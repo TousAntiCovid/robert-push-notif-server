@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<property name="LOG_DIR"
+		value="${ROBERT_PUSH_NOTIF_SERVER_WS_LOG_FILE_PATH:-/logs}" />
+	<property name="LOG_FILENAME"
+		value="${ROBERT_PUSH_NOTIF_SERVER_WS_LOG_FILE_NAME:-robert-push-notif-server-ws}" />
+	<property name="ERROR_LOG_FILENAME"
+		value="${ROBERT_PUSH_NOTIF_SERVER_WS_ERROR_LOG_FILE_NAME:-robert-push-notif-server-ws}.error" />
+
+	<appender name="RollingFile"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_DIR}/${LOG_FILENAME}.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>%d %p %C{1.} [%t][%file:%line] %m%n</Pattern>
+		</encoder>
+
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<!-- rollover daily and when the file reaches 10 MegaBytes -->
+			<fileNamePattern>${LOG_DIR}/${LOG_FILENAME}.%d{yyyy-MM-dd}.%i.log.gz
+			</fileNamePattern>
+			<maxFileSize>10MB</maxFileSize>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="RollingErrorFile"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_DIR}/${ERROR_LOG_FILENAME}.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>%d %p %C{1.} [%t][%file:%line] %m%n</Pattern>
+		</encoder>
+
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<!-- rollover daily and when the file reaches 10 MegaBytes -->
+			<fileNamePattern>${LOG_DIR}/${ERROR_LOG_FILENAME}.%d{yyyy-MM-dd}.%i.log.gz
+			</fileNamePattern>
+			<maxFileSize>10MB</maxFileSize>
+		</rollingPolicy>
+	</appender>
+
+	<!-- LOG everything at INFO level -->
+	<root level="info">
+		<appender-ref ref="RollingFile" />
+	</root>
+
+	<!-- at TRACE level -->
+	<logger name="trace" level="trace" additivity="false">
+		<appender-ref ref="RollingFile" />
+	</logger>
+
+	<!-- at WARN level -->
+	<logger name="warn" level="warn" additivity="false">
+		<appender-ref ref="RollingFile" />
+	</logger>
+
+	<!-- at ERROR level -->
+	<logger name="error" level="error" additivity="true">
+		<appender-ref ref="RollingErrorFile" />
+	</logger>
+
+</configuration>

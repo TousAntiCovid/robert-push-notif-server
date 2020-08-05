@@ -1,0 +1,101 @@
+package test.fr.gouv.stopc.robert.pushnotif.database.service;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.database.service.impl.PushInfoServiceImpl;
+
+@ExtendWith(SpringExtension.class)
+public class PushInfoServiceImplTest {
+
+    @InjectMocks
+    private PushInfoServiceImpl pushInfoService;
+
+    @Mock
+    private PushInfoRepository pushInfoRepository;
+
+    @Test
+    public void testFindByPushTokenWhenNull() {
+
+        // Given
+        String pushToken = null;
+
+        // When
+        Optional<PushInfo> pushInfo = this.pushInfoService.findByPushToken(pushToken);
+
+        // Then
+        assertFalse(pushInfo.isPresent());
+        verify(this.pushInfoRepository, never()).findById(anyString());
+    }
+
+    @Test
+    public void testFindByPushTokenWhenEmpty() {
+
+        // Given
+        String pushToken = "";
+
+        // When
+        Optional<PushInfo> pushInfo = this.pushInfoService.findByPushToken(pushToken);
+
+        // Then
+        assertFalse(pushInfo.isPresent());
+        verify(this.pushInfoRepository, never()).findById(anyString());
+    }
+
+    @Test
+    public void testFindByPushTokenSucceedsWhenNotEmpty() {
+
+        // Given
+        String pushToken = "pushToken";
+
+        when(this.pushInfoRepository.findById(pushToken)).thenReturn(Optional.of(PushInfo.builder().build()));
+
+        // When
+        Optional<PushInfo> pushInfo = this.pushInfoService.findByPushToken(pushToken);
+
+        // Then
+        assertTrue(pushInfo.isPresent());
+        verify(this.pushInfoRepository).findById(pushToken);
+    }
+ 
+    @Test
+    public void testCreateOrUpdateShouldNeverCallSaveWhenNull() {
+
+        // Given
+        PushInfo push = null;
+
+        // When
+        this.pushInfoService.createOrUpdate(push);
+
+        // Then
+        verify(this.pushInfoRepository, never()).save(any(PushInfo.class));
+    }
+ 
+    @Test
+    public void testCreateOrUpdateShouldCallSaveWhenNotNull() {
+
+        // Given
+        PushInfo push = PushInfo.builder().token("pushToken").build();
+
+        // When
+        this.pushInfoService.createOrUpdate(push);
+
+        // Then
+        verify(this.pushInfoRepository).save(push);
+    }
+}
