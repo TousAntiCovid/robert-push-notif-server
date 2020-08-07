@@ -172,5 +172,26 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+	<distributionManagement>
+		<repository>
+			<id>robert-repository</id>
+			<name>Releases</name>
+			<url>${nexusReleasesUrl}</url>
+		</repository>
+		<snapshotRepository>
+			<id>robert-repository</id>
+			<name>Snapshots</name>
+			<url>${nexusSnapshotsUrl}</url>
+		</snapshotRepository>
+	</distributionManagement>
+
+	<scm>
+		<connection>scm:git:${gitRepositoryUrl}</connection>
+		<developerConnection>scm:git:${gitRepositoryUrl}</developerConnection>
+		<url>${gitRepositoryUrl}</url>
+		<tag>HEAD</tag>
+	</scm>
+
+
 
 </project>
