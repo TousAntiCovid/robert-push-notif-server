@@ -40,7 +40,7 @@ public class PushInfoServiceImplTest {
 
         // Then
         assertFalse(pushInfo.isPresent());
-        verify(this.pushInfoRepository, never()).findById(anyString());
+        verify(this.pushInfoRepository, never()).findByToken(anyString());
     }
 
     @Test
@@ -54,7 +54,7 @@ public class PushInfoServiceImplTest {
 
         // Then
         assertFalse(pushInfo.isPresent());
-        verify(this.pushInfoRepository, never()).findById(anyString());
+        verify(this.pushInfoRepository, never()).findByToken(anyString());
     }
 
     @Test
@@ -63,14 +63,14 @@ public class PushInfoServiceImplTest {
         // Given
         String pushToken = "pushToken";
 
-        when(this.pushInfoRepository.findById(pushToken)).thenReturn(Optional.of(PushInfo.builder().build()));
+        when(this.pushInfoRepository.findByToken(pushToken)).thenReturn(Optional.of(PushInfo.builder().build()));
 
         // When
         Optional<PushInfo> pushInfo = this.pushInfoService.findByPushToken(pushToken);
 
         // Then
         assertTrue(pushInfo.isPresent());
-        verify(this.pushInfoRepository).findById(pushToken);
+        verify(this.pushInfoRepository).findByToken(pushToken);
     }
  
     @Test

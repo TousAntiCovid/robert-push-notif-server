@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "push_info")
+@Table(name = "PUSH")
 @DynamicUpdate(true)
 @Data
 @Builder
@@ -30,12 +30,13 @@ import lombok.NoArgsConstructor;
 public class PushInfo {
 
     @Id
+    @Column(name = "token")
     private String token;
 
-    @Column(name = "timezone")
+    @Column(name = "timezone", nullable = false)
     private String timezone;
 
-    @Column(name = "locale")
+    @Column(name = "locale", nullable = false)
     private String locale;
 
     @Column(name = "next_planned_push")

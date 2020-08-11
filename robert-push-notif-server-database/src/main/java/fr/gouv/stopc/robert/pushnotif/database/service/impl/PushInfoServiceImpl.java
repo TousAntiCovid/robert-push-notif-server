@@ -24,7 +24,7 @@ public class PushInfoServiceImpl implements IPushInfoService {
 
     @Override
     public Optional<PushInfo> findByPushToken(String pushToken) {
-        return Optional.ofNullable(pushToken).filter(StringUtils::isNotBlank).flatMap(this.pushInfoRepository::findById);
+        return Optional.ofNullable(pushToken).filter(StringUtils::isNotBlank).flatMap(this.pushInfoRepository::findByToken);
     }
 
     @Override
