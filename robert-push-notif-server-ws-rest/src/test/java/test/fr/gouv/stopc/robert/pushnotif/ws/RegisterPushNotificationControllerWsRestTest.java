@@ -2,6 +2,7 @@ package test.fr.gouv.stopc.robert.pushnotif.ws;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import fr.gouv.stopc.robert.pushnotif.server.ws.RobertPushNotifWsRestApplication;
@@ -264,13 +266,15 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
+        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
                 .locale(pushInfoVo.getLocale())
                 .timezone(pushInfoVo.getTimezone())
                 .active(false)
                 .deleted(false)
-                .nextPlannedPush(new Date())
+                .nextPlannedPush(nextPlannedPushed)
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
@@ -286,6 +290,7 @@ public class RegisterPushNotificationControllerWsRestTest {
         verify(this.pushInfoService).findByPushToken("PushToken");
         verify(this.pushInfoService).createOrUpdate(push);
         assertTrue(push.isActive());
+        assertNotEquals(nextPlannedPushed, push.getNextPlannedPush());
     }
 
     @Test
@@ -298,13 +303,15 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
+        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
                 .locale(pushInfoVo.getLocale())
                 .timezone(pushInfoVo.getTimezone())
                 .active(false)
                 .deleted(true)
-                .nextPlannedPush(new Date())
+                .nextPlannedPush(nextPlannedPushed)
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
@@ -321,6 +328,7 @@ public class RegisterPushNotificationControllerWsRestTest {
         verify(this.pushInfoService).createOrUpdate(push);
         assertTrue(push.isActive());
         assertFalse(push.isDeleted());
+        assertNotEquals(nextPlannedPushed, push.getNextPlannedPush());
     }
 
     @Test
@@ -333,13 +341,15 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/London")
                 .build();
 
+        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
                 .locale("fr-FR")
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
-                .nextPlannedPush(new Date())
+                .nextPlannedPush(nextPlannedPushed)
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
@@ -356,5 +366,6 @@ public class RegisterPushNotificationControllerWsRestTest {
         verify(this.pushInfoService).createOrUpdate(push);
         assertEquals("en-EN", push.getLocale());
         assertEquals("Europe/London", push.getTimezone());
+        assertEquals(nextPlannedPushed, push.getNextPlannedPush());
     }
 }

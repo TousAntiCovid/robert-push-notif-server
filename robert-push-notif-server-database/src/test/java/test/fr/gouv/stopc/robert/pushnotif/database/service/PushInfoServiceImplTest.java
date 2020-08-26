@@ -6,8 +6,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyString;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -72,7 +76,7 @@ public class PushInfoServiceImplTest {
         assertTrue(pushInfo.isPresent());
         verify(this.pushInfoRepository).findByToken(pushToken);
     }
- 
+
     @Test
     public void testCreateOrUpdateShouldNeverCallSaveWhenNull() {
 
@@ -85,7 +89,7 @@ public class PushInfoServiceImplTest {
         // Then
         verify(this.pushInfoRepository, never()).save(any(PushInfo.class));
     }
- 
+
     @Test
     public void testCreateOrUpdateShouldCallSaveWhenNotNull() {
 
@@ -97,5 +101,45 @@ public class PushInfoServiceImplTest {
 
         // Then
         verify(this.pushInfoRepository).save(push);
+    }
+
+    @Test
+    public void testSaveAllWhenListIsNull() {
+        
+        // Given
+        List<PushInfo> pushInfos = null;
+        
+        // When
+        this.pushInfoService.saveAll(pushInfos);
+        
+        // Then
+        verify(this.pushInfoRepository, never()).saveAll(anyIterable());
+    }
+
+    @Test
+    public void testSaveAllWhenListIsAEmpyt() {
+
+        // Given
+        List<PushInfo> pushInfos = Collections.emptyList();
+
+        // When
+        this.pushInfoService.saveAll(pushInfos);
+
+        // Then
+        verify(this.pushInfoRepository, never()).saveAll(anyIterable());
+    }
+
+    @Test
+    public void testSaveAllWhenListIsNotEmpyt() {
+
+        // Given
+        List<PushInfo> pushInfos = new ArrayList<>();
+        pushInfos.add(PushInfo.builder().build());
+
+        // When
+        this.pushInfoService.saveAll(pushInfos);
+
+        // Then
+        verify(this.pushInfoRepository).saveAll(pushInfos);
     }
 }

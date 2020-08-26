@@ -61,12 +61,21 @@ public final class TimeUtils {
     }
 
     public static Date getNowAtTimeZoneUTC() {
-        return Date.from(LocalDateTime.now().atZone(ZoneId.of(UTC)).toInstant());
+        return Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault())
+                .withZoneSameInstant(ZoneId.of(UTC))
+                .toInstant());
     }
 
+    public static Date getNowAtTimeOclockZoneUTC() {
+        LocalDateTime datetime = LocalDateTime.now().atZone(ZoneId.systemDefault())
+        .withZoneSameInstant(ZoneId.of(UTC)).toLocalDateTime();
+        int currentHour = datetime.getHour();
+        datetime = datetime.toLocalDate().atStartOfDay().withHour(currentHour);
+        return toSqlDate(datetime);
+    }
     public static Date toSqlDate(LocalDateTime date) {
 
-        return Date.from(date.atZone(ZoneId.of(UTC)).toInstant());
+        return java.sql.Timestamp.valueOf(date);
     }
 
     public static Optional<Date> getNextPushDate(PushDate pushDate) {

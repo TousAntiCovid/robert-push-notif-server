@@ -5,7 +5,10 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -20,7 +23,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "PUSH")
+@Table(name = "PUSH", indexes = { @Index(name = "IDX_TOKEN", columnList = "token") })
 @DynamicUpdate(true)
 @Data
 @Builder
@@ -30,7 +33,10 @@ import lombok.NoArgsConstructor;
 public class PushInfo {
 
     @Id
-    @Column(name = "token")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @Column(name = "token", unique = true, nullable = false)
     private String token;
 
     @Column(name = "timezone", nullable = false)
@@ -56,6 +62,9 @@ public class PushInfo {
 
     @Column(name = "successful_push_sent")
     private int successfulPushSent;
+
+    @Column(name = "failed_push_sent")
+    private int failedPushSent;
 
     @CreatedDate
     @Column(name = "creation_date", updatable = false)
