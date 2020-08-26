@@ -45,13 +45,17 @@ public class RegisterPushNotificationControllerImpl implements IRegisterPushNoti
                             .minPushHour(this.propertyLoader.getMinPushHour())
                             .maxPushHour(this.propertyLoader.getMaxPushHour())
                             .build();
+
                     return TimeUtils.getNextPushDate(pushDate).map(nextPlannnedPush -> {
+
+                        if(!push.isActive() || push.isDeleted()) {
+                            push.setNextPlannedPush(nextPlannnedPush);
+                        }
 
                         push.setDeleted(false);
                         push.setActive(true);
                         push.setTimezone(pushInfoVo.getTimezone());
                         push.setLocale(pushInfoVo.getLocale());
-                        push.setNextPlannedPush(nextPlannnedPush);
                         this.pushInfoService.createOrUpdate(push);
 
                         return ResponseEntity.status(HttpStatus.CREATED).build();

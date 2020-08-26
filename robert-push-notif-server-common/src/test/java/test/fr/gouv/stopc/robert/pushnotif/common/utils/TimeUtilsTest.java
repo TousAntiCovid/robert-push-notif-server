@@ -296,7 +296,7 @@ public class TimeUtilsTest {
         // Given
         LocalDateTime dateCompare  = LocalDateTime.now().plusHours(6);
         LocalDateTime dateDebut = LocalDateTime.now();
-        LocalDateTime dateFin = LocalDateTime.now().plusHours(5);
+        LocalDateTime dateFin = LocalDateTime.now().plusHours(4);
 
         // When && Then
         assertFalse(TimeUtils.isBetween(dateCompare, dateDebut, dateFin));

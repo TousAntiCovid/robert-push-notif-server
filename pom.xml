@@ -94,6 +94,11 @@
 				<version>${commons-lang3.version}</version>
 			</dependency>
 
+			<dependency>
+				<groupId>com.eatthepath</groupId>
+				<artifactId>pushy</artifactId>
+				<version>0.14.1</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
