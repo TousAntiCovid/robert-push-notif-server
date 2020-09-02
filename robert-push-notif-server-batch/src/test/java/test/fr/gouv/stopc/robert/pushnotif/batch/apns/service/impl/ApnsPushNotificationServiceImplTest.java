@@ -1,7 +1,6 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -195,6 +194,54 @@ public class ApnsPushNotificationServiceImplTest {
     }
 
     @Test
+    public void testSendPushNotificationSucceedsWithOnlyOneInactiveRejectionReasonAndSecondaryPushEnabled() {
+
+
+        // Given
+        String rejectionReason = "BadDeviceToken";
+        String nextRejectionReason = null;
+
+        ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
+
+        when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> 
+        sendNotificationFuture = new PushNotificationFuture<>(null);
+
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> 
+        nextSendNotificationFuture = new PushNotificationFuture<>(null);
+
+        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this.getPushNotificationResponse(false, rejectionReason);
+
+        PushNotificationResponse<SimpleApnsPushNotification> nextPushNotificationResponse = this.getPushNotificationResponse(true, nextRejectionReason);
+
+        sendNotificationFuture.complete(pushNotificationResponse);
+        nextSendNotificationFuture.complete(nextPushNotificationResponse);
+
+        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture)
+        .thenReturn(nextSendNotificationFuture);
+
+        assertNull(this.push.getLastFailurePush());
+        assertNull(this.push.getNextPlannedPush());
+        assertNull(this.push.getLastErrorCode());
+        assertEquals(0, this.push.getFailedPushSent());
+        assertEquals(0, this.push.getSuccessfulPushSent());
+
+        // When
+        this.apnsService.sendPushNotification(this.push);
+
+        // Then
+        assertTrue(this.push.isActive());
+        assertNull(this.push.getLastFailurePush());
+        assertNotNull(this.push.getLastSuccessfulPush());
+        assertNotNull(this.push.getNextPlannedPush());
+        assertEquals(null, this.push.getLastErrorCode());
+        assertEquals(0, this.push.getFailedPushSent());
+        assertEquals(1, this.push.getSuccessfulPushSent());
+        verify(this.apnsClient, times(2)).sendNotification(any(SimpleApnsPushNotification.class));
+
+    }
+
+    @Test
     public void testSendPushNotificationWhenItSucceeds() {
 
         // Given
@@ -241,6 +288,7 @@ public class ApnsPushNotificationServiceImplTest {
 
         when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture);
 
+        assertTrue(this.push.isActive());
         assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
         assertNull(this.push.getLastErrorCode());
@@ -251,12 +299,7 @@ public class ApnsPushNotificationServiceImplTest {
         this.apnsService.sendPushNotification(this.push);
 
         // Then
-        if(isActive) {
-            assertTrue(this.push.isActive());
-        } else {
-            assertFalse(this.push.isActive());
-        }
-
+        assertEquals(isActive, this.push.isActive());
         assertNotNull(this.push.getLastFailurePush());
         assertNull(this.push.getLastSuccessfulPush());
         assertNotNull(this.push.getNextPlannedPush());
