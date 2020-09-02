@@ -147,8 +147,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         pushNotificationResponse.getRejectionReason());
                 final String rejetctionReason = pushNotificationResponse.getRejectionReason();
 
-                push.setLastErrorCode(rejetctionReason);
-                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
                 if(StringUtils.isNotBlank(rejetctionReason) && rejetctionReason.equals(this.propertyLoader.getApnsInactiveRejectionReason())) {
 
                     if (useSecondaryApns) {
@@ -156,7 +154,13 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                     }
                     push.setActive(false);
                 }
-                push.setFailedPushSent(push.getFailedPushSent() + 1);
+
+                if(StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
+                    push.setLastErrorCode(rejetctionReason);
+                    push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                    push.setFailedPushSent(push.getFailedPushSent() + 1);
+
+                }
 
                 pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
                     log.warn("\t…and the token is invalid as of {}", timestamp);
