@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>fr.gouv.stopc</groupId>
 		<artifactId>robert-push-notif-server</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.1</version>
 	</parent>
 
 	<artifactId>robert-push-notif-server-batch</artifactId>

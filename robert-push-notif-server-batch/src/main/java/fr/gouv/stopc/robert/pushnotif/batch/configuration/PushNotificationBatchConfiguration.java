@@ -128,6 +128,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public TaskExecutorPartitionHandler partitionHandler() {
         TaskExecutorPartitionHandler partitionHandler = new TaskExecutorPartitionHandler();
+        partitionHandler.setGridSize(this.propertyLoader.getGridSize());
         partitionHandler.setStep(step1());
         partitionHandler.setTaskExecutor(new SimpleAsyncTaskExecutor());
         return partitionHandler; 
