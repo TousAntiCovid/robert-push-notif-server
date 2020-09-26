@@ -48,4 +48,7 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.apns.secondary.enable}")
     private boolean enableSecondaryPush;
 
+    @Value("${robert.push.notif.server.batch.grid-size}")
+    private int gridSize;
+
 }
