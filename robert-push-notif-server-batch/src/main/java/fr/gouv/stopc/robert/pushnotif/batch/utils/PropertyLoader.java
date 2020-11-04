@@ -1,5 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -36,8 +38,8 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.apns.host}")
     private String apnsHost;
 
-    @Value("${robert.push.notif.server.apns.inactive-rejection-reason}")
-    private String apnsInactiveRejectionReason;
+    @Value("#{'${robert.push.notif.server.apns.inactive-rejection-reason}'.split(',')}")
+    private List<String> apnsInactiveRejectionReason;
 
     @Value("${robert.push.notif.server.apns.topic}")
     private String apnsTopic;
@@ -50,5 +52,11 @@ public class PropertyLoader {
 
     @Value("${robert.push.notif.server.batch.grid-size}")
     private int gridSize;
+
+    @Value("${robert.push.notif.server.batch.chunk-size}")
+    private int chunkSize;
+
+    @Value("${robert.push.notif.server.batch.page-size}")
+    private int pageSize;
 
 }
