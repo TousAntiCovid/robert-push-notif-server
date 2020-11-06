@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -59,7 +60,7 @@ public class ApnsPushNotificationServiceImplTest {
         when(this.propertyLoader.getMinPushHour()).thenReturn(8);
         when(this.propertyLoader.getMaxPushHour()).thenReturn(20);
         when(this.propertyLoader.getApnsTopic()).thenReturn("topic");
-        when(this.propertyLoader.getApnsInactiveRejectionReason()).thenReturn("BadDeviceToken");
+        when(this.propertyLoader.getApnsInactiveRejectionReason()).thenReturn(Arrays.asList("BadDeviceToken"));
         when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(false);
     }
 

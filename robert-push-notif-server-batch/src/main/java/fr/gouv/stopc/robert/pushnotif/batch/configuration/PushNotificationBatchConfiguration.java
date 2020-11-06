@@ -37,8 +37,6 @@ import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 @EnableBatchProcessing
 public class PushNotificationBatchConfiguration {
 
-    private final int CHUNK_SIZE = 10000;
-
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
@@ -78,7 +76,7 @@ public class PushNotificationBatchConfiguration {
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
             @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
 
-        return new PushPagingItemReader(this.dataSource, pagingQueryProvider, minId, maxId, pushDate, 1000);
+        return new PushPagingItemReader(this.dataSource, pagingQueryProvider, minId, maxId, pushDate, this.propertyLoader.getPageSize());
     }
 
     @Bean
@@ -89,7 +87,7 @@ public class PushNotificationBatchConfiguration {
             @Value("#{stepExecutionContext['pushDate']}") Date pushDate) { 
 
 
-        StringBuilder dateWhereClause = new StringBuilder(" and next_planned_push = :");
+        StringBuilder dateWhereClause = new StringBuilder(" and next_planned_push <= :");
         dateWhereClause.append(PushBatchConstants.PUSH_DATE);
 
         StringBuilder whereClause = new StringBuilder("where id >= :");
@@ -145,7 +143,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .<PushInfo, PushInfo>chunk(CHUNK_SIZE)
+                .<PushInfo, PushInfo>chunk(this.propertyLoader.getChunkSize())
                 .reader(pushPagingReader(null, null, null, null))
                 .processor(pushProcessor())
                 .writer(pushItemWriter())
