@@ -120,13 +120,13 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         sendNotificationFuture.whenComplete((response, cause) -> {
             if (response != null) {
                 // Handle the push notification response as before from here.
-                log.info("Push Notification successful sent => {}", response);
+                log.debug("Push Notification successful sent => {}", response);
             } else {
                 // Something went wrong when trying to send the notification to the
                 // APNs server. Note that this is distinct from a rejection from
                 // the server, and indicates that something went wrong when actually
                 // sending the notification or waiting for a reply.
-                log.warn("Push Notification failed => {}", cause.getMessage());
+                log.debug("Push Notification failed => {}", cause.getMessage());
             }
         });
 
@@ -135,7 +135,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                     sendNotificationFuture.get();
 
             if (pushNotificationResponse.isAccepted()) {
-                log.info("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+                log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
 
                 push.setActive(true);
                 push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
@@ -143,11 +143,11 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
 
             } else {
-                log.warn("Notification rejected by the APNs gateway: {}",
+                log.debug("Notification rejected by the APNs gateway: {}",
                         pushNotificationResponse.getRejectionReason());
                 final String rejetctionReason = pushNotificationResponse.getRejectionReason();
 
-                if(StringUtils.isNotBlank(rejetctionReason) && rejetctionReason.equals(this.propertyLoader.getApnsInactiveRejectionReason())) {
+                if(StringUtils.isNotBlank(rejetctionReason) && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
 
                     if (useSecondaryApns) {
                         return this.sendNotification(push, false);
@@ -163,7 +163,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 }
 
                 pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                    log.warn("\t…and the token is invalid as of {}", timestamp);
+                    log.debug("\t…and the token is invalid as of {}", timestamp);
                 });
             }
         } catch (final ExecutionException | InterruptedException e) {
