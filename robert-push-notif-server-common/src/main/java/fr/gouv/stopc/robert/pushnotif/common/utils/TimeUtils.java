@@ -21,6 +21,8 @@ public final class TimeUtils {
 
     public final static String UTC = "UTC";
 
+    private static Random random = new Random();
+
     private TimeUtils() {
         throw new AssertionError();
     }
@@ -49,8 +51,7 @@ public final class TimeUtils {
             throw new IllegalArgumentException("max must be greater than min");
         }
 
-        Random r = new Random();
-        return r.nextInt((max - min) + 1) + min;
+        return random.nextInt((max - min) + 1) + min;
     }
 
     public static Optional<LocalDateTime> toLocalDateTime(Date date) {
