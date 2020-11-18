@@ -1,3 +1,6 @@
+# This Dockerfile is useful to quickly setup a test/dev environment.
+# It should not be used in production.
+
 # mvn package -Dmaven.test.skip=true
 # docker build -f src/main/docker/Dockerfile -t tac/robert-push-notif-server-ws-rest .
 
