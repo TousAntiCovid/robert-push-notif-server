@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -40,7 +39,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     @PostConstruct
-    public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
+    public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
@@ -109,65 +108,28 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         }
 
         sendNotificationFuture.whenComplete((response, cause) -> {
-            if (Objects.isNull(response)) {
+            // if (Objects.isNull(response)) {
+            if (!Objects.isNull(response) && response.isAccepted()) {
                 // Handle the push notification response as before from here.
                 log.debug("Push Notification successful sent => {}", response);
+                push.setActive(true);
+                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
+                push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+
             } else {
                 // Something went wrong when trying to send the notification to the
                 // APNs server. Note that this is distinct from a rejection from
                 // the server, and indicates that something went wrong when actually
                 // sending the notification or waiting for a reply.
+                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                push.setFailedPushSent(push.getFailedPushSent() + 1);
                 log.info("Push Notification failed => {}", cause.getMessage());
             }
         });
 
-        try {
-            // final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse =
-            //       sendNotificationFuture.get();
+        this.setNextPlannedPushDate(push);
 
-            // if (pushNotificationResponse.isAccepted()) {
-            log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
-
-            push.setActive(true);
-            push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-            push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-
-
-         /*   } else {
-                log.debug("Notification rejected by the APNs gateway: {}",
-                        pushNotificationResponse.getRejectionReason());
-                final String rejetctionReason = pushNotificationResponse.getRejectionReason();
-
-                if(StringUtils.isNotBlank(rejetctionReason) && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
-
-                    if (useSecondaryApns) {
-                        return this.sendNotification(push, false);
-                    }
-                    push.setActive(false);
-                }
-
-                if(StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
-                    push.setLastErrorCode(rejetctionReason);
-                    push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                    push.setFailedPushSent(push.getFailedPushSent() + 1);
-
-                }
-
-                pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                    log.debug("\t…and the token is invalid as of {}", timestamp);
-                });
-            }*/
-        } catch (Exception e) {
-            log.error("Failed to send push notification due to {}.", e.getMessage());
-
-            push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-            push.setFailedPushSent(push.getFailedPushSent() + 1);
-
-        } finally {
-            this.setNextPlannedPushDate(push);
-        }
         return push;
-
     }
 
     private void setNextPlannedPushDate(PushInfo push) {
@@ -195,7 +157,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             });
 
         }
-
     }
 
 }
