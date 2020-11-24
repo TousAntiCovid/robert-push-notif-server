@@ -103,7 +103,6 @@ public class PushNotificationBatchConfiguration {
         }
 
         whereClause.append(" and deleted = 'f' and active = 't' ");
-        whereClause.append(" order by next_planned_push ");
         SqlPagingQueryProviderFactoryBean factoryBean = new SqlPagingQueryProviderFactoryBean();
         factoryBean.setDataSource(dataSource);
         factoryBean.setSelectClause("select *");
