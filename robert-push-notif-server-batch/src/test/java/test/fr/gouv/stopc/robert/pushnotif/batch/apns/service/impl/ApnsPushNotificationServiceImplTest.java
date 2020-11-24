@@ -102,7 +102,7 @@ public class ApnsPushNotificationServiceImplTest {
         // Then
         assertTrue(this.push.isActive());
         assertNotNull(this.push.getNextPlannedPush());
-        assertEquals(0, this.push.getSuccessfulPushSent());
+        assertEquals(1, this.push.getSuccessfulPushSent());
     }
 
     @Test

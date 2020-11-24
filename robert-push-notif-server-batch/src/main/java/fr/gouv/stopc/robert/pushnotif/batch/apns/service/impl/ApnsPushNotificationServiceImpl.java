@@ -108,28 +108,37 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         }
 
         sendNotificationFuture.whenComplete((response, cause) -> {
-            // if (Objects.isNull(response)) {
-            if (!Objects.isNull(response) && response.isAccepted()) {
+            if (Objects.isNull(response)) {
                 // Handle the push notification response as before from here.
                 log.debug("Push Notification successful sent => {}", response);
-                push.setActive(true);
-                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-                push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-
             } else {
                 // Something went wrong when trying to send the notification to the
                 // APNs server. Note that this is distinct from a rejection from
                 // the server, and indicates that something went wrong when actually
                 // sending the notification or waiting for a reply.
-                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                push.setFailedPushSent(push.getFailedPushSent() + 1);
                 log.info("Push Notification failed => {}", cause.getMessage());
             }
         });
 
-        this.setNextPlannedPushDate(push);
+        try {
 
+            log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+
+            push.setActive(true);
+            push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
+            push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+
+        } catch (Exception e) {
+            log.error("Failed to send push notification due to {}.", e.getMessage());
+
+            push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+            push.setFailedPushSent(push.getFailedPushSent() + 1);
+
+        } finally {
+            this.setNextPlannedPushDate(push);
+        }
         return push;
+
     }
 
     private void setNextPlannedPushDate(PushInfo push) {
