@@ -1,5 +1,23 @@
 package fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl;
 
+import com.eatthepath.pushy.apns.*;
+import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
+import com.eatthepath.pushy.apns.util.ApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.eatthepath.pushy.apns.util.TokenUtil;
+import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
+import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
+import fr.gouv.stopc.robert.pushnotif.common.PushDate;
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -7,33 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.net.ssl.SSLException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-
-import com.eatthepath.pushy.apns.ApnsClient;
-import com.eatthepath.pushy.apns.ApnsClientBuilder;
-import com.eatthepath.pushy.apns.DeliveryPriority;
-import com.eatthepath.pushy.apns.PushNotificationResponse;
-import com.eatthepath.pushy.apns.PushType;
-import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
-import com.eatthepath.pushy.apns.util.ApnsPayloadBuilder;
-import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
-import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import com.eatthepath.pushy.apns.util.TokenUtil;
-import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
-
-import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
-import fr.gouv.stopc.robert.pushnotif.common.PushDate;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -50,11 +41,10 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
     @PostConstruct
     public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
-
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
         log.info("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
-                "production": "developement");
+                "production" : "developement");
         this.apnsClient = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
                 .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
@@ -62,7 +52,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         this.propertyLoader.getApnsAuthKeyId()))
                 .build();
 
-        if(this.propertyLoader.isEnableSecondaryPush()) {
+        if (this.propertyLoader.isEnableSecondaryPush()) {
 
             if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
                 secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
@@ -118,7 +108,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         }
 
         sendNotificationFuture.whenComplete((response, cause) -> {
-            if (response != null) {
+            if (Objects.isNull(response)) {
                 // Handle the push notification response as before from here.
                 log.debug("Push Notification successful sent => {}", response);
             } else {
@@ -126,47 +116,17 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 // APNs server. Note that this is distinct from a rejection from
                 // the server, and indicates that something went wrong when actually
                 // sending the notification or waiting for a reply.
-                log.debug("Push Notification failed => {}", cause.getMessage());
+                log.info("Push Notification failed => {}", cause.getMessage());
             }
         });
 
         try {
-            final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse =
-                    sendNotificationFuture.get();
 
-            if (pushNotificationResponse.isAccepted()) {
-                log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+            push.setActive(true);
+            push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
+            push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
 
-                push.setActive(true);
-                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-                push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-
-
-            } else {
-                log.debug("Notification rejected by the APNs gateway: {}",
-                        pushNotificationResponse.getRejectionReason());
-                final String rejetctionReason = pushNotificationResponse.getRejectionReason();
-
-                if(StringUtils.isNotBlank(rejetctionReason) && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
-
-                    if (useSecondaryApns) {
-                        return this.sendNotification(push, false);
-                    }
-                    push.setActive(false);
-                }
-
-                if(StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
-                    push.setLastErrorCode(rejetctionReason);
-                    push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                    push.setFailedPushSent(push.getFailedPushSent() + 1);
-
-                }
-
-                pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                    log.debug("\t…and the token is invalid as of {}", timestamp);
-                });
-            }
-        } catch (final ExecutionException | InterruptedException e) {
+        } catch (Exception e) {
             log.error("Failed to send push notification due to {}.", e.getMessage());
 
             push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
@@ -204,7 +164,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             });
 
         }
-
     }
 
 }

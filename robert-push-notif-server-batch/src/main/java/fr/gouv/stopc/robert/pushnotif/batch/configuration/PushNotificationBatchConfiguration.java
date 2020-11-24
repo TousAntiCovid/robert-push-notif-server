@@ -84,7 +84,7 @@ public class PushNotificationBatchConfiguration {
     public SqlPagingQueryProviderFactoryBean pagingQueryProvider(
             @Value("#{stepExecutionContext['minId']}") Long minId,
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
-            @Value("#{stepExecutionContext['pushDate']}") Date pushDate) { 
+            @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
 
 
         StringBuilder dateWhereClause = new StringBuilder(" and next_planned_push <= :");
@@ -103,13 +103,13 @@ public class PushNotificationBatchConfiguration {
         }
 
         whereClause.append(" and deleted = 'f' and active = 't' ");
-        SqlPagingQueryProviderFactoryBean factoryBean = new SqlPagingQueryProviderFactoryBean(); 
+        SqlPagingQueryProviderFactoryBean factoryBean = new SqlPagingQueryProviderFactoryBean();
         factoryBean.setDataSource(dataSource);
         factoryBean.setSelectClause("select *");
         factoryBean.setFromClause("from push");
         factoryBean.setWhereClause(whereClause.toString());
-        factoryBean.setSortKey("token"); 
-        return factoryBean; 
+        factoryBean.setSortKey("next_planned_push");
+        return factoryBean;
     }
 
     @Bean
@@ -129,8 +129,8 @@ public class PushNotificationBatchConfiguration {
         partitionHandler.setGridSize(this.propertyLoader.getGridSize());
         partitionHandler.setStep(step1());
         partitionHandler.setTaskExecutor(new SimpleAsyncTaskExecutor());
-        return partitionHandler; 
-    } 
+        return partitionHandler;
+    }
 
     @Bean
     public Step partitionedMaster() {
