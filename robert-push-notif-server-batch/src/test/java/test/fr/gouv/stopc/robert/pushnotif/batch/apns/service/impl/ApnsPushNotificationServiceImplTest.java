@@ -90,7 +90,6 @@ public class ApnsPushNotificationServiceImplTest {
         when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture)
                 .thenReturn(nextSendNotificationFuture);
 
-        //assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
         assertNull(this.push.getLastErrorCode());
         assertEquals(0, this.push.getFailedPushSent());

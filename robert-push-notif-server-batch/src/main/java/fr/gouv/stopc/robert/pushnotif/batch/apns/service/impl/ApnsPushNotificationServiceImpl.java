@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -39,8 +40,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     @PostConstruct
-    public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
-
+    public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
         log.info("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
@@ -121,8 +121,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         });
 
         try {
-
-            log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
 
             push.setActive(true);
             push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
