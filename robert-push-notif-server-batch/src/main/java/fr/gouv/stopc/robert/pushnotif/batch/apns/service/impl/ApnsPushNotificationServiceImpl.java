@@ -84,16 +84,16 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     @Override
-    public PushInfo sendPushNotification(PushInfo push) {
+    public PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendPushNotification(PushInfo push) {
 
         if (Objects.isNull(push)) {
-            return push;
+            return null;
         }
 
         return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
     }
 
-    private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {
+    private PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotification(PushInfo push, boolean useSecondaryApns) {
 
 
         final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
@@ -107,18 +107,18 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
         }
 
-        sendNotificationFuture.whenComplete((response, cause) -> {
-            if (Objects.isNull(response)) {
-                // Handle the push notification response as before from here.
-                log.debug("Push Notification successful sent => {}", response);
-            } else {
-                // Something went wrong when trying to send the notification to the
-                // APNs server. Note that this is distinct from a rejection from
-                // the server, and indicates that something went wrong when actually
-                // sending the notification or waiting for a reply.
-                log.info("Push Notification failed => {}", cause.getMessage());
-            }
-        });
+//        sendNotificationFuture.whenComplete((response, cause) -> {
+//            if (Objects.isNull(response)) {
+//                // Handle the push notification response as before from here.
+//                log.debug("Push Notification successful sent => {}", response);
+//            } else {
+//                // Something went wrong when trying to send the notification to the
+//                // APNs server. Note that this is distinct from a rejection from
+//                // the server, and indicates that something went wrong when actually
+//                // sending the notification or waiting for a reply.
+//                log.info("Push Notification failed => {}", cause.getMessage());
+//            }
+//        });
 
         try {
 
@@ -135,7 +135,8 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         } finally {
             this.setNextPlannedPushDate(push);
         }
-        return push;
+
+        return sendNotificationFuture;
 
     }
 
