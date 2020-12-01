@@ -24,8 +24,8 @@ public class PushJobExecutionListener implements JobExecutionListener {
     @Override
     public void afterJob(JobExecution jobExecution) {
 
-        log.info("Trying to close the apns service.");
-        this.apnsPushNotifcationService.close();
+//        log.info("Trying to close the apns service.");
+//        this.apnsPushNotifcationService.close();
     }
 
 }
