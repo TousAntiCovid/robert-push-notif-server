@@ -30,7 +30,7 @@ public class PushProcessor implements ItemProcessor<PushInfo, PushInfo> {
         PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = this.apnsPushNotifcationService.sendPushNotification(push);
         
         sendNotificationFuture.thenAcceptAsync((response) -> {
-            if (Objects.isNull(response)) {
+            if (Objects.nonNull(response)) {
                 // Handle the push notification response as before from here.
                 log.info("Push Notification successful sent => {}", response);
             } else {
