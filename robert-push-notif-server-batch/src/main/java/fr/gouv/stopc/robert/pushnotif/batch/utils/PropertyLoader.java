@@ -1,12 +1,17 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 
 import lombok.Getter;
 
@@ -62,11 +67,18 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.batch.page-size}")
     private int pageSize;
     
-    private File apnsAuthFile;
+    private ApnsSigningKey apnsAuthFile;
 
     @PostConstruct
     private void initFile() {
-        this.apnsAuthFile = new File(this.apnsAuthTokenFile);
+        try {
+            this.apnsAuthFile = ApnsSigningKey.loadFromPkcs8File( new File(this.apnsAuthTokenFile),
+                    this.apnsTeamId,
+                    this.apnsAuthKeyId);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }
