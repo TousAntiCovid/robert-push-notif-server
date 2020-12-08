@@ -53,7 +53,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 "production" : "developement");
         this.apnsClient = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
-                .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
+                .setSigningKey(ApnsSigningKey.loadFromPkcs8File(this.propertyLoader.getApnsAuthFile(),
                         this.propertyLoader.getApnsTeamId(),
                         this.propertyLoader.getApnsAuthKeyId()))
                 .build();

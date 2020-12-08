@@ -1,6 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
+import java.io.File;
 import java.util.List;
+
+import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -58,5 +61,12 @@ public class PropertyLoader {
 
     @Value("${robert.push.notif.server.batch.page-size}")
     private int pageSize;
+    
+    private File apnsAuthFile;
+
+    @PostConstruct
+    private void initFile() {
+        this.apnsAuthFile = new File(this.apnsAuthTokenFile);
+    }
 
 }
