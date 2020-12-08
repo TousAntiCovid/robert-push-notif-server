@@ -49,7 +49,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
-        log.info("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
+        log.debug("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
                 "production" : "developement");
         this.apnsClient = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
@@ -62,7 +62,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
             if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
                 secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
-                log.info("Configured secondary anps host as developement");
+                log.debug("Configured secondary anps host as developement");
             }
 
             this.secondaryApnsClient = new ApnsClientBuilder()
@@ -78,7 +78,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     public ApnsClient getApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
-        log.info("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
+        log.debug("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
                 "production" : "developement");
         ApnsClient client = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
@@ -91,7 +91,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
             if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
                 secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
-                log.info("Configured secondary anps host as developement");
+                log.debug("Configured secondary anps host as developement");
             }
 
             client = new ApnsClientBuilder()
@@ -127,7 +127,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             return null ;
         }
 
-//        log,info("SDDDDDDD");
+//        log,debug("SDDDDDDD");
         return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
     }
 
@@ -145,7 +145,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 //            ApnsClient apnsClient;
             try {
 //                client = getApnsClient();
-//                log.info("APPPPPNS CLIENT - {}", client);
+//                log.debug("APPPPPNS CLIENT - {}", client);
                 if (useSecondaryApns) {
 
                     sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
@@ -157,7 +157,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         sendNotificationFuture.get();
                 
                 if (pushNotificationResponse.isAccepted()) {
-                    log.info("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+                    log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
                     push.setActive(true);
                     push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
                     push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
@@ -191,13 +191,13 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 sendNotificationFuture.whenComplete((response, cause) -> {
                     if (Objects.nonNull(response)) {
                         // Handle the push notification response as before from here.
-                        log.info("Push Notification successful sent => {} - {}", response, cause);
+                        log.debug("Push Notification successful sent => {} - {}", response, cause);
                     } else {
                         // Something went wrong when trying to send the notification to the
                         // APNs server. Note that this is distinct from a rejection from
                         // the server, and indicates that something went wrong when actually
                         // sending the notification or waiting for a reply.
-                        log.info("Push Notification failed => {}", cause);
+                        log.debug("Push Notification failed => {}", cause);
                     }
                     
                     this.close();
