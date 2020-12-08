@@ -8,7 +8,7 @@ import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 
 public interface IApnsPushNotificationService {
 
-    PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendPushNotification(PushInfo push);
+    PushInfo sendPushNotification(PushInfo push);
 
     public void close();
 }

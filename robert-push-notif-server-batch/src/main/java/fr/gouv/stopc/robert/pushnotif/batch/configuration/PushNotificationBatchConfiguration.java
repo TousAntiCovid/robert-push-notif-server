@@ -43,7 +43,7 @@ public class PushNotificationBatchConfiguration {
     private final DataSource dataSource;
     private final IPushInfoService pushInfoService;
     private final PropertyLoader propertyLoader;
-    private final IApnsPushNotificationService apnsPushNotifcationService;
+//    private final IApnsPushNotificationService apnsPushNotifcationService;
 
     @Inject
     public PushNotificationBatchConfiguration(JobBuilderFactory jobBuilderFactory,
@@ -51,15 +51,14 @@ public class PushNotificationBatchConfiguration {
             DataSource dataSource,
             IPushInfoService pushInfoService,
             PropertyLoader propertyLoader,
-            IRestApiService restApiService,
-            IApnsPushNotificationService apnsPushNotifcationService) {
+            IRestApiService restApiService) {
 
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.dataSource = dataSource;
         this.pushInfoService = pushInfoService;
         this.propertyLoader = propertyLoader;
-        this.apnsPushNotifcationService = apnsPushNotifcationService;
+//        this.apnsPushNotifcationService = apnsPushNotifcationService;
 
     }
 
@@ -115,7 +114,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public PushProcessor pushProcessor() {
 
-        return new PushProcessor(this.apnsPushNotifcationService);
+        return new PushProcessor(this.propertyLoader, this.pushInfoService);
     }
 
     @Bean
@@ -153,7 +152,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Job pushPartitionedJob() {
         return this.jobBuilderFactory.get("pushPartitionedJob")
-                .listener(new PushJobExecutionListener(this.apnsPushNotifcationService))
+//                .listener(new PushJobExecutionListener(this.apnsPushNotifcationService))
                 .incrementer(new RunIdIncrementer())
                 .start(partitionedMaster())
                 .build();
