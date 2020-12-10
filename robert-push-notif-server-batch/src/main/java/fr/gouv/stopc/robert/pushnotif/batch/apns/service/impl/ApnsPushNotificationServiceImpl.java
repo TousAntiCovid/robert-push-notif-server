@@ -198,7 +198,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         log.debug("Push Notification failed => {}", cause);
                     }
                     
-                    this.close();
+//                    this.close();
                 });
                 
              
