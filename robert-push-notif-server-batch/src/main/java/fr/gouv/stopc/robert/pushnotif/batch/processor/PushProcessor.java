@@ -44,13 +44,13 @@ public class PushProcessor implements ItemProcessor<PushInfo, PushInfo> {
 //        PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = 
         CompletableFuture.runAsync(() -> {
             
-            IApnsPushNotificationService LocalApnsPushNotifcationService = new ApnsPushNotificationServiceImpl(this.propertyLoader, this.pushInfoService);
-            LocalApnsPushNotifcationService.sendPushNotification(push);
+//            IApnsPushNotificationService localApnsPushNotifcationService = new ApnsPushNotificationServiceImpl(this.propertyLoader, this.pushInfoService);
+            this.apnsPushNotifcationService.sendPushNotification(push);
         });
         
 //        sendNotificationFuture.thenAcceptAsync((response) -> {
 //            if (Objects.nonNull(response)) {
-//                // Handle the push notification response as before from here.
+//                // Handle the push notification response as before from here.             
 //                log.info("Push Notification successful sent => {}", response);
 //            } else {
 //                // Something went wrong when trying to send the notification to the

@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl.ApnsPushNotificationServiceImpl;
 import fr.gouv.stopc.robert.pushnotif.batch.listener.PushJobExecutionListener;
 import fr.gouv.stopc.robert.pushnotif.batch.partitioner.PushPartitioner;
 import fr.gouv.stopc.robert.pushnotif.batch.processor.PushProcessor;
@@ -114,7 +115,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public PushProcessor pushProcessor() {
 
-        return new PushProcessor(this.propertyLoader, this.pushInfoService);
+        return new PushProcessor(new ApnsPushNotificationServiceImpl(this.propertyLoader, this.pushInfoService));
     }
 
     @Bean
