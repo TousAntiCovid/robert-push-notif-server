@@ -130,12 +130,12 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {
-         try {
-            this.initApnsClient();
-        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
+//         try {
+//            this.initApnsClient();
+//        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e1) {
+//            // TODO Auto-generated catch block
+//            e1.printStackTrace();
+//        }
         CompletableFuture.runAsync(() -> {
             final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
