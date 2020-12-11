@@ -159,6 +159,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                     push.setActive(true);
                     push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
                     push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+                    this.setNextPlannedPushDate(push);
 
                 } else {
                     log.debug("Notification rejected by the APNs gateway: {}",
