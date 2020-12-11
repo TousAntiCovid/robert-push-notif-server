@@ -236,9 +236,10 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
             push.setFailedPushSent(push.getFailedPushSent() + 1);
             
-        } finally {
-            this.setNextPlannedPushDate(push);
-        }
+        } 
+//        finally {
+//            this.setNextPlannedPushDate(push);
+//        }
         return push;
 
     }
