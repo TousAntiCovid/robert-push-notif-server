@@ -53,7 +53,9 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 "production" : "developement");
         this.apnsClient = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
-                .setSigningKey(this.propertyLoader.getApnsAuthFile())
+                .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
+                        this.propertyLoader.getApnsTeamId(),
+                        this.propertyLoader.getApnsAuthKeyId()))
                 .build();
 
         if (this.propertyLoader.isEnableSecondaryPush()) {
@@ -70,37 +72,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                             this.propertyLoader.getApnsAuthKeyId()))
                     .build();
         }
-
-    }
-    
-    public ApnsClient getApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
-        String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
-
-        log.debug("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
-                "production" : "developement");
-        ApnsClient client = new ApnsClientBuilder()
-                .setApnsServer(this.propertyLoader.getApnsHost())
-                .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
-                        this.propertyLoader.getApnsTeamId(),
-                        this.propertyLoader.getApnsAuthKeyId()))
-                .build();
-
-        if (this.propertyLoader.isEnableSecondaryPush()) {
-
-            if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
-                secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
-                log.debug("Configured secondary anps host as developement");
-            }
-
-            client = new ApnsClientBuilder()
-                    .setApnsServer(secondaryApnsHost)
-                    .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
-                            this.propertyLoader.getApnsTeamId(),
-                            this.propertyLoader.getApnsAuthKeyId()))
-                    .build();
-        }
-        
-        return client;
 
     }
 
@@ -125,35 +96,26 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             return null ;
         }
 
-//        log,debug("SDDDDDDD");
         return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
     }
 
     private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {
-//         try {
-//            this.initApnsClient();
-//        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e1) {
-//            // TODO Auto-generated catch block
-//            e1.printStackTrace();
-//        }
+
         CompletableFuture.runAsync(() -> {
             final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
-            
-//            ApnsClient apnsClient;
+
             try {
-//                client = getApnsClient();
-//                log.debug("APPPPPNS CLIENT - {}", client);
                 if (useSecondaryApns) {
 
-                    sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
-                } else {
                     sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
+                } else {
+                    sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
 
                 }
                 final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse =
                         sendNotificationFuture.get();
-                
+
                 if (pushNotificationResponse.isAccepted()) {
                     log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
                     push.setActive(true);
@@ -170,8 +132,9 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
                         if (useSecondaryApns) {
                             this.sendNotification(push, false);
+                        } else {
+                            push.setActive(false);
                         }
-                        push.setActive(false);
                     }
 
                     if(StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
@@ -190,7 +153,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 sendNotificationFuture.whenComplete((response, cause) -> {
                     if (Objects.nonNull(response)) {
                         // Handle the push notification response as before from here.
-                        log.info("Push Notification successful sent => {} - {}", response, cause);
+                        log.info("Push Notification successful sent => {}", response);
                     } else {
                         // Something went wrong when trying to send the notification to the
                         // APNs server. Note that this is distinct from a rejection from
@@ -198,49 +161,23 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         // sending the notification or waiting for a reply.
                         log.debug("Push Notification failed => {}", cause);
                     }
-                    
-//                    this.close();
+
                 });
-                
-             
-//            } catch (InvalidKeyException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            } catch (SSLException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            } catch (NoSuchAlgorithmException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            } catch (IOException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } 
-            
+
+
+            } catch (final ExecutionException | InterruptedException e) {
+                log.error("Failed to send push notification due to {}.", e.getMessage());
+
+                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                push.setFailedPushSent(push.getFailedPushSent() + 1);
+                push.setLastErrorCode(e.getMessage());
+            } finally {
+                this.setNextPlannedPushDate(push);
+            }
+
+
         });
 
-        try {
-            
-    //            push.setActive(true);
-    //            push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-    //            push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-            
-        } catch (Exception e) {
-            log.error("Failed to send push notification due to {}.", e.getMessage());
-            
-            push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-            push.setFailedPushSent(push.getFailedPushSent() + 1);
-            
-        } 
-//        finally {
-//            this.setNextPlannedPushDate(push);
-//        }
         return push;
 
     }
