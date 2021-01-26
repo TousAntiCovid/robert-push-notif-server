@@ -153,7 +153,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 sendNotificationFuture.whenComplete((response, cause) -> {
                     if (Objects.nonNull(response)) {
                         // Handle the push notification response as before from here.
-                        log.info("Push Notification successful sent => {}", response);
+                        log.debug("Push Notification successful sent => {}", response);
                     } else {
                         // Something went wrong when trying to send the notification to the
                         // APNs server. Note that this is distinct from a rejection from
