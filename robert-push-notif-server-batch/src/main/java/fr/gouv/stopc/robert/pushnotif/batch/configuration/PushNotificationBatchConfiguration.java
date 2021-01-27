@@ -115,7 +115,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public PushProcessor pushProcessor() {
 
-        return new PushProcessor(this.apnsPushNotifcationService);
+        return new PushProcessor( this.apnsPushNotifcationService);
     }
 
     @Bean
