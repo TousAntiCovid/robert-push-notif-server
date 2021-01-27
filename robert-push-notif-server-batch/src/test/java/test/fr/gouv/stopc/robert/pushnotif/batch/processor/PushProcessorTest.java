@@ -38,6 +38,12 @@ public class PushProcessorTest {
             // When
             this.pushProcessor.process(toPush);
 
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                fail(SHOULD_NOT_FAIL);
+            }
+
             // Then
             verify(this.apnsPushNotifcationService).sendPushNotification(toPush);
         } catch (Exception e) {
