@@ -266,7 +266,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
@@ -303,7 +303,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
@@ -341,7 +341,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/London")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowAtTimeOclockZoneUTC();
+        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())

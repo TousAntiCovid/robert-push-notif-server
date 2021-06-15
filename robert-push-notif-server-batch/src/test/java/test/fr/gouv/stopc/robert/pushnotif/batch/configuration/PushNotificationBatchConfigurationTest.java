@@ -1,20 +1,22 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.configuration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.LongStream;
 
 import javax.inject.Inject;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
@@ -39,10 +41,13 @@ import org.springframework.web.client.RestTemplate;
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.batch.configuration.PushNotificationBatchConfiguration;
 import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchUtils;
 import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 @ExtendWith(SpringExtension.class)
@@ -61,6 +66,8 @@ public class PushNotificationBatchConfigurationTest {
 
     @Autowired
     private IPushInfoService pushInfoService;
+
+    private Random random = new Random();
 
     @Test
     public void testPushPartitionedJobShouldFailWhenRetrievingNotificationContentFails() {
@@ -94,7 +101,7 @@ public class PushNotificationBatchConfigurationTest {
                 Object[] args = invocation.getArguments();
                 PushInfo push = (PushInfo) args[0];
                 push.setSuccessfulPushSent(1);
-                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeOclockZoneUTC());
+                push.setLastSuccessfulPush(TimeUtils.getNowZoneUTC());
                 return push;
             }
         });
@@ -106,24 +113,41 @@ public class PushNotificationBatchConfigurationTest {
             JobExecution jobExecution = this.jobLauncherTestUtils.launchJob();
 
             // Then
-            assertTrue(jobExecution.getExitStatus().getExitCode().equals("COMPLETED"));
+            assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+            assertThat(jobExecution.getStepExecutions())
+                    .filteredOn(s -> s.getStatus().equals(BatchStatus.COMPLETED))
+                    .hasSize(11);
+            assertThat(jobExecution.getStepExecutions())
+                    .filteredOn(s -> s.getStepName().equalsIgnoreCase("Step1"))
+                    .extracting("writeCount").containsExactly(1000);
         } catch (Exception e) {
-            fail();
+            fail(e);
         }
-
     }
 
     private void loadData() {
-        LongStream.rangeClosed(0, 1000L).forEach(i -> {
+        LongStream.rangeClosed(1, 1000L).forEach(i -> {
             PushInfo push = PushInfo.builder()
                     .token(UUID.randomUUID().toString())
                     .locale("fr_FR")
                     .timezone("Europe/Paris")
+                    .active(true)
+                    .deleted(false)
+                    .nextPlannedPush(Date.from(LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0,23))
+                            .plusMinutes(getRandomNumberInRange(0,59)).minusDays(1).toInstant(ZoneOffset.UTC)))
                     .build();
 
-            PushBatchUtils.setNextPlannedPushDate(push, 0, 19);
             this.pushInfoService.createOrUpdate(push);
         });
+    }
+
+    private int getRandomNumberInRange(int min, int max) {
+
+        if (min >= max) {
+            throw new IllegalArgumentException("max must be greater than min");
+        }
+
+        return random.nextInt((max - min) + 1) + min;
     }
 
     @ComponentScan(basePackages  = "fr.gouv.stopc")

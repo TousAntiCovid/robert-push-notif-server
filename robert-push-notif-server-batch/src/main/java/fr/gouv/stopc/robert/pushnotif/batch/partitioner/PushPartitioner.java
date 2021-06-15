@@ -37,7 +37,7 @@ public class PushPartitioner implements Partitioner {
 
         Map<String, ExecutionContext> result = new HashMap<>();
         
-        Date pushDate = TimeUtils.getNowAtTimeOclockZoneUTC();
+        Date pushDate = TimeUtils.getNowZoneUTC();
 
         int number = 0;
         long start = min;

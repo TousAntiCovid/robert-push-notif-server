@@ -67,11 +67,9 @@ public final class TimeUtils {
                 .toInstant());
     }
 
-    public static Date getNowAtTimeOclockZoneUTC() {
+    public static Date getNowZoneUTC() {
         LocalDateTime datetime = LocalDateTime.now().atZone(ZoneId.systemDefault())
         .withZoneSameInstant(ZoneId.of(UTC)).toLocalDateTime();
-        int currentHour = datetime.getHour();
-        datetime = datetime.toLocalDate().atStartOfDay().withHour(currentHour);
         return toSqlDate(datetime);
     }
     public static Date toSqlDate(LocalDateTime date) {
@@ -109,7 +107,9 @@ public final class TimeUtils {
 
                 do {
                     int pushHour = getRandomNumberInRange (pushDate.getMinPushHour(),  pushDate.getMaxPushHour());
-                    dateAtTimezone = dateTime.get().toLocalDate().plusDays(1).atStartOfDay().withHour(pushHour);
+                    // add distribution on minutes ==> allowing to execute the batch every x minutes instead of every hour
+                    int pushMinute = getRandomNumberInRange(0,59);
+                    dateAtTimezone = dateTime.get().toLocalDate().plusDays(1).atStartOfDay().withHour(pushHour).withMinute(pushMinute);
 
                 } while(!isBetween(dateAtTimezone, dateAtTimezone.withHour(pushDate.getMinPushHour()), dateAtTimezone.withHour(pushDate.getMaxPushHour())));
 

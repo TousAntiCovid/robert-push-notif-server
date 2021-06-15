@@ -1,17 +1,18 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.processor;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.batch.processor.PushProcessor;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @ExtendWith(SpringExtension.class)
 public class PushProcessorTest {
@@ -24,10 +25,13 @@ public class PushProcessorTest {
     @Mock
     private IApnsPushNotificationService apnsPushNotifcationService;
 
-    @Test
-    public void testProcessWhenNotifsExists() {
+    @Mock
+    private PropertyLoader propertyLoader;
 
-        try {
+
+    @Test
+    public void testProcessWhenNotifsExists() throws Exception {
+
             // Given
             PushInfo toPush = PushInfo.builder()
                     .token("token")
@@ -35,19 +39,18 @@ public class PushProcessorTest {
                     .timezone("Europe/Paris")
                     .build();
 
+        when(propertyLoader.getPushProcessorThrottlingPauseInMs()).thenReturn(0L);
+
             // When
             this.pushProcessor.process(toPush);
 
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                fail(SHOULD_NOT_FAIL);
+            fail(SHOULD_NOT_FAIL, e);
             }
 
             // Then
             verify(this.apnsPushNotifcationService).sendPushNotification(toPush);
-        } catch (Exception e) {
-            fail(SHOULD_NOT_FAIL);
-        }
     }
 }
