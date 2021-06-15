@@ -16,7 +16,7 @@ build:
   image: maven:3.8.1-adoptopenjdk-11
   stage: build
   script:
-    - mvn -B -s .mvn/settings-ci.xml -ntp -fae -DdeployAtEnd deploy
+    - mvn -B -s .mvn/settings-ci.xml -ntp -fae spotless:check -DdeployAtEnd deploy
   artifacts:
     paths:
       - "**/target/*.jar"
