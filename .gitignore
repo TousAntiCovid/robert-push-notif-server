@@ -1,4 +1,5 @@
 HELP.md
+.git-versioned-pom.xml
 **/bin/**
 target/
 **/bin/**
