@@ -1,6 +1,26 @@
 package fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl;
 
-import com.eatthepath.pushy.apns.*;
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.net.ssl.SSLException;
+
+import org.springframework.stereotype.Service;
+
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsClientBuilder;
+import com.eatthepath.pushy.apns.DeliveryPriority;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import com.eatthepath.pushy.apns.util.ApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
@@ -15,20 +35,6 @@ import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.net.ssl.SSLException;
-import java.io.File;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Service
@@ -198,14 +204,18 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     public void close() {
 
         if (Objects.nonNull(this.apnsClient)) {
+            log.info("Beginning of the close of the main apns client");
             CompletableFuture<Void> close = this.apnsClient.close();
             close.whenComplete((response, cause) -> {
-
+                log.info("Close of the main apnsClient has been successfully completed");
                 if (Objects.nonNull(this.secondaryApnsClient)) {
-                    this.secondaryApnsClient.close();
+                    log.info("Beginning of the close of the secondary apns client");
+                    CompletableFuture<Void> closeSecondary = this.secondaryApnsClient.close();
+                    closeSecondary.whenComplete((response2, cause2) -> {
+                        log.info("Close of the secondary apns client has been successfully completed");
+                    });
                 }
             });
-
         }
     }
 
