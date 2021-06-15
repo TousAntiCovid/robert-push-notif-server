@@ -1,11 +1,10 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
-import java.util.List;
-
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.Getter;
+import java.util.List;
 
 @Getter
 @Component

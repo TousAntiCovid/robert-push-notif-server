@@ -1,17 +1,16 @@
 package fr.gouv.stopc.robert.pushnotif.database.service.impl;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.inject.Inject;
-
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
-import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import javax.inject.Inject;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PushInfoServiceImpl implements IPushInfoService {
@@ -26,7 +25,8 @@ public class PushInfoServiceImpl implements IPushInfoService {
 
     @Override
     public Optional<PushInfo> findByPushToken(String pushToken) {
-        return Optional.ofNullable(pushToken).filter(StringUtils::isNotBlank).flatMap(this.pushInfoRepository::findByToken);
+        return Optional.ofNullable(pushToken).filter(StringUtils::isNotBlank)
+                .flatMap(this.pushInfoRepository::findByToken);
     }
 
     @Override
@@ -37,8 +37,8 @@ public class PushInfoServiceImpl implements IPushInfoService {
 
     @Override
     public void saveAll(List<PushInfo> pushInfos) {
-        
-        if(!CollectionUtils.isEmpty(pushInfos)) {
+
+        if (!CollectionUtils.isEmpty(pushInfos)) {
             this.pushInfoRepository.saveAll(pushInfos);
         }
     }

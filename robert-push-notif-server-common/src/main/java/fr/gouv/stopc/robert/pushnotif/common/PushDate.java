@@ -1,22 +1,22 @@
 package fr.gouv.stopc.robert.pushnotif.common;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.Date;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class PushDate {
 
-   private int minPushHour;
+    private int minPushHour;
 
-   private int maxPushHour;
-   
-   private String timezone;
+    private int maxPushHour;
 
-   private Date lastPushDate;
+    private String timezone;
+
+    private Date lastPushDate;
 
 }

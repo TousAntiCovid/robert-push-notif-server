@@ -1,11 +1,10 @@
 package fr.gouv.stopc.robert.pushnotif.batch.writer;
 
-import java.util.List;
-
-import org.springframework.batch.item.ItemWriter;
-
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import org.springframework.batch.item.ItemWriter;
+
+import java.util.List;
 
 public class PushItemWriter implements ItemWriter<PushInfo> {
 

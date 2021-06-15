@@ -1,9 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.server.ws.utils;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import lombok.Getter;
 
 @Getter
 @Component

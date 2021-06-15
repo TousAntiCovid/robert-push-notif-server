@@ -1,28 +1,27 @@
 package test.fr.gouv.stopc.robert.pushnotif.database.service;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyIterable;
-import static org.mockito.ArgumentMatchers.anyString;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.database.service.impl.PushInfoServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
-import fr.gouv.stopc.robert.pushnotif.database.service.impl.PushInfoServiceImpl;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 public class PushInfoServiceImplTest {
@@ -105,13 +104,13 @@ public class PushInfoServiceImplTest {
 
     @Test
     public void testSaveAllWhenListIsNull() {
-        
+
         // Given
         List<PushInfo> pushInfos = null;
-        
+
         // When
         this.pushInfoService.saveAll(pushInfos);
-        
+
         // Then
         verify(this.pushInfoRepository, never()).saveAll(anyIterable());
     }

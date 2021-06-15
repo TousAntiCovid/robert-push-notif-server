@@ -1,20 +1,19 @@
 package fr.gouv.stopc.robert.pushnotif.batch.partitioner;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
+import lombok.Data;
 import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-import lombok.Data;
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class PushPartitioner implements Partitioner {
@@ -22,8 +21,8 @@ public class PushPartitioner implements Partitioner {
     private JdbcOperations jdbcTemplate;
 
     @Inject
-    public  PushPartitioner(DataSource dataSource) {
-        this.jdbcTemplate =  new JdbcTemplate(dataSource);
+    public PushPartitioner(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
@@ -36,19 +35,18 @@ public class PushPartitioner implements Partitioner {
         Long targetSize = (max - min) / gridSize + 1;
 
         Map<String, ExecutionContext> result = new HashMap<>();
-        
+
         Date pushDate = TimeUtils.getNowZoneUTC();
 
         int number = 0;
         long start = min;
         long end = start + targetSize - 1;
 
-        while (start <= max) 
-        {
+        while (start <= max) {
             ExecutionContext value = new ExecutionContext();
             result.put("partition" + number, value);
 
-            if(end >= max) {
+            if (end >= max) {
                 end = max;
             }
 

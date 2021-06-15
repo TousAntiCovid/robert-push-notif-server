@@ -1,20 +1,18 @@
 package fr.gouv.stopc.robert.pushnotif.batch.mapper;
 
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Optional;
 
-import org.springframework.jdbc.core.RowMapper;
-
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-
 public class PushRowMapper implements RowMapper<PushInfo> {
 
     @Override
     public PushInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
-
 
         return PushInfo.builder()
                 .id(rs.getLong("id"))
@@ -32,8 +30,9 @@ public class PushRowMapper implements RowMapper<PushInfo> {
                 .build();
     }
 
-    private Date getDateFromTimestamp(ResultSet rs, String columnName) throws SQLException{
+    private Date getDateFromTimestamp(ResultSet rs, String columnName) throws SQLException {
         Timestamp nextPushDateTimestamp = rs.getTimestamp(columnName);
-        return Optional.ofNullable(nextPushDateTimestamp).map(timestamp -> new java.util.Date(timestamp.getTime())).orElse(null);
+        return Optional.ofNullable(nextPushDateTimestamp).map(timestamp -> new java.util.Date(timestamp.getTime()))
+                .orElse(null);
     }
 }

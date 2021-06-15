@@ -1,10 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.batch.listener;
 
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobExecutionListener;
-
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobExecutionListener;
 
 @Slf4j
 public class PushJobExecutionListener implements JobExecutionListener {
@@ -24,8 +23,8 @@ public class PushJobExecutionListener implements JobExecutionListener {
     @Override
     public void afterJob(JobExecution jobExecution) {
 
-//        log.info("Trying to close the apns service.");
-//        this.apnsPushNotifcationService.close();
+        // log.info("Trying to close the apns service.");
+        // this.apnsPushNotifcationService.close();
     }
 
 }

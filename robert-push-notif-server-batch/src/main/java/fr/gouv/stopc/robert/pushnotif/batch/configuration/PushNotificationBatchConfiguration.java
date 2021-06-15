@@ -1,11 +1,16 @@
 package fr.gouv.stopc.robert.pushnotif.batch.configuration;
 
-import java.util.Date;
-import java.util.Objects;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
+import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.batch.listener.PushJobExecutionListener;
+import fr.gouv.stopc.robert.pushnotif.batch.partitioner.PushPartitioner;
+import fr.gouv.stopc.robert.pushnotif.batch.processor.PushProcessor;
+import fr.gouv.stopc.robert.pushnotif.batch.reader.PushPagingItemReader;
+import fr.gouv.stopc.robert.pushnotif.batch.rest.service.IRestApiService;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
+import fr.gouv.stopc.robert.pushnotif.batch.writer.PushItemWriter;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -21,17 +26,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
-import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.batch.listener.PushJobExecutionListener;
-import fr.gouv.stopc.robert.pushnotif.batch.partitioner.PushPartitioner;
-import fr.gouv.stopc.robert.pushnotif.batch.processor.PushProcessor;
-import fr.gouv.stopc.robert.pushnotif.batch.reader.PushPagingItemReader;
-import fr.gouv.stopc.robert.pushnotif.batch.rest.service.IRestApiService;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
-import fr.gouv.stopc.robert.pushnotif.batch.writer.PushItemWriter;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import java.util.Date;
+import java.util.Objects;
 
 @Configuration
 @EnableBatchProcessing
@@ -40,9 +39,13 @@ public class PushNotificationBatchConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
+
     private final DataSource dataSource;
+
     private final IPushInfoService pushInfoService;
+
     private final PropertyLoader propertyLoader;
+
     private final IApnsPushNotificationService apnsPushNotifcationService;
 
     @Inject
@@ -76,7 +79,9 @@ public class PushNotificationBatchConfiguration {
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
             @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
 
-        return new PushPagingItemReader(this.dataSource, pagingQueryProvider, minId, maxId, pushDate, this.propertyLoader.getPageSize());
+        return new PushPagingItemReader(
+                this.dataSource, pagingQueryProvider, minId, maxId, pushDate, this.propertyLoader.getPageSize()
+        );
     }
 
     @Bean
@@ -86,19 +91,18 @@ public class PushNotificationBatchConfiguration {
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
             @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
 
-
         StringBuilder dateWhereClause = new StringBuilder(" and next_planned_push <= :");
         dateWhereClause.append(PushBatchConstants.PUSH_DATE);
 
         StringBuilder whereClause = new StringBuilder("where id >= :");
         whereClause.append(PushBatchConstants.MIN_ID);
 
-        if(minId != maxId) {
+        if (minId != maxId) {
             whereClause.append(" and id <= :");
             whereClause.append(PushBatchConstants.MAX_ID);
         }
 
-        if(Objects.nonNull(pushDate) && this.propertyLoader.isEnablePushDate()) {
+        if (Objects.nonNull(pushDate) && this.propertyLoader.isEnablePushDate()) {
             whereClause.append(dateWhereClause.toString());
         }
 
@@ -115,7 +119,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public PushProcessor pushProcessor() {
 
-        return new PushProcessor( this.apnsPushNotifcationService, this.propertyLoader);
+        return new PushProcessor(this.apnsPushNotifcationService, this.propertyLoader);
     }
 
     @Bean

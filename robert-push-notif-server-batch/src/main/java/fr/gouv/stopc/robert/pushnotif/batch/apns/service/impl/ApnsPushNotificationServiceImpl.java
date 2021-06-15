@@ -1,21 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.net.ssl.SSLException;
-
-import org.springframework.stereotype.Service;
-
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.DeliveryPriority;
@@ -35,14 +19,32 @@ import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.net.ssl.SSLException;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Service
 public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationService {
 
     private final PropertyLoader propertyLoader;
+
     private ApnsClient apnsClient;
+
     private ApnsClient secondaryApnsClient;
+
     private IPushInfoService pushInfoService;
 
     @Inject
@@ -55,13 +57,20 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
 
-        log.debug("Configured default anps host as {}", this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ?
-                "production" : "developement");
+        log.debug(
+                "Configured default anps host as {}",
+                this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ? "production"
+                        : "developement"
+        );
         this.apnsClient = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
-                .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
-                        this.propertyLoader.getApnsTeamId(),
-                        this.propertyLoader.getApnsAuthKeyId()))
+                .setSigningKey(
+                        ApnsSigningKey.loadFromPkcs8File(
+                                new File(this.propertyLoader.getApnsAuthTokenFile()),
+                                this.propertyLoader.getApnsTeamId(),
+                                this.propertyLoader.getApnsAuthKeyId()
+                        )
+                )
                 .build();
 
         if (this.propertyLoader.isEnableSecondaryPush()) {
@@ -73,9 +82,13 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
             this.secondaryApnsClient = new ApnsClientBuilder()
                     .setApnsServer(secondaryApnsHost)
-                    .setSigningKey(ApnsSigningKey.loadFromPkcs8File(new File(this.propertyLoader.getApnsAuthTokenFile()),
-                            this.propertyLoader.getApnsTeamId(),
-                            this.propertyLoader.getApnsAuthKeyId()))
+                    .setSigningKey(
+                            ApnsSigningKey.loadFromPkcs8File(
+                                    new File(this.propertyLoader.getApnsAuthTokenFile()),
+                                    this.propertyLoader.getApnsTeamId(),
+                                    this.propertyLoader.getApnsAuthKeyId()
+                            )
+                    )
                     .build();
         }
 
@@ -90,8 +103,11 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         final String payload = payloadBuilder.build();
         final String token = TokenUtil.sanitizeTokenString(push.getToken());
 
-        return new SimpleApnsPushNotification(token.toLowerCase(), this.propertyLoader.getApnsTopic(), payload,
-                Instant.now().plus(SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD), DeliveryPriority.IMMEDIATE, PushType.BACKGROUND);
+        return new SimpleApnsPushNotification(
+                token.toLowerCase(), this.propertyLoader.getApnsTopic(), payload,
+                Instant.now().plus(SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD), DeliveryPriority.IMMEDIATE,
+                PushType.BACKGROUND
+        );
 
     }
 
@@ -99,7 +115,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     public PushInfo sendPushNotification(PushInfo push) {
 
         if (Objects.isNull(push)) {
-            return null ;
+            return null;
         }
 
         return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
@@ -119,8 +135,8 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                     sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
 
                 }
-                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse =
-                        sendNotificationFuture.get();
+                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture
+                        .get();
 
                 if (pushNotificationResponse.isAccepted()) {
                     log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
@@ -130,11 +146,14 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                     this.setNextPlannedPushDate(push);
 
                 } else {
-                    log.debug("Notification rejected by the APNs gateway: {}",
-                            pushNotificationResponse.getRejectionReason());
+                    log.debug(
+                            "Notification rejected by the APNs gateway: {}",
+                            pushNotificationResponse.getRejectionReason()
+                    );
                     final String rejetctionReason = pushNotificationResponse.getRejectionReason();
 
-                    if(StringUtils.isNotBlank(rejetctionReason) && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
+                    if (StringUtils.isNotBlank(rejetctionReason)
+                            && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
 
                         if (useSecondaryApns) {
                             this.sendNotification(push, false);
@@ -143,7 +162,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         }
                     }
 
-                    if(StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
+                    if (StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
                         push.setLastErrorCode(rejetctionReason);
                         push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
                         push.setFailedPushSent(push.getFailedPushSent() + 1);
@@ -170,7 +189,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
                 });
 
-
             } catch (final ExecutionException | InterruptedException e) {
                 log.error("Failed to send push notification due to {}.", e.getMessage());
 
@@ -180,7 +198,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             } finally {
                 this.setNextPlannedPushDate(push);
             }
-
 
         });
 

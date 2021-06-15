@@ -1,7 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.batch.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

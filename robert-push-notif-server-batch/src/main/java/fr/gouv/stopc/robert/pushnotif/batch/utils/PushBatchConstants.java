@@ -8,6 +8,8 @@ public final class PushBatchConstants {
     }
 
     public final static String MIN_ID = "minId";
+
     public final static String MAX_ID = "maxId";
+
     public final static String PUSH_DATE = "pushDate";
 }

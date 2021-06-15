@@ -1,8 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.batch.rest.service;
 
-import java.util.Optional;
-
 import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
+
+import java.util.Optional;
 
 public interface IRestApiService {
 

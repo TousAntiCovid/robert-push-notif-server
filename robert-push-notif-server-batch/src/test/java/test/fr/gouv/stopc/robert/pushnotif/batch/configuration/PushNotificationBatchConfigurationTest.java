@@ -1,21 +1,15 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.LongStream;
-
-import javax.inject.Inject;
-
+import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.batch.configuration.PushNotificationBatchConfiguration;
+import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -38,20 +32,25 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.batch.configuration.PushNotificationBatchConfiguration;
-import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import javax.inject.Inject;
+
+import java.net.URI;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.LongStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {PushNotificationBatchConfigurationTest.BatchTestConfig.class})
+@ContextConfiguration(classes = { PushNotificationBatchConfigurationTest.BatchTestConfig.class })
 @TestPropertySource("classpath:application.properties")
 public class PushNotificationBatchConfigurationTest {
 
@@ -74,7 +73,7 @@ public class PushNotificationBatchConfigurationTest {
 
         // Given
         when(this.restTemplate.getForEntity(any(URI.class), any()))
-        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
 
         try {
             // When
@@ -92,19 +91,24 @@ public class PushNotificationBatchConfigurationTest {
 
         // Given
         when(this.restTemplate.getForEntity(any(URI.class), any()))
-        .thenReturn(ResponseEntity.ok(
-                NotificationDetailsDto.builder().title("Hello").message("Merci").build()));
+                .thenReturn(
+                        ResponseEntity.ok(
+                                NotificationDetailsDto.builder().title("Hello").message("Merci").build()
+                        )
+                );
 
-        when(this.apnsPushNotifcationService.sendPushNotification(any(PushInfo.class))).thenAnswer(new Answer<PushInfo>() {
-            @Override
-            public PushInfo answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                PushInfo push = (PushInfo) args[0];
-                push.setSuccessfulPushSent(1);
-                push.setLastSuccessfulPush(TimeUtils.getNowZoneUTC());
-                return push;
-            }
-        });
+        when(this.apnsPushNotifcationService.sendPushNotification(any(PushInfo.class)))
+                .thenAnswer(new Answer<PushInfo>() {
+
+                    @Override
+                    public PushInfo answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        PushInfo push = (PushInfo) args[0];
+                        push.setSuccessfulPushSent(1);
+                        push.setLastSuccessfulPush(TimeUtils.getNowZoneUTC());
+                        return push;
+                    }
+                });
 
         this.loadData();
 
@@ -133,8 +137,13 @@ public class PushNotificationBatchConfigurationTest {
                     .timezone("Europe/Paris")
                     .active(true)
                     .deleted(false)
-                    .nextPlannedPush(Date.from(LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0,23))
-                            .plusMinutes(getRandomNumberInRange(0,59)).minusDays(1).toInstant(ZoneOffset.UTC)))
+                    .nextPlannedPush(
+                            Date.from(
+                                    LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                            .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                            .toInstant(ZoneOffset.UTC)
+                            )
+                    )
                     .build();
 
             this.pushInfoService.createOrUpdate(push);
@@ -150,11 +159,11 @@ public class PushNotificationBatchConfigurationTest {
         return random.nextInt((max - min) + 1) + min;
     }
 
-    @ComponentScan(basePackages  = "fr.gouv.stopc")
+    @ComponentScan(basePackages = "fr.gouv.stopc")
     @EnableJpaRepositories("fr.gouv.stopc")
     @EntityScan("fr.gouv.stopc")
     @Configuration
-    @Import({PushNotificationBatchConfiguration.class})
+    @Import({ PushNotificationBatchConfiguration.class })
     public static class BatchTestConfig {
 
         private Job pushPartitionedJob;
@@ -171,6 +180,5 @@ public class PushNotificationBatchConfigurationTest {
             return jobLauncherTestUtils;
         }
     }
-
 
 }
