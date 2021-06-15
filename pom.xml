@@ -179,23 +179,19 @@
 	</build>
 	<distributionManagement>
 		<repository>
-			<id>robert-repository</id>
-			<name>Releases</name>
-			<url>${nexusReleasesUrl}</url>
+			<id>gitlab-maven</id>
+			<url>https://gitlab.inria.fr/api/v4/projects/30750/packages/maven</url>
 		</repository>
 		<snapshotRepository>
-			<id>robert-repository</id>
-			<name>Snapshots</name>
-			<url>${nexusSnapshotsUrl}</url>
+			<id>gitlab-maven</id>
+			<url>https://gitlab.inria.fr/api/v4/projects/30750/packages/maven</url>
 		</snapshotRepository>
 	</distributionManagement>
 
 	<scm>
-		<connection>scm:git:${gitRepositoryUrl}</connection>
-		<developerConnection>scm:git:${gitRepositoryUrl}</developerConnection>
-		<url>${gitRepositoryUrl}</url>
-		<tag>HEAD</tag>
+		<url>https://gitlab.inria.fr/stopcovid19/robert-push-notif-server</url>
 	</scm>
+
 
 
 
