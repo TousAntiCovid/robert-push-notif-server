@@ -1,14 +1,13 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.utils;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PushBatchConstantsTest {
 

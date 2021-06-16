@@ -1,10 +1,10 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
-import java.util.Optional;
-
 import fr.gouv.stopc.robert.pushnotif.common.PushDate;
 import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+
+import java.util.Optional;
 
 public final class PushBatchUtils {
 

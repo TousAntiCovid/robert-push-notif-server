@@ -13,7 +13,7 @@
 
 	<groupId>fr.gouv.stopc</groupId>
 	<artifactId>robert-push-notif-server</artifactId>
-	<version>1.1.0</version>
+	<version>0-SNAPSHOT</version>
 	<name>robert-push-notif-server</name>
 	<packaging>pom</packaging>
 	<description>Server of notifications</description>
@@ -103,6 +103,62 @@
 	</dependencyManagement>
 
 	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.rudikershaw.gitbuildhook</groupId>
+				<artifactId>git-build-hook-maven-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<gitConfig>
+						<core.hooksPath>.etc/git-hooks</core.hooksPath>
+					</gitConfig>
+				</configuration>
+				<executions>
+					<execution>
+						<inherited>false</inherited>
+						<goals>
+							<goal>configure</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.11.1</version>
+				<configuration>
+					<java>
+						<importOrder>
+							<file>.etc/eclipse.importorder</file>
+						</importOrder>
+						<removeUnusedImports/>
+						<eclipse>
+							<file>.etc/eclipse-formatter-java.xml</file>
+						</eclipse>
+					</java>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<configuration>
+					<rules>
+						<requireReleaseDeps>
+							<message>No Snapshots Allowed!</message>
+						</requireReleaseDeps>
+					</rules>
+					<fail>false</fail>
+				</configuration>
+				<executions>
+					<execution>
+						<id>enforce-no-snapshots</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 		<pluginManagement>
 			<plugins>
 				<plugin>
@@ -179,24 +235,40 @@
 	</build>
 	<distributionManagement>
 		<repository>
-			<id>robert-repository</id>
-			<name>Releases</name>
-			<url>${nexusReleasesUrl}</url>
+			<id>gitlab-maven</id>
+			<url>https://gitlab.inria.fr/api/v4/projects/30750/packages/maven</url>
 		</repository>
 		<snapshotRepository>
-			<id>robert-repository</id>
-			<name>Snapshots</name>
-			<url>${nexusSnapshotsUrl}</url>
+			<id>gitlab-maven</id>
+			<url>https://gitlab.inria.fr/api/v4/projects/30750/packages/maven</url>
 		</snapshotRepository>
 	</distributionManagement>
 
 	<scm>
-		<connection>scm:git:${gitRepositoryUrl}</connection>
-		<developerConnection>scm:git:${gitRepositoryUrl}</developerConnection>
-		<url>${gitRepositoryUrl}</url>
-		<tag>HEAD</tag>
+		<url>https://gitlab.inria.fr/stopcovid19/robert-push-notif-server</url>
 	</scm>
 
+	<profiles>
+		<profile>
+			<id>release</id>
+			<activation>
+				<property>
+					<name>git.tag</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-enforcer-plugin</artifactId>
+						<configuration>
+							<fail>true</fail>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 
 </project>

@@ -1,6 +1,12 @@
 package fr.gouv.stopc.robert.pushnotif.database.model;
 
-import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,14 +19,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.hibernate.annotations.DynamicUpdate;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Date;
 
 @Entity
 @Table(name = "PUSH", indexes = { @Index(name = "IDX_TOKEN", columnList = "token") })
@@ -52,7 +51,7 @@ public class PushInfo {
     @Column(name = "last_successful_push")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastSuccessfulPush;
- 
+
     @Column(name = "last_failure_push ")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastFailurePush;
@@ -70,7 +69,7 @@ public class PushInfo {
     @Column(name = "creation_date", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate;
- 
+
     @Column(name = "active")
     private boolean active;
 

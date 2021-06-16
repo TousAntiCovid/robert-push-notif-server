@@ -1,16 +1,9 @@
 package test.fr.gouv.stopc.robert.pushnotif.ws;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import fr.gouv.stopc.robert.pushnotif.server.ws.RobertPushNotifWsRestApplication;
+import fr.gouv.stopc.robert.pushnotif.server.ws.utils.UriConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,14 +20,20 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
-import fr.gouv.stopc.robert.pushnotif.server.ws.RobertPushNotifWsRestApplication;
-import fr.gouv.stopc.robert.pushnotif.server.ws.utils.UriConstants;
+import java.net.URI;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = { RobertPushNotifWsRestApplication.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {
+        RobertPushNotifWsRestApplication.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource("classpath:application.properties")
 public class UnregisterPushNotificationControllerWsRest {
 
@@ -67,8 +66,10 @@ public class UnregisterPushNotificationControllerWsRest {
     public void testRegisterWhenUsingGetMethod() {
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.GET, new HttpEntity<>(null),
-                Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.GET, new HttpEntity<>(null),
+                Object.class
+        );
 
         // Then
         assertNotNull(response);
@@ -85,8 +86,10 @@ public class UnregisterPushNotificationControllerWsRest {
                 .toUri();
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.DELETE, null,
-                Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.DELETE, null,
+                Object.class
+        );
 
         // Then
         assertNotNull(response);
@@ -100,8 +103,10 @@ public class UnregisterPushNotificationControllerWsRest {
         when(this.pushInfoService.findByPushToken(this.token)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.DELETE, null,
-                Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.DELETE, null,
+                Object.class
+        );
 
         // Then
         assertNotNull(response);
@@ -123,8 +128,10 @@ public class UnregisterPushNotificationControllerWsRest {
         when(this.pushInfoService.findByPushToken(this.token)).thenReturn(Optional.of(push));
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.DELETE, null,
-                Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.DELETE, null,
+                Object.class
+        );
 
         // Then
         assertNotNull(response);

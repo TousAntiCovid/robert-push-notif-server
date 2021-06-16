@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# check prettier is installed
+if ! command -v prettier &> /dev/null ; then
+  echo '🙏 Please, install prettier so we can check yaml/xml/md/json files'
+  echo '📝  `npm install -g prettier @prettier/plugin-xml`'
+  echo ''
+  echo 'Have you read this? ☝'
+  echo ''
+fi
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+[ -z "$FILES" ] && exit 0
+
+# Prettify all selected files
+echo "$FILES" | xargs prettier --ignore-unknown --write
+
+# Spotlessify java source files
+./mvnw spotless:apply
+
+# Add back the modified/prettified files to staging
+echo "$FILES" | xargs git add
+
+exit 0

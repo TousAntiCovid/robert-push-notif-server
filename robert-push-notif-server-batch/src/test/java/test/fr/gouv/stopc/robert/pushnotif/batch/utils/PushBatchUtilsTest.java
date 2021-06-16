@@ -1,16 +1,15 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.utils;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchUtils;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchUtils;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class PushBatchUtilsTest {
 
@@ -50,6 +49,6 @@ public class PushBatchUtilsTest {
         PushBatchUtils.setNextPlannedPushDate(push, 8, 20);
 
         // Then
-       assertNotNull(push.getNextPlannedPush());
+        assertNotNull(push.getNextPlannedPush());
     }
 }

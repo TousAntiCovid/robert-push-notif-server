@@ -1,6 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.common.utils;
 
-import static java.time.temporal.ChronoUnit.HOURS;
+import fr.gouv.stopc.robert.pushnotif.common.PushDate;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -11,10 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
-import org.apache.commons.lang3.StringUtils;
-
-import fr.gouv.stopc.robert.pushnotif.common.PushDate;
-import lombok.extern.slf4j.Slf4j;
+import static java.time.temporal.ChronoUnit.HOURS;
 
 @Slf4j
 public final class TimeUtils {
@@ -29,16 +28,22 @@ public final class TimeUtils {
 
     private static Optional<LocalDateTime> toDateAtTimezone(PushDate pushdate) {
 
-        return Optional.ofNullable(Instant.ofEpochMilli(pushdate.getLastPushDate().getTime())
-                .atZone(ZoneId.of(UTC))
-                .withZoneSameInstant(ZoneId.of(pushdate.getTimezone()))
-                .toLocalDateTime());
+        return Optional.ofNullable(
+                Instant.ofEpochMilli(pushdate.getLastPushDate().getTime())
+                        .atZone(ZoneId.of(UTC))
+                        .withZoneSameInstant(ZoneId.of(pushdate.getTimezone()))
+                        .toLocalDateTime()
+        );
     }
 
     private static Optional<Date> toDateTimezoneUTC(LocalDateTime dateTime, String currentTimezone) {
 
-        return Optional.ofNullable(Date.from(dateTime.atZone(ZoneId.of(currentTimezone))
-                .withZoneSameInstant(ZoneId.of(UTC)).toInstant()));
+        return Optional.ofNullable(
+                Date.from(
+                        dateTime.atZone(ZoneId.of(currentTimezone))
+                                .withZoneSameInstant(ZoneId.of(UTC)).toInstant()
+                )
+        );
     }
 
     private static boolean isValidHour(PushDate pushDate) {
@@ -56,22 +61,27 @@ public final class TimeUtils {
 
     public static Optional<LocalDateTime> toLocalDateTime(Date date) {
 
-        return Optional.ofNullable(Instant.ofEpochMilli(date.getTime())
-                .atZone(ZoneId.of(UTC))
-                .toLocalDateTime());
+        return Optional.ofNullable(
+                Instant.ofEpochMilli(date.getTime())
+                        .atZone(ZoneId.of(UTC))
+                        .toLocalDateTime()
+        );
     }
 
     public static Date getNowAtTimeZoneUTC() {
-        return Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault())
-                .withZoneSameInstant(ZoneId.of(UTC))
-                .toInstant());
+        return Date.from(
+                LocalDateTime.now().atZone(ZoneId.systemDefault())
+                        .withZoneSameInstant(ZoneId.of(UTC))
+                        .toInstant()
+        );
     }
 
     public static Date getNowZoneUTC() {
         LocalDateTime datetime = LocalDateTime.now().atZone(ZoneId.systemDefault())
-        .withZoneSameInstant(ZoneId.of(UTC)).toLocalDateTime();
+                .withZoneSameInstant(ZoneId.of(UTC)).toLocalDateTime();
         return toSqlDate(datetime);
     }
+
     public static Date toSqlDate(LocalDateTime date) {
 
         return java.sql.Timestamp.valueOf(date);
@@ -81,16 +91,19 @@ public final class TimeUtils {
 
         if (Objects.nonNull(pushDate)) {
             if (!isValidHour(pushDate)) {
-                log.warn("Invalid hours (minHour >= maxHour) {} > {}", pushDate.getMinPushHour(), pushDate.getMaxPushHour());
+                log.warn(
+                        "Invalid hours (minHour >= maxHour) {} > {}", pushDate.getMinPushHour(),
+                        pushDate.getMaxPushHour()
+                );
                 return Optional.empty();
             }
 
-            if(StringUtils.isBlank(pushDate.getTimezone())) {
+            if (StringUtils.isBlank(pushDate.getTimezone())) {
                 log.warn("The timezone should not be null or blank");
                 return Optional.empty();
             }
 
-            if(Objects.isNull(pushDate.getLastPushDate())) {
+            if (Objects.isNull(pushDate.getLastPushDate())) {
                 log.warn("The last push date is null. Using now");
                 pushDate.setLastPushDate(getNowAtTimeZoneUTC());
             }
@@ -98,7 +111,7 @@ public final class TimeUtils {
             try {
                 // Convert to timezone
                 Optional<LocalDateTime> dateTime = toDateAtTimezone(pushDate);
-                if(!dateTime.isPresent()) {
+                if (!dateTime.isPresent()) {
                     log.warn("Failed to convert the push date at timezone");
                     return Optional.empty();
                 }
@@ -106,12 +119,17 @@ public final class TimeUtils {
                 LocalDateTime dateAtTimezone = null;
 
                 do {
-                    int pushHour = getRandomNumberInRange (pushDate.getMinPushHour(),  pushDate.getMaxPushHour());
-                    // add distribution on minutes ==> allowing to execute the batch every x minutes instead of every hour
-                    int pushMinute = getRandomNumberInRange(0,59);
-                    dateAtTimezone = dateTime.get().toLocalDate().plusDays(1).atStartOfDay().withHour(pushHour).withMinute(pushMinute);
+                    int pushHour = getRandomNumberInRange(pushDate.getMinPushHour(), pushDate.getMaxPushHour());
+                    // add distribution on minutes ==> allowing to execute the batch every x minutes
+                    // instead of every hour
+                    int pushMinute = getRandomNumberInRange(0, 59);
+                    dateAtTimezone = dateTime.get().toLocalDate().plusDays(1).atStartOfDay().withHour(pushHour)
+                            .withMinute(pushMinute);
 
-                } while(!isBetween(dateAtTimezone, dateAtTimezone.withHour(pushDate.getMinPushHour()), dateAtTimezone.withHour(pushDate.getMaxPushHour())));
+                } while (!isBetween(
+                        dateAtTimezone, dateAtTimezone.withHour(pushDate.getMinPushHour()),
+                        dateAtTimezone.withHour(pushDate.getMaxPushHour())
+                ));
 
                 return toDateTimezoneUTC(dateAtTimezone, pushDate.getTimezone());
             } catch (DateTimeException e) {
@@ -121,8 +139,7 @@ public final class TimeUtils {
         return Optional.empty();
     }
 
-
-    public static boolean isDateBetween(Date dateToCompare, Date dateDebut, Date dateFin){
+    public static boolean isDateBetween(Date dateToCompare, Date dateDebut, Date dateFin) {
 
         return Optional.ofNullable(dateToCompare)
                 .filter(date -> Objects.nonNull(dateDebut))
@@ -136,7 +153,7 @@ public final class TimeUtils {
                 }).orElse(false);
     }
 
-    public static boolean isBetween(LocalDateTime dateToCompare, LocalDateTime dateDebut, LocalDateTime dateFin){
+    public static boolean isBetween(LocalDateTime dateToCompare, LocalDateTime dateDebut, LocalDateTime dateFin) {
 
         return Optional.ofNullable(dateToCompare)
                 .filter(date -> Objects.nonNull(dateDebut))

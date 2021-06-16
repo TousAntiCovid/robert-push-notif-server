@@ -1,5 +1,25 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl;
 
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
+import fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl.ApnsPushNotificationServiceImpl;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,28 +30,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import com.eatthepath.pushy.apns.ApnsClient;
-import com.eatthepath.pushy.apns.PushNotificationResponse;
-import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
-
-import fr.gouv.stopc.robert.pushnotif.batch.apns.service.impl.ApnsPushNotificationServiceImpl;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 
 @ExtendWith(SpringExtension.class)
 public class ApnsPushNotificationServiceImplTest {
@@ -80,14 +78,16 @@ public class ApnsPushNotificationServiceImplTest {
     public void testSendPushNotificationWhenAnExceptionIsthrown() {
 
         // Given
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        sendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
         String runtimeExceptionMessage = "failed";
 
         sendNotificationFuture.completeExceptionally(new RuntimeException(runtimeExceptionMessage));
 
-        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture);
+        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(sendNotificationFuture);
 
         assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
@@ -168,21 +168,25 @@ public class ApnsPushNotificationServiceImplTest {
         ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
 
         when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        sendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        nextSendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> nextSendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this.getPushNotificationResponse(false, rejectionReason);
+        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this
+                .getPushNotificationResponse(false, rejectionReason);
 
-        PushNotificationResponse<SimpleApnsPushNotification> nextPushNotificationResponse = this.getPushNotificationResponse(false, nextRejectionReason);
+        PushNotificationResponse<SimpleApnsPushNotification> nextPushNotificationResponse = this
+                .getPushNotificationResponse(false, nextRejectionReason);
 
         sendNotificationFuture.complete(pushNotificationResponse);
         nextSendNotificationFuture.complete(nextPushNotificationResponse);
 
         when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture)
-        .thenReturn(nextSendNotificationFuture);
+                .thenReturn(nextSendNotificationFuture);
 
         assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
@@ -210,7 +214,6 @@ public class ApnsPushNotificationServiceImplTest {
     @Test
     public void testSendPushNotificationSucceedsWithOnlyOneInactiveRejectionReasonAndSecondaryPushEnabled() {
 
-
         // Given
         String rejectionReason = "BadDeviceToken";
         String nextRejectionReason = null;
@@ -218,21 +221,25 @@ public class ApnsPushNotificationServiceImplTest {
         ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
 
         when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        sendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        nextSendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> nextSendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this.getPushNotificationResponse(false, rejectionReason);
+        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this
+                .getPushNotificationResponse(false, rejectionReason);
 
-        PushNotificationResponse<SimpleApnsPushNotification> nextPushNotificationResponse = this.getPushNotificationResponse(true, nextRejectionReason);
+        PushNotificationResponse<SimpleApnsPushNotification> nextPushNotificationResponse = this
+                .getPushNotificationResponse(true, nextRejectionReason);
 
         sendNotificationFuture.complete(pushNotificationResponse);
         nextSendNotificationFuture.complete(nextPushNotificationResponse);
 
         when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture)
-        .thenReturn(nextSendNotificationFuture);
+                .thenReturn(nextSendNotificationFuture);
 
         assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
@@ -261,14 +268,17 @@ public class ApnsPushNotificationServiceImplTest {
     public void testSendPushNotificationWhenItSucceeds() {
 
         // Given
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        sendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this.getPushNotificationResponse(true, null);
+        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this
+                .getPushNotificationResponse(true, null);
 
         sendNotificationFuture.complete(pushNotificationResponse);
 
-        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture);
+        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(sendNotificationFuture);
 
         assertNull(this.push.getLastFailurePush());
         assertNull(this.push.getNextPlannedPush());
@@ -294,15 +304,17 @@ public class ApnsPushNotificationServiceImplTest {
     private void testSendPushNotificationFails(boolean isActive, String rejectionReason, int times) {
 
         // Given
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
-        sendNotificationFuture = new PushNotificationFuture<>(null);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
+                null
+        );
 
-        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this.getPushNotificationResponse(false, rejectionReason);
-
+        PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = this
+                .getPushNotificationResponse(false, rejectionReason);
 
         sendNotificationFuture.complete(pushNotificationResponse);
 
-        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class))).thenReturn(sendNotificationFuture);
+        when(this.apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(sendNotificationFuture);
 
         assertTrue(this.push.isActive());
         assertNull(this.push.getLastFailurePush());
@@ -328,7 +340,8 @@ public class ApnsPushNotificationServiceImplTest {
 
     }
 
-    private PushNotificationResponse<SimpleApnsPushNotification> getPushNotificationResponse(boolean isAccepted, String rejectionReason) {
+    private PushNotificationResponse<SimpleApnsPushNotification> getPushNotificationResponse(boolean isAccepted,
+            String rejectionReason) {
         return new PushNotificationResponse<SimpleApnsPushNotification>() {
 
             @Override

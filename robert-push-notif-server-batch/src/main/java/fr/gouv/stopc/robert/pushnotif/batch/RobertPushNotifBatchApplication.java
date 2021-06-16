@@ -8,17 +8,17 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
 
-@ComponentScan(basePackages  = "fr.gouv.stopc")
+@ComponentScan(basePackages = "fr.gouv.stopc")
 @EnableJpaRepositories("fr.gouv.stopc")
 @EntityScan("fr.gouv.stopc")
 @SpringBootApplication
 public class RobertPushNotifBatchApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(RobertPushNotifBatchApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(RobertPushNotifBatchApplication.class, args);
+    }
 
-	@Bean
+    @Bean
     public RestTemplate restTemplate() {
 
         return new RestTemplate();

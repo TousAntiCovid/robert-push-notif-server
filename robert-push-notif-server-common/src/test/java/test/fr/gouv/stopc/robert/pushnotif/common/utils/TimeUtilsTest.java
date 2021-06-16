@@ -1,8 +1,9 @@
 package test.fr.gouv.stopc.robert.pushnotif.common.utils;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import fr.gouv.stopc.robert.pushnotif.common.PushDate;
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -13,12 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import fr.gouv.stopc.robert.pushnotif.common.PushDate;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimeUtilsTest {
 
@@ -57,7 +55,7 @@ public class TimeUtilsTest {
         return now.withHour(pushDate.getMaxPushHour()).toLocalDateTime();
     }
 
-    private  LocalDateTime toDateAtTimezone(Date nextPushDate, PushDate pushdate) {
+    private LocalDateTime toDateAtTimezone(Date nextPushDate, PushDate pushdate) {
 
         return Instant.ofEpochMilli(nextPushDate.getTime())
                 .atZone(ZoneId.of(TimeUtils.UTC))
@@ -94,7 +92,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateWhenPushDateMinHourIsGreaterThanMaxHour() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(17)
                 .maxPushHour(10)
                 .lastPushDate(new Date())
@@ -111,7 +109,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateWhenTimezoneIsNull() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(6)
                 .maxPushHour(10)
                 .lastPushDate(new Date())
@@ -128,7 +126,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateWhenTimezoneIsBlank() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(6)
                 .maxPushHour(10)
                 .timezone("")
@@ -146,7 +144,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateWhenTimezoneIsInvalid() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(6)
                 .maxPushHour(10)
                 .timezone("Fake timezone")
@@ -164,7 +162,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateSucceeds() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(6)
                 .maxPushHour(10)
                 .timezone("Europe/Paris")
@@ -183,7 +181,7 @@ public class TimeUtilsTest {
     public void testGetNextPushDateSucceedsWhenLastPushDateIsNull() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(6)
                 .maxPushHour(10)
                 .timezone("Europe/Paris")
@@ -196,11 +194,12 @@ public class TimeUtilsTest {
         assertTrue(nextPushDate.isPresent());
         assertTrue(this.isBetween(nextPushDate.get(), pushDate));
     }
+
     @Test
     public void testGetNextPushDateSucceedsWithAnotherTimezone() {
 
         // Given
-        PushDate pushDate =  PushDate.builder()
+        PushDate pushDate = PushDate.builder()
                 .minPushHour(8)
                 .maxPushHour(19)
                 .timezone("America/Cayenne")
@@ -226,7 +225,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateDebutIsNull() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateFin = LocalDateTime.now().plusHours(5);
 
         // When && Then
@@ -237,7 +236,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateFinIsNull() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateDebut = LocalDateTime.now().minusHours(5);
 
         // When && Then
@@ -248,7 +247,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenEqualsDateDebutAndDateFin() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateDebut = LocalDateTime.now().minusHours(5);
         LocalDateTime dateFin = dateDebut;
 
@@ -260,7 +259,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateToCompareIsTheSameThanDateDebut() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateFin = LocalDateTime.now().plusHours(5);
 
         // When && Then
@@ -271,7 +270,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateToCompareIsTheSameThanDateFin() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateDebut = LocalDateTime.now().minusHours(5);
 
         // When && Then
@@ -282,7 +281,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateToCompareIsBeforeDateDebut() {
 
         // Given
-        LocalDateTime dateCompare  = LocalDateTime.now().minusHours(1);
+        LocalDateTime dateCompare = LocalDateTime.now().minusHours(1);
         LocalDateTime dateDebut = LocalDateTime.now();
         LocalDateTime dateFin = LocalDateTime.now().plusHours(5);
 
@@ -294,7 +293,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateToCompareIsAfterDateFin() {
 
         // Given
-        LocalDateTime dateCompare  = LocalDateTime.now().plusHours(6);
+        LocalDateTime dateCompare = LocalDateTime.now().plusHours(6);
         LocalDateTime dateDebut = LocalDateTime.now();
         LocalDateTime dateFin = LocalDateTime.now().plusHours(4);
 
@@ -306,7 +305,7 @@ public class TimeUtilsTest {
     public void testDateIsBetweenWhenDateToCompareIsBetween() {
 
         // Given
-        LocalDateTime now  = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime dateDebut = LocalDateTime.now().minusHours(5);
         LocalDateTime dateFin = LocalDateTime.now().plusHours(5);
 
@@ -325,7 +324,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenDateDebutIsNull() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateFin = TimeUtils.toSqlDate(LocalDateTime.now().plusDays(5));
 
         // When && Then
@@ -336,7 +335,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenDateFinIsNull() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateDebut = TimeUtils.toSqlDate(LocalDateTime.now().minusDays(5));
 
         // When && Then
@@ -347,7 +346,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenEqualsDateDebutAndDateFin() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateDebut = TimeUtils.toSqlDate(LocalDateTime.now().minusDays(5));
         Date dateFin = dateDebut;
 
@@ -359,7 +358,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenDateToCompareIsTheSameThanDateDebut() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateFin = TimeUtils.toSqlDate(LocalDateTime.now().plusDays(5));
 
         // When && Then
@@ -370,7 +369,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenDateToCompareIsTheSameThanDateFin() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateDebut = TimeUtils.toSqlDate(LocalDateTime.now().minusDays(5));
 
         // When && Then
@@ -381,7 +380,7 @@ public class TimeUtilsTest {
     public void testDateIsDateBetweenWhenDateToCompareIsBetween() {
 
         // Given
-        Date now  = TimeUtils.toSqlDate(LocalDateTime.now());
+        Date now = TimeUtils.toSqlDate(LocalDateTime.now());
         Date dateDebut = TimeUtils.toSqlDate(LocalDateTime.now().minusDays(5));
         Date dateFin = TimeUtils.toSqlDate(LocalDateTime.now().plusDays(5));
 

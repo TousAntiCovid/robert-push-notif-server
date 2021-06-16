@@ -1,15 +1,9 @@
 package test.fr.gouv.stopc.robert.pushnotif.batch.rest.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.util.Optional;
-
+import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
+import fr.gouv.stopc.robert.pushnotif.batch.rest.service.IRestApiService;
+import fr.gouv.stopc.robert.pushnotif.batch.rest.service.impl.RestApiServiceImpl;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,10 +17,15 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import fr.gouv.stopc.robert.pushnotif.batch.rest.dto.NotificationDetailsDto;
-import fr.gouv.stopc.robert.pushnotif.batch.rest.service.IRestApiService;
-import fr.gouv.stopc.robert.pushnotif.batch.rest.service.impl.RestApiServiceImpl;
-import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
+import java.net.URI;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @TestPropertySource("classpath:application.properties")
@@ -124,7 +123,7 @@ public class RestApiServiceImplTest {
         String locale = "fr-FR";
 
         when(this.restTemplate.getForEntity(any(URI.class), any()))
-        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
 
         // When
         Optional<NotificationDetailsDto> notifDetails = this.restApiSerice.getNotificationDetails(locale);
@@ -141,8 +140,11 @@ public class RestApiServiceImplTest {
         String locale = "fr-FR";
 
         when(this.restTemplate.getForEntity(any(URI.class), any()))
-        .thenReturn(ResponseEntity.ok(
-                NotificationDetailsDto.builder().title("Hello").message("Merci").build()));
+                .thenReturn(
+                        ResponseEntity.ok(
+                                NotificationDetailsDto.builder().title("Hello").message("Merci").build()
+                        )
+                );
 
         // When
         Optional<NotificationDetailsDto> notifDetails = this.restApiSerice.getNotificationDetails(locale);

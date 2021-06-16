@@ -1,19 +1,11 @@
 package test.fr.gouv.stopc.robert.pushnotif.ws;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.util.Date;
-import java.util.Optional;
-
+import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
+import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
+import fr.gouv.stopc.robert.pushnotif.server.ws.RobertPushNotifWsRestApplication;
+import fr.gouv.stopc.robert.pushnotif.server.ws.utils.UriConstants;
+import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,15 +24,23 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
-import fr.gouv.stopc.robert.pushnotif.server.ws.RobertPushNotifWsRestApplication;
-import fr.gouv.stopc.robert.pushnotif.server.ws.utils.UriConstants;
-import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
+import java.net.URI;
+import java.util.Date;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = { RobertPushNotifWsRestApplication.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {
+        RobertPushNotifWsRestApplication.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource("classpath:application.properties")
 public class RegisterPushNotificationControllerWsRestTest {
 
@@ -60,7 +60,8 @@ public class RegisterPushNotificationControllerWsRestTest {
     @BeforeEach
     public void setup() {
 
-        this.targetURI = UriComponentsBuilder.fromUriString(this.pathPrefix).path(UriConstants.PATH).build().encode().toUri();
+        this.targetURI = UriComponentsBuilder.fromUriString(this.pathPrefix).path(UriConstants.PATH).build().encode()
+                .toUri();
 
         this.headers = new HttpHeaders();
         this.headers.setContentType(MediaType.APPLICATION_JSON);
@@ -70,8 +71,10 @@ public class RegisterPushNotificationControllerWsRestTest {
     public void testRegisterWhenUsingGetMethod() {
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.GET, new HttpEntity<>(null, this.headers),
-                Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.GET, new HttpEntity<>(null, this.headers),
+                Object.class
+        );
 
         // Then
         assertNotNull(response);
@@ -82,8 +85,10 @@ public class RegisterPushNotificationControllerWsRestTest {
     public void testRegisterWhenPushInfoIsNull() {
 
         // When
-        ResponseEntity<Object> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(null, this.headers), Object.class);
+        ResponseEntity<Object> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(null, this.headers), Object.class
+        );
 
         // Then
         assertNotNull(response);
@@ -100,8 +105,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -121,8 +128,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -141,8 +150,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -161,8 +172,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -181,8 +194,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -202,8 +217,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -223,8 +240,10 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -246,8 +265,10 @@ public class RegisterPushNotificationControllerWsRestTest {
         when(this.pushInfoService.findByPushToken(pushInfo.getToken())).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -266,7 +287,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
+        Date nextPlannedPushed = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
@@ -278,11 +299,13 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
-        .thenReturn(Optional.of(push));
+                .thenReturn(Optional.of(push));
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -303,7 +326,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/Paris")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
+        Date nextPlannedPushed = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
@@ -315,11 +338,13 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
-        .thenReturn(Optional.of(push));
+                .thenReturn(Optional.of(push));
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
@@ -341,7 +366,7 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .timezone("Europe/London")
                 .build();
 
-        Date nextPlannedPushed  = TimeUtils.getNowZoneUTC();
+        Date nextPlannedPushed = TimeUtils.getNowZoneUTC();
 
         PushInfo push = PushInfo.builder()
                 .token(pushInfoVo.getToken())
@@ -353,11 +378,13 @@ public class RegisterPushNotificationControllerWsRestTest {
                 .build();
 
         when(this.pushInfoService.findByPushToken(pushInfoVo.getToken()))
-        .thenReturn(Optional.of(push));
+                .thenReturn(Optional.of(push));
 
         // When
-        ResponseEntity<String> response = this.testRestTemplate.exchange(targetURI, HttpMethod.POST,
-                new HttpEntity<>(pushInfoVo, this.headers), String.class);
+        ResponseEntity<String> response = this.testRestTemplate.exchange(
+                targetURI, HttpMethod.POST,
+                new HttpEntity<>(pushInfoVo, this.headers), String.class
+        );
 
         // Then
         assertNotNull(response);
