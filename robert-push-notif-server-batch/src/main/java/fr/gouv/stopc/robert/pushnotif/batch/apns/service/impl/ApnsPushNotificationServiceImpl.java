@@ -63,7 +63,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         : "developement"
         );
         ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
-                .setApnsServer(this.propertyLoader.getApnsHost())
+                .setApnsServer(this.propertyLoader.getApnsHost(), propertyLoader.getApnsMainServerPort())
                 .setSigningKey(
                         ApnsSigningKey.loadFromPkcs8File(
                                 new File(this.propertyLoader.getApnsAuthTokenFile()),
@@ -87,7 +87,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             }
 
             ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
-                    .setApnsServer(secondaryApnsHost)
+                    .setApnsServer(secondaryApnsHost, propertyLoader.getApnsSecondaryServerPort())
                     .setSigningKey(
                             ApnsSigningKey.loadFromPkcs8File(
                                     new File(this.propertyLoader.getApnsAuthTokenFile()),

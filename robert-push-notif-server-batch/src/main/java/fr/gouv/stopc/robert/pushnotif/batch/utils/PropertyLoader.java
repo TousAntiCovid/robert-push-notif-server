@@ -63,4 +63,11 @@ public class PropertyLoader {
 
     @Value("${robert.push.notif.server.apns.trusted-client-certificate-chained}")
     private String apnsTrustedClientCertificateChained;
+
+    @Value("${robert.push.notif.server.apns.main-server-port:443}")
+    private int apnsMainServerPort;
+
+    @Value("${robert.push.notif.server.apns.secondary-server-port:443}")
+    private int apnsSecondaryServerPort;
+
 }
