@@ -62,7 +62,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ? "production"
                         : "developement"
         );
-        this.apnsClient = new ApnsClientBuilder()
+        ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost())
                 .setSigningKey(
                         ApnsSigningKey.loadFromPkcs8File(
@@ -70,8 +70,14 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                                 this.propertyLoader.getApnsTeamId(),
                                 this.propertyLoader.getApnsAuthKeyId()
                         )
-                )
-                .build();
+                );
+
+        if (StringUtils.isNotBlank(propertyLoader.getApnsTrustedClientCertificateChained())) {
+            apnsClientBuilder.setTrustedServerCertificateChain(
+                    getClass().getResourceAsStream(propertyLoader.getApnsTrustedClientCertificateChained())
+            );
+        }
+        this.apnsClient = apnsClientBuilder.build();
 
         if (this.propertyLoader.isEnableSecondaryPush()) {
 
@@ -80,7 +86,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                 log.debug("Configured secondary anps host as developement");
             }
 
-            this.secondaryApnsClient = new ApnsClientBuilder()
+            ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(secondaryApnsHost)
                     .setSigningKey(
                             ApnsSigningKey.loadFromPkcs8File(
@@ -88,8 +94,14 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                                     this.propertyLoader.getApnsTeamId(),
                                     this.propertyLoader.getApnsAuthKeyId()
                             )
-                    )
-                    .build();
+                    );
+
+            if (StringUtils.isNotBlank(propertyLoader.getApnsTrustedClientCertificateChained())) {
+                secondaryApnsClientBuilder.setTrustedServerCertificateChain(
+                        getClass().getResourceAsStream(propertyLoader.getApnsTrustedClientCertificateChained())
+                );
+            }
+            this.secondaryApnsClient = secondaryApnsClientBuilder.build();
         }
 
     }

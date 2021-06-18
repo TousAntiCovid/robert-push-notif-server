@@ -61,4 +61,6 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.batch.throttling.pause-in-ms}")
     private long pushProcessorThrottlingPauseInMs;
 
+    @Value("${robert.push.notif.server.apns.trusted-client-certificate-chained}")
+    private String apnsTrustedClientCertificateChained;
 }
