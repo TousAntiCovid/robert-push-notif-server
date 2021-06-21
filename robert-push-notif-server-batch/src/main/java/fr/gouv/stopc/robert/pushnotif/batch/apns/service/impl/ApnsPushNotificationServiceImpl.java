@@ -55,12 +55,12 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
 
     @PostConstruct
     public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
-        String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
+        String secondaryApnsHost = this.propertyLoader.getDevelopmentApnsHost();
 
         log.debug(
                 "Configured default anps host as {}",
                 this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ? "production"
-                        : "developement"
+                        : "development"
         );
         ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost(), propertyLoader.getApnsMainServerPort())
@@ -80,11 +80,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         this.apnsClient = apnsClientBuilder.build();
 
         if (this.propertyLoader.isEnableSecondaryPush()) {
-
-            if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
-                secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
-                log.debug("Configured secondary anps host as developement");
-            }
 
             ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(secondaryApnsHost, propertyLoader.getApnsSecondaryServerPort())

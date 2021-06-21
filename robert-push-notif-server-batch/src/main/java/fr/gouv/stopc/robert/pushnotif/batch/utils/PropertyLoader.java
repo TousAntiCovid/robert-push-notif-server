@@ -37,6 +37,9 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.apns.host}")
     private String apnsHost;
 
+    @Value("${robert.push.notif.server.apns.development.host}")
+    private String developmentApnsHost;
+
     @Value("#{'${robert.push.notif.server.apns.inactive-rejection-reason}'.split(',')}")
     private List<String> apnsInactiveRejectionReason;
 
