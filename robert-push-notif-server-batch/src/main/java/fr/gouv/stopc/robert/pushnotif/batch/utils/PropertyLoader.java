@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -64,8 +65,8 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.batch.throttling.pause-in-ms}")
     private long pushProcessorThrottlingPauseInMs;
 
-    @Value("${robert.push.notif.server.apns.trusted-client-certificate-chained}")
-    private String apnsTrustedClientCertificateChained;
+    @Value("${robert.push.notif.server.apns.trusted-client-certificate-chain}")
+    private Resource apnsTrustedClientCertificateChain;
 
     @Value("${robert.push.notif.server.apns.main-server-port:443}")
     private int apnsMainServerPort;

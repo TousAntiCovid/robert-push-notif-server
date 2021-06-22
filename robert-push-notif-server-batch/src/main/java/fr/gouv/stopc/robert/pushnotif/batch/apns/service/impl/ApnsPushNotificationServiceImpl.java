@@ -72,9 +72,9 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                         )
                 );
 
-        if (StringUtils.isNotBlank(propertyLoader.getApnsTrustedClientCertificateChained())) {
+        if (propertyLoader.getApnsTrustedClientCertificateChain() != null) {
             apnsClientBuilder.setTrustedServerCertificateChain(
-                    getClass().getResourceAsStream(propertyLoader.getApnsTrustedClientCertificateChained())
+                    propertyLoader.getApnsTrustedClientCertificateChain().getInputStream()
             );
         }
         this.apnsClient = apnsClientBuilder.build();
@@ -91,9 +91,9 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
                             )
                     );
 
-            if (StringUtils.isNotBlank(propertyLoader.getApnsTrustedClientCertificateChained())) {
+            if (propertyLoader.getApnsTrustedClientCertificateChain() != null) {
                 secondaryApnsClientBuilder.setTrustedServerCertificateChain(
-                        getClass().getResourceAsStream(propertyLoader.getApnsTrustedClientCertificateChained())
+                        propertyLoader.getApnsTrustedClientCertificateChain().getInputStream()
                 );
             }
             this.secondaryApnsClient = secondaryApnsClientBuilder.build();
