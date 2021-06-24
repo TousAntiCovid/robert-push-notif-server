@@ -97,13 +97,11 @@ public class PushNotificationBatchConfiguration {
         StringBuilder whereClause = new StringBuilder("where id >= :");
         whereClause.append(PushBatchConstants.MIN_ID);
 
-        if (minId != maxId) {
-            whereClause.append(" and id <= :");
-            whereClause.append(PushBatchConstants.MAX_ID);
-        }
+        whereClause.append(" and id <= :");
+        whereClause.append(PushBatchConstants.MAX_ID);
 
         if (Objects.nonNull(pushDate) && this.propertyLoader.isEnablePushDate()) {
-            whereClause.append(dateWhereClause.toString());
+            whereClause.append(dateWhereClause);
         }
 
         whereClause.append(" and deleted = 'f' and active = 't' ");

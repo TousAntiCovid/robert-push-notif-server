@@ -28,7 +28,7 @@ public class PushPartitioner implements Partitioner {
     @Override
     public Map<String, ExecutionContext> partition(int gridSize) {
 
-        long min = jdbcTemplate.queryForObject("SELECT MIN(id) FROM PUSH", Long.class);
+        Long min = jdbcTemplate.queryForObject("SELECT MIN(id) FROM PUSH", Long.class);
 
         Long max = jdbcTemplate.queryForObject("SELECT MAX(id) FROM PUSH", Long.class);
 
