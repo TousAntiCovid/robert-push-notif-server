@@ -59,9 +59,6 @@ public class PropertyLoader {
     @Value("${robert.push.notif.server.batch.chunk-size}")
     private int chunkSize;
 
-    @Value("${robert.push.notif.server.batch.page-size}")
-    private int pageSize;
-
     @Value("${robert.push.notif.server.batch.throttling.pause-in-ms}")
     private long pushProcessorThrottlingPauseInMs;
 

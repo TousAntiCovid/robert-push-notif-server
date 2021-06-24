@@ -32,7 +32,9 @@ public class PushPartitioner implements Partitioner {
 
         Long max = jdbcTemplate.queryForObject("SELECT MAX(id) FROM PUSH", Long.class);
 
-        Long targetSize = (max - min) / gridSize + 1;
+        // In case ArithmeticException, the gridSize parameter must be increased in
+        // configuration !
+        int targetSize = Math.toIntExact((max - min) / gridSize + 1);
 
         Map<String, ExecutionContext> result = new HashMap<>();
 
@@ -53,6 +55,7 @@ public class PushPartitioner implements Partitioner {
             value.putLong(PushBatchConstants.MIN_ID, start);
             value.putLong(PushBatchConstants.MAX_ID, end);
             value.put(PushBatchConstants.PUSH_DATE, pushDate);
+            value.put(PushBatchConstants.PAGE_SIZE, targetSize);
 
             start += targetSize;
             end += targetSize;

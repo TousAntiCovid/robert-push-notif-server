@@ -36,6 +36,8 @@ class MultiThreadedIntegrationTest {
     @Autowired
     PushInfoRepository pushInfoRepository;
 
+    private static final int PUSH_NOTIF_COUNT = 1007;
+
     @Test
     void should_correctly_sent_notification_to_apns_servers() throws Exception {
 
@@ -46,9 +48,11 @@ class MultiThreadedIntegrationTest {
         JobExecution jobExecution = this.jobLauncherTestUtils.launchJob();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(1000);
+        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(
+                PUSH_NOTIF_COUNT
+        );
 
-        assertThat(notificationSentToMainApnServer).hasSize(1000);
+        assertThat(notificationSentToMainApnServer).hasSize(PUSH_NOTIF_COUNT);
 
         assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(jobExecution.getStepExecutions())
@@ -56,9 +60,9 @@ class MultiThreadedIntegrationTest {
                 .hasSize(11);
         assertThat(jobExecution.getStepExecutions())
                 .filteredOn(s -> s.getStepName().equalsIgnoreCase("Step1"))
-                .extracting("writeCount").containsExactly(1000);
+                .extracting("writeCount").containsExactly(PUSH_NOTIF_COUNT);
 
-        assertThat(pushInfoRepository.findAll()).hasSize(1000)
+        assertThat(pushInfoRepository.findAll()).hasSize(PUSH_NOTIF_COUNT)
                 .anySatisfy(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .anySatisfy(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .anySatisfy(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
@@ -77,7 +81,7 @@ class MultiThreadedIntegrationTest {
     }
 
     private void loadData() {
-        LongStream.rangeClosed(1, 1000L).forEach(i -> {
+        LongStream.rangeClosed(1, PUSH_NOTIF_COUNT).forEach(i -> {
             PushInfo push = PushInfo.builder()
                     .token(UUID.randomUUID().toString())
                     .locale("fr_FR")

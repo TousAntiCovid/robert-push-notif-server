@@ -77,10 +77,11 @@ public class PushNotificationBatchConfiguration {
     public PushPagingItemReader pushPagingReader(PagingQueryProvider pagingQueryProvider,
             @Value("#{stepExecutionContext['minId']}") Long minId,
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
-            @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
+            @Value("#{stepExecutionContext['pushDate']}") Date pushDate,
+            @Value("#{stepExecutionContext['pageSize']}") Integer pageSize) {
 
         return new PushPagingItemReader(
-                this.dataSource, pagingQueryProvider, minId, maxId, pushDate, this.propertyLoader.getPageSize()
+                this.dataSource, pagingQueryProvider, minId, maxId, pushDate, pageSize
         );
     }
 
@@ -146,7 +147,7 @@ public class PushNotificationBatchConfiguration {
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
                 .<PushInfo, PushInfo>chunk(this.propertyLoader.getChunkSize())
-                .reader(pushPagingReader(null, null, null, null))
+                .reader(pushPagingReader(null, null, null, null, null))
                 .processor(pushProcessor())
                 .writer(pushItemWriter())
                 .build();

@@ -12,4 +12,6 @@ public final class PushBatchConstants {
     public final static String MAX_ID = "maxId";
 
     public final static String PUSH_DATE = "pushDate";
+
+    public final static String PAGE_SIZE = "pageSize";
 }
