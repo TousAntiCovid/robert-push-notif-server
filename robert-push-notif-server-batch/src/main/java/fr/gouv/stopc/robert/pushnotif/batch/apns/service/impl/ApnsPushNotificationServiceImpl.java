@@ -25,7 +25,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.net.ssl.SSLException;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -65,8 +64,8 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
                 .setApnsServer(this.propertyLoader.getApnsHost(), propertyLoader.getApnsMainServerPort())
                 .setSigningKey(
-                        ApnsSigningKey.loadFromPkcs8File(
-                                new File(this.propertyLoader.getApnsAuthTokenFile()),
+                        ApnsSigningKey.loadFromInputStream(
+                                this.propertyLoader.getApnsAuthTokenFile().getInputStream(),
                                 this.propertyLoader.getApnsTeamId(),
                                 this.propertyLoader.getApnsAuthKeyId()
                         )
@@ -84,8 +83,8 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(secondaryApnsHost, propertyLoader.getApnsSecondaryServerPort())
                     .setSigningKey(
-                            ApnsSigningKey.loadFromPkcs8File(
-                                    new File(this.propertyLoader.getApnsAuthTokenFile()),
+                            ApnsSigningKey.loadFromInputStream(
+                                    this.propertyLoader.getApnsAuthTokenFile().getInputStream(),
                                     this.propertyLoader.getApnsTeamId(),
                                     this.propertyLoader.getApnsAuthKeyId()
                             )

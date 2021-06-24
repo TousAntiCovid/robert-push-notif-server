@@ -27,7 +27,7 @@ public class PropertyLoader {
     private String notificationContentUrl;
 
     @Value("${robert.push.notif.server.apns.auth.token.file}")
-    private String apnsAuthTokenFile;
+    private Resource apnsAuthTokenFile;
 
     @Value("${robert.push.notif.server.apns.auth.key-id}")
     private String apnsAuthKeyId;
