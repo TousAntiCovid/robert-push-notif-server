@@ -1,7 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.batch.configuration;
 
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.batch.listener.PushJobExecutionListener;
 import fr.gouv.stopc.robert.pushnotif.batch.partitioner.PushPartitioner;
 import fr.gouv.stopc.robert.pushnotif.batch.processor.PushProcessor;
 import fr.gouv.stopc.robert.pushnotif.batch.reader.PushPagingItemReader;
@@ -156,7 +155,6 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Job pushPartitionedJob() {
         return this.jobBuilderFactory.get("pushPartitionedJob")
-                .listener(new PushJobExecutionListener(this.apnsPushNotifcationService))
                 .incrementer(new RunIdIncrementer())
                 .start(partitionedMaster())
                 .build();
