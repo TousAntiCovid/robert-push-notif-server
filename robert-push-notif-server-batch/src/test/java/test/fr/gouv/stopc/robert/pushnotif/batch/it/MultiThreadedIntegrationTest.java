@@ -63,17 +63,17 @@ class MultiThreadedIntegrationTest {
                 .extracting("writeCount").containsExactly(PUSH_NOTIF_COUNT);
 
         assertThat(pushInfoRepository.findAll()).hasSize(PUSH_NOTIF_COUNT)
-                .anySatisfy(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .anySatisfy(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .anySatisfy(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
-                .anySatisfy(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
-                .anySatisfy(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
-                .anySatisfy(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
-                .anySatisfy(
+                .allSatisfy(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
+                .allSatisfy(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
+                .allSatisfy(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
+                .allSatisfy(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
+                .allSatisfy(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
+                .allSatisfy(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
+                .allSatisfy(
                         pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
                                 .isCloseTo(Date.from(Instant.now()), 10_000)
                 )
-                .anySatisfy(
+                .allSatisfy(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
                                 Date.from(LocalDate.now().atStartOfDay().plusDays(1).toInstant(ZoneOffset.UTC))
                         )

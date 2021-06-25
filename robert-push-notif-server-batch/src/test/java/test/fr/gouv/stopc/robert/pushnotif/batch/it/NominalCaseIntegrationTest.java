@@ -123,7 +123,11 @@ class NominalCaseIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadDeviceToken"))
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isBefore(Date.from(Instant.now())));
+                .satisfies(
+                        pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                                Date.from(LocalDate.now().atStartOfDay().plusDays(1).toInstant(ZoneOffset.UTC))
+                        )
+                );
     }
 
     private void loadData() {
