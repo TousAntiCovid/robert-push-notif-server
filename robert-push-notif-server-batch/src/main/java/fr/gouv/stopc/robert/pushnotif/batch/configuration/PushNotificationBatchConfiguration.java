@@ -101,7 +101,7 @@ public class PushNotificationBatchConfiguration {
         whereClause.append(" and id <= :");
         whereClause.append(PushBatchConstants.MAX_ID);
 
-        if (Objects.nonNull(pushDate) && this.propertyLoader.isEnablePushDate()) {
+        if (Objects.nonNull(pushDate) && this.propertyLoader.isPushDateEnable()) {
             whereClause.append(dateWhereClause);
         }
 
@@ -129,7 +129,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public TaskExecutorPartitionHandler partitionHandler() {
         TaskExecutorPartitionHandler partitionHandler = new TaskExecutorPartitionHandler();
-        partitionHandler.setGridSize(this.propertyLoader.getGridSize());
+        partitionHandler.setGridSize(this.propertyLoader.getBatchGridSize());
         partitionHandler.setStep(step1());
         partitionHandler.setTaskExecutor(new SimpleAsyncTaskExecutor());
         return partitionHandler;
@@ -146,7 +146,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .<PushInfo, PushInfo>chunk(this.propertyLoader.getChunkSize())
+                .<PushInfo, PushInfo>chunk(this.propertyLoader.getBatchChunkSize())
                 .reader(pushPagingReader(null, null, null, null, null))
                 .processor(pushProcessor())
                 .writer(pushItemWriter())

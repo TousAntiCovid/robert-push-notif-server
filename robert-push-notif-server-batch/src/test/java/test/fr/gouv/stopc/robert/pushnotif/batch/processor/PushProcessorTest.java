@@ -37,7 +37,7 @@ public class PushProcessorTest {
                 .timezone("Europe/Paris")
                 .build();
 
-        when(propertyLoader.getPushProcessorThrottlingPauseInMs()).thenReturn(0L);
+        when(propertyLoader.getBatchThrottlingPauseInMs()).thenReturn(0L);
 
         // When
         this.pushProcessor.process(toPush);

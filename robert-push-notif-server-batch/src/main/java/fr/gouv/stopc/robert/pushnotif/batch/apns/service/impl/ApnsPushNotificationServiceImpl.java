@@ -50,7 +50,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
-        String secondaryApnsHost = this.propertyLoader.getDevelopmentApnsHost();
+        String secondaryApnsHost = this.propertyLoader.getApnsDevelopmentHost();
 
         log.debug(
                 "Configured default anps host as {}",
@@ -74,7 +74,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         }
         this.apnsClient = apnsClientBuilder.build();
 
-        if (this.propertyLoader.isEnableSecondaryPush()) {
+        if (this.propertyLoader.isApnsSecondaryEnable()) {
 
             ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(secondaryApnsHost, propertyLoader.getApnsSecondaryServerPort())
@@ -120,7 +120,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             return null;
         }
 
-        return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
+        return this.sendNotification(push, this.propertyLoader.isApnsSecondaryEnable());
     }
 
     private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {

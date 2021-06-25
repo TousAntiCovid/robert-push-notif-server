@@ -23,7 +23,7 @@ public class PushProcessor implements ItemProcessor<PushInfo, PushInfo> {
     @Override
     public PushInfo process(PushInfo push) throws Exception {
 
-        Thread.sleep(propertyLoader.getPushProcessorThrottlingPauseInMs());
+        Thread.sleep(propertyLoader.getBatchThrottlingPauseInMs());
 
         this.apnsPushNotifcationService.sendPushNotification(push);
 

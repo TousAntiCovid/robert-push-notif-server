@@ -64,11 +64,11 @@ public class APNsServersManager implements TestExecutionListener {
 
     protected static NioEventLoopGroup SECONDARY_SERVER_EVENT_LOOP_GROUP;
 
-    protected static final Resource CA_CERTIFICATE_FILENAME = new ClassPathResource("/ca.pem");
+    protected static final Resource CA_CERTIFICATE_FILENAME = new ClassPathResource("/apns/ca.pem");
 
-    protected static final Resource SERVER_CERTIFICATES_FILENAME = new ClassPathResource("/server-certs.pem");
+    protected static final Resource SERVER_CERTIFICATES_FILENAME = new ClassPathResource("/apns/server-certs.pem");
 
-    protected static final Resource SERVER_KEY_FILENAME = new ClassPathResource("/server-key.pem");
+    protected static final Resource SERVER_KEY_FILENAME = new ClassPathResource("/apns/server-key.pem");
 
     public static final int MAIN_SERVER_PORT = 443;
 
@@ -77,9 +77,9 @@ public class APNsServersManager implements TestExecutionListener {
     static {
         MAIN_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
         SECONDARY_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
-        System.setProperty("robert.push.notif.server.apns.main-server-port", String.valueOf(MAIN_SERVER_PORT));
+        System.setProperty("robert.push.server.apns.main-server-port", String.valueOf(MAIN_SERVER_PORT));
         System.setProperty(
-                "robert.push.notif.server.apns.secondary-server-port", String.valueOf(SECONDARY_SERVER_PORT)
+                "robert.push.server.apns.secondary-server-port", String.valueOf(SECONDARY_SERVER_PORT)
         );
     }
 
