@@ -21,10 +21,7 @@ import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import javax.net.ssl.SSLException;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -52,8 +49,7 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         this.pushInfoService = pushInfoService;
     }
 
-    @PostConstruct
-    public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
+    public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = this.propertyLoader.getDevelopmentApnsHost();
 
         log.debug(
@@ -218,7 +214,6 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     @Override
-    @PreDestroy
     public void close() throws ExecutionException, InterruptedException {
 
         if (Objects.nonNull(this.apnsClient)) {
