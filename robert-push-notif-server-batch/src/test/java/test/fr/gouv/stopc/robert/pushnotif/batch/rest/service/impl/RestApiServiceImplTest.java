@@ -23,9 +23,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 @TestPropertySource("classpath:application.properties")
@@ -43,21 +41,21 @@ public class RestApiServiceImplTest {
     @Mock
     private PropertyLoader propertyLoader;
 
-    @Value("${robert.push.notif.server.notification.available-languages}")
+    @Value("${robert.push.server.notification-available-languages}")
     private String[] availableNotificationLanguages;
 
-    @Value("${robert.push.notif.server.notification.url}")
+    @Value("${robert.push.server.notification-url}")
     private String notificationContentUrl;
 
-    @Value("${robert.push.notif.server.notification.url.version}")
+    @Value("${robert.push.server.notification-url-version}")
     private String notificationContentUrlVersion;
 
     @BeforeEach
     public void beforeEach() {
 
-        when(this.propertyLoader.getAvailableNotificationLanguages()).thenReturn(availableNotificationLanguages);
-        when(this.propertyLoader.getNotificationContentUrl()).thenReturn(notificationContentUrl);
-        when(this.propertyLoader.getNotificationContentUrlVersion()).thenReturn(notificationContentUrlVersion);
+        when(this.propertyLoader.getNotificationAvailableLanguages()).thenReturn(availableNotificationLanguages);
+        when(this.propertyLoader.getNotificationUrl()).thenReturn(notificationContentUrl);
+        when(this.propertyLoader.getNotificationUrlVersion()).thenReturn(notificationContentUrlVersion);
     }
 
     @Test

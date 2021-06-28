@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class PropertyLoader {
 
-    @Value("${robert.push.notif.server.minPushHour}")
+    @Value("${robert.push.server.minPushHour}")
     private Integer minPushHour;
 
-    @Value("${robert.push.notif.server.maxPushHour}")
+    @Value("${robert.push.server.maxPushHour}")
     private Integer maxPushHour;
 
 }

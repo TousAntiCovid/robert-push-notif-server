@@ -21,16 +21,12 @@ import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.net.ssl.SSLException;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,43 +49,49 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
         this.pushInfoService = pushInfoService;
     }
 
-    @PostConstruct
-    public void initApnsClient() throws InvalidKeyException, SSLException, NoSuchAlgorithmException, IOException {
-        String secondaryApnsHost = ApnsClientBuilder.PRODUCTION_APNS_HOST;
+    public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
+        String secondaryApnsHost = this.propertyLoader.getApnsDevelopmentHost();
 
         log.debug(
                 "Configured default anps host as {}",
                 this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST) ? "production"
-                        : "developement"
+                        : "development"
         );
-        this.apnsClient = new ApnsClientBuilder()
-                .setApnsServer(this.propertyLoader.getApnsHost())
+        ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
+                .setApnsServer(this.propertyLoader.getApnsHost(), propertyLoader.getApnsMainServerPort())
                 .setSigningKey(
-                        ApnsSigningKey.loadFromPkcs8File(
-                                new File(this.propertyLoader.getApnsAuthTokenFile()),
+                        ApnsSigningKey.loadFromInputStream(
+                                this.propertyLoader.getApnsAuthTokenFile().getInputStream(),
                                 this.propertyLoader.getApnsTeamId(),
                                 this.propertyLoader.getApnsAuthKeyId()
                         )
-                )
-                .build();
+                );
 
-        if (this.propertyLoader.isEnableSecondaryPush()) {
+        if (propertyLoader.getApnsTrustedClientCertificateChain() != null) {
+            apnsClientBuilder.setTrustedServerCertificateChain(
+                    propertyLoader.getApnsTrustedClientCertificateChain().getInputStream()
+            );
+        }
+        this.apnsClient = apnsClientBuilder.build();
 
-            if (this.propertyLoader.getApnsHost().equals(ApnsClientBuilder.PRODUCTION_APNS_HOST)) {
-                secondaryApnsHost = ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
-                log.debug("Configured secondary anps host as developement");
-            }
+        if (this.propertyLoader.isApnsSecondaryEnable()) {
 
-            this.secondaryApnsClient = new ApnsClientBuilder()
-                    .setApnsServer(secondaryApnsHost)
+            ApnsClientBuilder secondaryApnsClientBuilder = new ApnsClientBuilder()
+                    .setApnsServer(secondaryApnsHost, propertyLoader.getApnsSecondaryServerPort())
                     .setSigningKey(
-                            ApnsSigningKey.loadFromPkcs8File(
-                                    new File(this.propertyLoader.getApnsAuthTokenFile()),
+                            ApnsSigningKey.loadFromInputStream(
+                                    this.propertyLoader.getApnsAuthTokenFile().getInputStream(),
                                     this.propertyLoader.getApnsTeamId(),
                                     this.propertyLoader.getApnsAuthKeyId()
                             )
-                    )
-                    .build();
+                    );
+
+            if (propertyLoader.getApnsTrustedClientCertificateChain() != null) {
+                secondaryApnsClientBuilder.setTrustedServerCertificateChain(
+                        propertyLoader.getApnsTrustedClientCertificateChain().getInputStream()
+                );
+            }
+            this.secondaryApnsClient = secondaryApnsClientBuilder.build();
         }
 
     }
@@ -118,88 +120,82 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
             return null;
         }
 
-        return this.sendNotification(push, this.propertyLoader.isEnableSecondaryPush());
+        return this.sendNotification(push, this.propertyLoader.isApnsSecondaryEnable());
     }
 
     private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {
 
-        CompletableFuture.runAsync(() -> {
-            final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
-            final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
+        final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
+        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
 
-            try {
-                if (useSecondaryApns) {
+        try {
+            if (useSecondaryApns) {
 
-                    sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
-                } else {
-                    sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
+                sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
+            } else {
+                sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
 
-                }
-                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture
-                        .get();
+            }
+            final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture
+                    .get();
 
-                if (pushNotificationResponse.isAccepted()) {
-                    log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
-                    push.setActive(true);
-                    push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-                    push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-                    this.setNextPlannedPushDate(push);
+            if (pushNotificationResponse.isAccepted()) {
+                log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+                push.setActive(true);
+                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
+                push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+            } else {
+                log.debug(
+                        "Notification rejected by the APNs gateway: {}",
+                        pushNotificationResponse.getRejectionReason()
+                );
+                final String rejectionReason = pushNotificationResponse.getRejectionReason();
 
-                } else {
-                    log.debug(
-                            "Notification rejected by the APNs gateway: {}",
-                            pushNotificationResponse.getRejectionReason()
-                    );
-                    final String rejetctionReason = pushNotificationResponse.getRejectionReason();
+                if (StringUtils.isNotBlank(rejectionReason)
+                        && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejectionReason)) {
 
-                    if (StringUtils.isNotBlank(rejetctionReason)
-                            && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejetctionReason)) {
-
-                        if (useSecondaryApns) {
-                            this.sendNotification(push, false);
-                        } else {
-                            push.setActive(false);
-                        }
-                    }
-
-                    if (StringUtils.isNotBlank(rejetctionReason) && !useSecondaryApns) {
-                        push.setLastErrorCode(rejetctionReason);
-                        push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                        push.setFailedPushSent(push.getFailedPushSent() + 1);
-
-                    }
-
-                    pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                        log.debug("\t…and the token is invalid as of {}", timestamp);
-                    });
-
-                }
-                this.pushInfoService.saveAll(Arrays.asList(push));
-                sendNotificationFuture.whenComplete((response, cause) -> {
-                    if (Objects.nonNull(response)) {
-                        // Handle the push notification response as before from here.
-                        log.debug("Push Notification successful sent => {}", response);
+                    if (useSecondaryApns) {
+                        this.sendNotification(push, false);
                     } else {
-                        // Something went wrong when trying to send the notification to the
-                        // APNs server. Note that this is distinct from a rejection from
-                        // the server, and indicates that something went wrong when actually
-                        // sending the notification or waiting for a reply.
-                        log.debug("Push Notification failed => {}", cause);
+                        push.setActive(false);
                     }
+                }
 
+                if (StringUtils.isNotBlank(rejectionReason) && !useSecondaryApns) {
+                    push.setLastErrorCode(rejectionReason);
+                    push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                    push.setFailedPushSent(push.getFailedPushSent() + 1);
+
+                }
+
+                pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
+                    log.debug("\t…and the token is invalid as of {}", timestamp);
                 });
 
-            } catch (final ExecutionException | InterruptedException e) {
-                log.error("Failed to send push notification due to {}.", e.getMessage());
-
-                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                push.setFailedPushSent(push.getFailedPushSent() + 1);
-                push.setLastErrorCode(e.getMessage());
-            } finally {
-                this.setNextPlannedPushDate(push);
             }
+            sendNotificationFuture.whenComplete((response, cause) -> {
+                if (Objects.nonNull(response)) {
+                    // Handle the push notification response as before from here.
+                    log.debug("Push Notification successful sent => {}", response);
+                } else {
+                    // Something went wrong when trying to send the notification to the
+                    // APNs server. Note that this is distinct from a rejection from
+                    // the server, and indicates that something went wrong when actually
+                    // sending the notification or waiting for a reply.
+                    log.debug("Push Notification failed => {}", cause);
+                }
 
-        });
+            });
+
+        } catch (final ExecutionException | InterruptedException e) {
+            log.error("Failed to send push notification due to {}.", e.getMessage());
+
+            push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+            push.setFailedPushSent(push.getFailedPushSent() + 1);
+            push.setLastErrorCode(e.getMessage());
+        } finally {
+            this.setNextPlannedPushDate(push);
+        }
 
         return push;
 
@@ -218,22 +214,17 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     @Override
-    public void close() {
+    public void close() throws ExecutionException, InterruptedException {
 
         if (Objects.nonNull(this.apnsClient)) {
-            log.info("Beginning of the close of the main apns client");
             CompletableFuture<Void> close = this.apnsClient.close();
-            close.whenComplete((response, cause) -> {
-                log.info("Close of the main apnsClient has been successfully completed");
-                if (Objects.nonNull(this.secondaryApnsClient)) {
-                    log.info("Beginning of the close of the secondary apns client");
-                    CompletableFuture<Void> closeSecondary = this.secondaryApnsClient.close();
-                    closeSecondary.whenComplete((response2, cause2) -> {
-                        log.info("Close of the secondary apns client has been successfully completed");
-                    });
-                }
-            });
+            close.get();
+            log.info("Closure of the main apnsClient has been successfully completed");
+        }
+        if (Objects.nonNull(this.secondaryApnsClient)) {
+            CompletableFuture<Void> closeSecondary = this.secondaryApnsClient.close();
+            closeSecondary.get();
+            log.info("Closure of the secondary apnsClient has been successfully completed");
         }
     }
-
 }

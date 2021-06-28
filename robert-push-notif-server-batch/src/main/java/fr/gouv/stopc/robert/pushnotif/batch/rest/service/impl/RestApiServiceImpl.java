@@ -49,7 +49,7 @@ public class RestApiServiceImpl implements IRestApiService {
         }
 
         List<String> availableNotificationLanguages = Arrays
-                .asList(this.propertyLoader.getAvailableNotificationLanguages());
+                .asList(this.propertyLoader.getNotificationAvailableLanguages());
         String lang = locale.substring(0, 2);
 
         if (!availableNotificationLanguages.contains(lang)) {
@@ -75,9 +75,9 @@ public class RestApiServiceImpl implements IRestApiService {
     private URI buildURI(String lang) {
         Map<String, String> parameters = new HashMap<>();
         parameters.put("lang", lang);
-        parameters.put("version", this.propertyLoader.getNotificationContentUrlVersion());
+        parameters.put("version", this.propertyLoader.getNotificationUrlVersion());
 
-        return UriComponentsBuilder.fromUriString(this.propertyLoader.getNotificationContentUrl())
+        return UriComponentsBuilder.fromUriString(this.propertyLoader.getNotificationUrl())
                 .build(parameters);
     }
 
