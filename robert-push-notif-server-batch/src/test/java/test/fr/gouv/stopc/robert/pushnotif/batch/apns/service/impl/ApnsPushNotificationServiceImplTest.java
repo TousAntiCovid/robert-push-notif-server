@@ -60,7 +60,7 @@ public class ApnsPushNotificationServiceImplTest {
         when(this.propertyLoader.getMaxPushHour()).thenReturn(20);
         when(this.propertyLoader.getApnsTopic()).thenReturn("topic");
         when(this.propertyLoader.getApnsInactiveRejectionReason()).thenReturn(Arrays.asList("BadDeviceToken"));
-        when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(false);
+        when(this.propertyLoader.isApnsSecondaryEnable()).thenReturn(false);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class ApnsPushNotificationServiceImplTest {
 
         ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
 
-        when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
+        when(this.propertyLoader.isApnsSecondaryEnable()).thenReturn(true);
 
         // When & Then
         this.testSendPushNotificationFails(false, rejectionReason, 2);
@@ -167,7 +167,7 @@ public class ApnsPushNotificationServiceImplTest {
 
         ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
 
-        when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
+        when(this.propertyLoader.isApnsSecondaryEnable()).thenReturn(true);
         final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
                 null
         );
@@ -220,7 +220,7 @@ public class ApnsPushNotificationServiceImplTest {
 
         ReflectionTestUtils.setField(this.apnsService, "secondaryApnsClient", this.apnsClient);
 
-        when(this.propertyLoader.isEnableSecondaryPush()).thenReturn(true);
+        when(this.propertyLoader.isApnsSecondaryEnable()).thenReturn(true);
         final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture = new PushNotificationFuture<>(
                 null
         );

@@ -5,6 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
+
 @Slf4j
 public class PushJobExecutionListener implements JobExecutionListener {
 
@@ -17,14 +22,23 @@ public class PushJobExecutionListener implements JobExecutionListener {
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
-
+        try {
+            apnsPushNotifcationService.initApnsClient();
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            log.error("An error occurred during init of APNs client(s)", e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void afterJob(JobExecution jobExecution) {
 
-        // log.info("Trying to close the apns service.");
-        // this.apnsPushNotifcationService.close();
+        try {
+            apnsPushNotifcationService.close();
+        } catch (ExecutionException | InterruptedException e) {
+            log.error("An error occurred during init of APNs client(s)", e);
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -77,10 +77,11 @@ public class PushNotificationBatchConfiguration {
     public PushPagingItemReader pushPagingReader(PagingQueryProvider pagingQueryProvider,
             @Value("#{stepExecutionContext['minId']}") Long minId,
             @Value("#{stepExecutionContext['maxId']}") Long maxId,
-            @Value("#{stepExecutionContext['pushDate']}") Date pushDate) {
+            @Value("#{stepExecutionContext['pushDate']}") Date pushDate,
+            @Value("#{stepExecutionContext['pageSize']}") Integer pageSize) {
 
         return new PushPagingItemReader(
-                this.dataSource, pagingQueryProvider, minId, maxId, pushDate, this.propertyLoader.getPageSize()
+                this.dataSource, pagingQueryProvider, minId, maxId, pushDate, pageSize
         );
     }
 
@@ -97,13 +98,11 @@ public class PushNotificationBatchConfiguration {
         StringBuilder whereClause = new StringBuilder("where id >= :");
         whereClause.append(PushBatchConstants.MIN_ID);
 
-        if (minId != maxId) {
-            whereClause.append(" and id <= :");
-            whereClause.append(PushBatchConstants.MAX_ID);
-        }
+        whereClause.append(" and id <= :");
+        whereClause.append(PushBatchConstants.MAX_ID);
 
-        if (Objects.nonNull(pushDate) && this.propertyLoader.isEnablePushDate()) {
-            whereClause.append(dateWhereClause.toString());
+        if (Objects.nonNull(pushDate) && this.propertyLoader.isPushDateEnable()) {
+            whereClause.append(dateWhereClause);
         }
 
         whereClause.append(" and deleted = 'f' and active = 't' ");
@@ -130,7 +129,7 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public TaskExecutorPartitionHandler partitionHandler() {
         TaskExecutorPartitionHandler partitionHandler = new TaskExecutorPartitionHandler();
-        partitionHandler.setGridSize(this.propertyLoader.getGridSize());
+        partitionHandler.setGridSize(this.propertyLoader.getBatchGridSize());
         partitionHandler.setStep(step1());
         partitionHandler.setTaskExecutor(new SimpleAsyncTaskExecutor());
         return partitionHandler;
@@ -147,8 +146,8 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .<PushInfo, PushInfo>chunk(this.propertyLoader.getChunkSize())
-                .reader(pushPagingReader(null, null, null, null))
+                .<PushInfo, PushInfo>chunk(this.propertyLoader.getBatchChunkSize())
+                .reader(pushPagingReader(null, null, null, null, null))
                 .processor(pushProcessor())
                 .writer(pushItemWriter())
                 .build();

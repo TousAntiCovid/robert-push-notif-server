@@ -34,6 +34,7 @@
 		<javax.validation.version>2.0.1.Final</javax.validation.version>
 		<postgresql.version>42.2.12</postgresql.version>
 		<commons-lang3.version>3.11</commons-lang3.version>
+		<testcontainers.version>1.15.3</testcontainers.version>
 	</properties>
 
 	<dependencies>
@@ -99,6 +100,13 @@
 				<artifactId>pushy</artifactId>
 				<version>0.14.1</version>
 			</dependency>
+
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers</artifactId>
+				<version>${testcontainers.version}</version>
+				<scope>test</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -141,6 +149,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.0.0-M3</version>
 				<configuration>
 					<rules>
 						<requireReleaseDeps>

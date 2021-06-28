@@ -1,64 +1,55 @@
 package fr.gouv.stopc.robert.pushnotif.batch.utils;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
 
 import java.util.List;
 
-@Getter
-@Component
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "robert.push.server")
 public class PropertyLoader {
 
-    @Value("${robert.push.notif.server.minPushHour}")
     private Integer minPushHour;
 
-    @Value("${robert.push.notif.server.maxPushHour}")
     private Integer maxPushHour;
 
-    @Value("${robert.push.notif.server.notification.available-languages}")
-    private String[] availableNotificationLanguages;
+    private String[] notificationAvailableLanguages;
 
-    @Value("${robert.push.notif.server.notification.url.version}")
-    private String notificationContentUrlVersion;
+    private String notificationUrlVersion;
 
-    @Value("${robert.push.notif.server.notification.url}")
-    private String notificationContentUrl;
+    private String notificationUrl;
 
-    @Value("${robert.push.notif.server.apns.auth.token.file}")
-    private String apnsAuthTokenFile;
+    private Resource apnsAuthTokenFile;
 
-    @Value("${robert.push.notif.server.apns.auth.key-id}")
     private String apnsAuthKeyId;
 
-    @Value("${robert.push.notif.server.apns.team-id}")
     private String apnsTeamId;
 
-    @Value("${robert.push.notif.server.apns.host}")
     private String apnsHost;
 
-    @Value("#{'${robert.push.notif.server.apns.inactive-rejection-reason}'.split(',')}")
+    private String apnsDevelopmentHost;
+
     private List<String> apnsInactiveRejectionReason;
 
-    @Value("${robert.push.notif.server.apns.topic}")
     private String apnsTopic;
 
-    @Value("${robert.push.notif.server.push.date.enable}")
-    private boolean enablePushDate;
+    private boolean pushDateEnable;
 
-    @Value("${robert.push.notif.server.apns.secondary.enable}")
-    private boolean enableSecondaryPush;
+    private boolean apnsSecondaryEnable;
 
-    @Value("${robert.push.notif.server.batch.grid-size}")
-    private int gridSize;
+    private int batchGridSize;
 
-    @Value("${robert.push.notif.server.batch.chunk-size}")
-    private int chunkSize;
+    private int batchChunkSize;
 
-    @Value("${robert.push.notif.server.batch.page-size}")
-    private int pageSize;
+    private long batchThrottlingPauseInMs;
 
-    @Value("${robert.push.notif.server.batch.throttling.pause-in-ms}")
-    private long pushProcessorThrottlingPauseInMs;
+    private Resource apnsTrustedClientCertificateChain;
+
+    private int apnsMainServerPort;
+
+    private int apnsSecondaryServerPort;
 
 }

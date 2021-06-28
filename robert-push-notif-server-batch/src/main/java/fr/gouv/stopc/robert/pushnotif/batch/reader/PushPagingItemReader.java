@@ -20,10 +20,7 @@ public class PushPagingItemReader extends JdbcPagingItemReader<PushInfo> {
 
         Map<String, Object> parameterValues = new HashMap<>(3);
         parameterValues.put(PushBatchConstants.MIN_ID, minId);
-
-        if (minId != maxId) {
-            parameterValues.put(PushBatchConstants.MAX_ID, maxId);
-        }
+        parameterValues.put(PushBatchConstants.MAX_ID, maxId);
 
         if (Objects.nonNull(pushDate)) {
             parameterValues.put(PushBatchConstants.PUSH_DATE, pushDate);
