@@ -1,6 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.batch.listener;
 
 import fr.gouv.stopc.robert.pushnotif.batch.apns.service.IApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.batch.utils.PropertyLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -13,17 +14,22 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class PushJobExecutionListener implements JobExecutionListener {
 
-    private final IApnsPushNotificationService apnsPushNotifcationService;
+    private final IApnsPushNotificationService apnsPushNotificationService;
 
-    public PushJobExecutionListener(IApnsPushNotificationService apnsPushNotifcationService) {
+    private final PropertyLoader propertyLoader;
 
-        this.apnsPushNotifcationService = apnsPushNotifcationService;
+    public PushJobExecutionListener(IApnsPushNotificationService apnsPushNotificationService,
+            PropertyLoader propertyLoader) {
+
+        this.apnsPushNotificationService = apnsPushNotificationService;
+        this.propertyLoader = propertyLoader;
     }
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
         try {
-            apnsPushNotifcationService.initApnsClient();
+            log.info("this job is initialized with {}", propertyLoader.toString());
+            apnsPushNotificationService.initApnsClient();
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException e) {
             log.error("An error occurred during init of APNs client(s)", e);
             throw new RuntimeException(e);
@@ -34,9 +40,9 @@ public class PushJobExecutionListener implements JobExecutionListener {
     public void afterJob(JobExecution jobExecution) {
 
         try {
-            apnsPushNotifcationService.close();
+            apnsPushNotificationService.close();
         } catch (ExecutionException | InterruptedException e) {
-            log.error("An error occurred during init of APNs client(s)", e);
+            log.error("An error occurred during closure of APNs client(s)", e);
             throw new RuntimeException(e);
         }
     }
