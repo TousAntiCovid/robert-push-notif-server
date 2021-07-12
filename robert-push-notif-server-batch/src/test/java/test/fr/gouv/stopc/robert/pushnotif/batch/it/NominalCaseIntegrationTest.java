@@ -74,7 +74,7 @@ class NominalCaseIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
-                                .isCloseTo(Date.from(Instant.now()), 10_000)
+                                .isCloseTo(Date.from(Instant.now()), 60_000)
                 )
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
@@ -90,7 +90,7 @@ class NominalCaseIntegrationTest {
                 .satisfies(notif -> assertThat(notif.getTopic()).isEqualTo("test"))
                 .satisfies(
                         notif -> assertThat(notif.getExpiration())
-                                .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(30, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(60, ChronoUnit.SECONDS))
                 )
                 .satisfies(
                         notif -> assertThat(notif.getPayload())
@@ -118,7 +118,7 @@ class NominalCaseIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(Date.from(Instant.now()), 10_000)
+                                .isCloseTo(Date.from(Instant.now()), 60_000)
                 )
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadDeviceToken"))
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))

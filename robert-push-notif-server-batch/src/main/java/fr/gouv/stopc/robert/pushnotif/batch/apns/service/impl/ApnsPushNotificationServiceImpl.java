@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -124,79 +125,80 @@ public class ApnsPushNotificationServiceImpl implements IApnsPushNotificationSer
     }
 
     private PushInfo sendNotification(PushInfo push, boolean useSecondaryApns) {
+        CompletableFuture.runAsync(() -> {
+            final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
+            final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
 
-        final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
+            try {
+                if (useSecondaryApns) {
 
-        try {
-            if (useSecondaryApns) {
+                    sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
+                } else {
+                    sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
 
-                sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
-            } else {
-                sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
+                }
+                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture
+                        .get();
 
-            }
-            final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture
-                    .get();
+                if (pushNotificationResponse.isAccepted()) {
+                    log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+                    push.setActive(true);
+                    push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
+                    push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+                } else {
+                    log.debug(
+                            "Notification rejected by the APNs gateway: {}",
+                            pushNotificationResponse.getRejectionReason()
+                    );
+                    final String rejectionReason = pushNotificationResponse.getRejectionReason();
 
-            if (pushNotificationResponse.isAccepted()) {
-                log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
-                push.setActive(true);
-                push.setLastSuccessfulPush(TimeUtils.getNowAtTimeZoneUTC());
-                push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-            } else {
-                log.debug(
-                        "Notification rejected by the APNs gateway: {}",
-                        pushNotificationResponse.getRejectionReason()
-                );
-                final String rejectionReason = pushNotificationResponse.getRejectionReason();
+                    if (StringUtils.isNotBlank(rejectionReason)
+                            && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejectionReason)) {
 
-                if (StringUtils.isNotBlank(rejectionReason)
-                        && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejectionReason)) {
-
-                    if (useSecondaryApns) {
-                        this.sendNotification(push, false);
-                    } else {
-                        push.setActive(false);
+                        if (useSecondaryApns) {
+                            this.sendNotification(push, false);
+                        } else {
+                            push.setActive(false);
+                        }
                     }
+
+                    if (StringUtils.isNotBlank(rejectionReason) && !useSecondaryApns) {
+                        push.setLastErrorCode(rejectionReason);
+                        push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                        push.setFailedPushSent(push.getFailedPushSent() + 1);
+
+                    }
+
+                    pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
+                        log.debug("\t…and the token is invalid as of {}", timestamp);
+                    });
+
                 }
+                sendNotificationFuture.whenComplete((response, cause) -> {
+                    if (Objects.nonNull(response)) {
+                        // Handle the push notification response as before from here.
+                        log.debug("Push Notification successful sent => {}", response);
+                    } else {
+                        // Something went wrong when trying to send the notification to the
+                        // APNs server. Note that this is distinct from a rejection from
+                        // the server, and indicates that something went wrong when actually
+                        // sending the notification or waiting for a reply.
+                        log.debug("Push Notification failed => {}", cause);
+                    }
 
-                if (StringUtils.isNotBlank(rejectionReason) && !useSecondaryApns) {
-                    push.setLastErrorCode(rejectionReason);
-                    push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-                    push.setFailedPushSent(push.getFailedPushSent() + 1);
-
-                }
-
-                pushNotificationResponse.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                    log.debug("\t…and the token is invalid as of {}", timestamp);
                 });
 
+            } catch (final ExecutionException | InterruptedException e) {
+                log.error("Failed to send push notification due to {}.", e.getMessage());
+
+                push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
+                push.setFailedPushSent(push.getFailedPushSent() + 1);
+                push.setLastErrorCode(e.getMessage());
+            } finally {
+                this.setNextPlannedPushDate(push);
+                this.pushInfoService.saveAll(Arrays.asList(push));
             }
-            sendNotificationFuture.whenComplete((response, cause) -> {
-                if (Objects.nonNull(response)) {
-                    // Handle the push notification response as before from here.
-                    log.debug("Push Notification successful sent => {}", response);
-                } else {
-                    // Something went wrong when trying to send the notification to the
-                    // APNs server. Note that this is distinct from a rejection from
-                    // the server, and indicates that something went wrong when actually
-                    // sending the notification or waiting for a reply.
-                    log.debug("Push Notification failed => {}", cause);
-                }
-
-            });
-
-        } catch (final ExecutionException | InterruptedException e) {
-            log.error("Failed to send push notification due to {}.", e.getMessage());
-
-            push.setLastFailurePush(TimeUtils.getNowAtTimeZoneUTC());
-            push.setFailedPushSent(push.getFailedPushSent() + 1);
-            push.setLastErrorCode(e.getMessage());
-        } finally {
-            this.setNextPlannedPushDate(push);
-        }
-
+        });
         return push;
 
     }

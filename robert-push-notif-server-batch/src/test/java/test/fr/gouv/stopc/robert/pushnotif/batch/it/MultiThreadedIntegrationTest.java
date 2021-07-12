@@ -71,7 +71,7 @@ class MultiThreadedIntegrationTest {
                 .allSatisfy(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
                 .allSatisfy(
                         pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
-                                .isCloseTo(Date.from(Instant.now()), 10_000)
+                                .isCloseTo(Date.from(Instant.now()), 60_000)
                 )
                 .allSatisfy(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(

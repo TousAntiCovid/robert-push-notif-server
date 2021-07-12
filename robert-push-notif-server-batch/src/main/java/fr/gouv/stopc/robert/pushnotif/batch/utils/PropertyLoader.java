@@ -52,4 +52,8 @@ public class PropertyLoader {
 
     private int apnsSecondaryServerPort;
 
+    private int maxWaitingTimeAfterLastSentNotificationInSec;
+
+    private int delayBetweenTwoCheckingAttemptsOfEndedJobInSec;
+
 }

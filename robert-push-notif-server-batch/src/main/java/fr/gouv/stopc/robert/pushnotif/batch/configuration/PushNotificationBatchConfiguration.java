@@ -32,6 +32,8 @@ import javax.sql.DataSource;
 import java.util.Date;
 import java.util.Objects;
 
+import static fr.gouv.stopc.robert.pushnotif.batch.utils.PushBatchConstants.MAIN_STEP_NAME;
+
 @Configuration
 @EnableBatchProcessing
 public class PushNotificationBatchConfiguration {
@@ -123,7 +125,7 @@ public class PushNotificationBatchConfiguration {
 
     @Bean
     public PushItemWriter pushItemWriter() {
-        return new PushItemWriter(this.pushInfoService);
+        return new PushItemWriter();
     }
 
     @Bean
@@ -137,7 +139,7 @@ public class PushNotificationBatchConfiguration {
 
     @Bean
     public Step partitionedMaster() {
-        return this.stepBuilderFactory.get("Step1")
+        return this.stepBuilderFactory.get(MAIN_STEP_NAME)
                 .partitioner("partitioner", partitioner())
                 .partitionHandler(partitionHandler())
                 .build();
@@ -145,7 +147,7 @@ public class PushNotificationBatchConfiguration {
 
     @Bean
     public Step step1() {
-        return this.stepBuilderFactory.get("step1")
+        return this.stepBuilderFactory.get(MAIN_STEP_NAME)
                 .<PushInfo, PushInfo>chunk(this.propertyLoader.getBatchChunkSize())
                 .reader(pushPagingReader(null, null, null, null, null))
                 .processor(pushProcessor())
@@ -156,7 +158,11 @@ public class PushNotificationBatchConfiguration {
     @Bean
     public Job pushPartitionedJob() {
         return this.jobBuilderFactory.get("pushPartitionedJob")
-                .listener(new PushJobExecutionListener(this.apnsPushNotificationService, this.propertyLoader))
+                .listener(
+                        new PushJobExecutionListener(
+                                this.apnsPushNotificationService, this.pushInfoService, this.propertyLoader
+                        )
+                )
                 .incrementer(new RunIdIncrementer())
                 .start(partitionedMaster())
                 .build();

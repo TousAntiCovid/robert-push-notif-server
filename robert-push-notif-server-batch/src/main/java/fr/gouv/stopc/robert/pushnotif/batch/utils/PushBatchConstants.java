@@ -14,4 +14,6 @@ public final class PushBatchConstants {
     public final static String PUSH_DATE = "pushDate";
 
     public final static String PAGE_SIZE = "pageSize";
+
+    public final static String MAIN_STEP_NAME = "Step1";
 }

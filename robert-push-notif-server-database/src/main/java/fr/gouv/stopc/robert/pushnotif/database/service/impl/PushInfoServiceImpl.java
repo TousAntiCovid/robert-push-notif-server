@@ -9,6 +9,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.inject.Inject;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,4 +44,13 @@ public class PushInfoServiceImpl implements IPushInfoService {
         }
     }
 
+    @Override
+    public Optional<Date> findMaxLastSuccessfulPush() {
+        return this.pushInfoRepository.findMaxLastSuccessfulPush();
+    }
+
+    @Override
+    public Optional<Date> findMaxLastFailurePush() {
+        return this.pushInfoRepository.findMaxLastFailurePush();
+    }
 }
