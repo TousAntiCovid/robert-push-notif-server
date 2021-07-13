@@ -16,7 +16,7 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 echo "$FILES" | xargs prettier --ignore-unknown --write
 
 # Spotlessify java source files
-./mvnw spotless:apply
+mvn spotless:apply
 
 # Add back the modified/prettified files to staging
 echo "$FILES" | xargs git add
