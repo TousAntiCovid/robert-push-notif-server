@@ -52,8 +52,8 @@ public final class TimeUtils {
 
     private static int getRandomNumberInRange(int min, int max) {
 
-        if (min >= max) {
-            throw new IllegalArgumentException("max must be greater than min");
+        if (min > max) {
+            throw new IllegalArgumentException("max must be greater or equals to min");
         }
 
         return random.nextInt((max - min) + 1) + min;
@@ -72,6 +72,13 @@ public final class TimeUtils {
         return Date.from(
                 LocalDateTime.now().atZone(ZoneId.systemDefault())
                         .withZoneSameInstant(ZoneId.of(UTC))
+                        .toInstant()
+        );
+    }
+
+    public static Date getNowAtTimeZoneUTCBis() {
+        return Date.from(
+                LocalDateTime.now().atZone(ZoneId.systemDefault())
                         .toInstant()
         );
     }
@@ -119,7 +126,7 @@ public final class TimeUtils {
                 LocalDateTime dateAtTimezone = null;
 
                 do {
-                    int pushHour = getRandomNumberInRange(pushDate.getMinPushHour(), pushDate.getMaxPushHour());
+                    int pushHour = getRandomNumberInRange(pushDate.getMinPushHour(), pushDate.getMaxPushHour() - 1);
                     // add distribution on minutes ==> allowing to execute the batch every x minutes
                     // instead of every hour
                     int pushMinute = getRandomNumberInRange(0, 59);
