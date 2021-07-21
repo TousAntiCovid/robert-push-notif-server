@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -54,6 +55,18 @@ public class Scheduler {
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
                 new MyRowCallbackHandler(apnsPushNotificationService)
         );
+
+        // L'IDEE EST D'ATTENDRE LA FIN DES DIFFERENTS THREADS LANCES PAR LA SUITE
+        // POUR EVITER DES DECLENCHEMENTS CONCURRENTS DE CETTE TACHE PLANIFIEE
+        do {
+            log.info(
+                    "it remains {} active threads",
+                    propertyLoader.getMaxNumberOfOutstandingNotification()
+                            - apnsPushNotificationService.getAvailablePermits()
+            );
+            TimeUnit.SECONDS.sleep(1);
+        } while (apnsPushNotificationService.getAvailablePermits() < propertyLoader
+                .getMaxNumberOfOutstandingNotification());
 
         log.info("end");
     }

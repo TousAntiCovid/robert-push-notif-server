@@ -46,4 +46,6 @@ public class PropertyLoader {
 
     private int apnsSecondaryServerPort;
 
+    private int maxNumberOfOutstandingNotification;
+
 }

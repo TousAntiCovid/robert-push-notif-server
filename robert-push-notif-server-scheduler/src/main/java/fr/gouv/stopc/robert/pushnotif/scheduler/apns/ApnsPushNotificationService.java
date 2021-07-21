@@ -27,6 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 
 @Slf4j
 @Service
@@ -41,7 +42,16 @@ public class ApnsPushNotificationService {
 
     private final PushInfoDao pushInfoDao;
 
+    private Semaphore semaphore;
+
     @PostConstruct
+    public void postConstruct() throws NoSuchAlgorithmException, IOException, InvalidKeyException {
+
+        semaphore = new Semaphore(propertyLoader.getMaxNumberOfOutstandingNotification());
+
+        initApnsClient();
+    }
+
     public void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
         String secondaryApnsHost = this.propertyLoader.getApnsDevelopmentHost();
 
@@ -89,6 +99,10 @@ public class ApnsPushNotificationService {
 
     }
 
+    public int getAvailablePermits() {
+        return this.semaphore.availablePermits();
+    }
+
     private SimpleApnsPushNotification buildPushNotification(PushInfo push) {
 
         final ApnsPayloadBuilder payloadBuilder = new SimpleApnsPayloadBuilder();
@@ -111,65 +125,75 @@ public class ApnsPushNotificationService {
     }
 
     private void sendNotification(PushInfo push, boolean useSecondaryApns) {
-        final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
-        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
+        try {
+            semaphore.acquire();
+            final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
+            final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
 
-        if (useSecondaryApns) {
+            if (useSecondaryApns) {
 
-            sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
-        } else {
-            sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
-
-        }
-
-        sendNotificationFuture.whenComplete((response, cause) -> {
-            if (Objects.nonNull(response)) {
-                if (response.isAccepted()) {
-                    log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
-                    push.setLastSuccessfulPush(LocalDateTime.now());
-                    push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-                    pushInfoDao.updateSuccessFulPushedNotif(push);
-                } else {
-                    log.debug(
-                            "Notification rejected by the APNs gateway: {}",
-                            response.getRejectionReason()
-                    );
-                    final String rejectionReason = response.getRejectionReason();
-
-                    if (StringUtils.isNotBlank(rejectionReason)
-                            && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejectionReason)) {
-
-                        if (useSecondaryApns) {
-                            this.sendNotification(push, false);
-                        } else {
-                            push.setActive(false);
-                        }
-                    }
-
-                    if (StringUtils.isNotBlank(rejectionReason) && !useSecondaryApns) {
-                        push.setLastErrorCode(rejectionReason);
-                        push.setLastFailurePush(LocalDateTime.now());
-                        push.setFailedPushSent(push.getFailedPushSent() + 1);
-                        pushInfoDao.updateFailurePushedNotif(push);
-                    }
-
-                    response.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
-                        log.debug("\t…and the token is invalid as of {}", timestamp);
-                    });
-                }
+                sendNotificationFuture = this.secondaryApnsClient.sendNotification(pushNotification);
             } else {
-                // Something went wrong when trying to send the notification to the
-                // APNs server. Note that this is distinct from a rejection from
-                // the server, and indicates that something went wrong when actually
-                // sending the notification or waiting for a reply.
-                log.warn("Push Notification failed => {}", cause);
-                // mettre à jour le lastErrorCode et lastFailurePushDate?
+                sendNotificationFuture = this.apnsClient.sendNotification(pushNotification);
+
             }
 
-        }).exceptionally(e -> {
-            // TODO voir pour une meilleure façon de gérer les exceptions !
-            log.error("Unexpected error occurred !!", e);
-            return null;
-        });
+            sendNotificationFuture.whenComplete((response, cause) -> {
+                semaphore.release();
+                if (Objects.nonNull(response)) {
+                    if (response.isAccepted()) {
+                        log.debug("Push notification accepted by APNs gateway for the token ({})", push.getToken());
+                        push.setLastSuccessfulPush(LocalDateTime.now());
+                        push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+                        pushInfoDao.updateSuccessFulPushedNotif(push);
+                    } else {
+                        log.debug(
+                                "Notification rejected by the APNs gateway: {}",
+                                response.getRejectionReason()
+                        );
+                        final String rejectionReason = response.getRejectionReason();
+
+                        if (StringUtils.isNotBlank(rejectionReason)
+                                && this.propertyLoader.getApnsInactiveRejectionReason().contains(rejectionReason)) {
+
+                            if (useSecondaryApns) {
+                                this.sendNotification(push, false);
+                            } else {
+                                push.setActive(false);
+                            }
+                        }
+
+                        if (StringUtils.isNotBlank(rejectionReason) && !useSecondaryApns) {
+                            push.setLastErrorCode(rejectionReason);
+                            push.setLastFailurePush(LocalDateTime.now());
+                            push.setFailedPushSent(push.getFailedPushSent() + 1);
+                            pushInfoDao.updateFailurePushedNotif(push);
+                        }
+
+                        response.getTokenInvalidationTimestamp().ifPresent(timestamp -> {
+                            log.debug("\t…and the token is invalid as of {}", timestamp);
+                        });
+                    }
+                } else {
+                    // Something went wrong when trying to send the notification to the
+                    // APNs server. Note that this is distinct from a rejection from
+                    // the server, and indicates that something went wrong when actually
+                    // sending the notification or waiting for a reply.
+                    log.warn("Push Notification failed => {}", cause);
+                    // mettre à jour le lastErrorCode et lastFailurePushDate?
+                }
+
+            }).exceptionally(e -> {
+                // TODO voir pour une meilleure façon de gérer les exceptions !
+                log.error("Unexpected error occurred !!", e);
+                return null;
+            });
+
+        } catch (InterruptedException e) {
+            // TODO ==> REMONTEE L'EXCEPTION
+            e.printStackTrace();
+        }
+
     }
+
 }
