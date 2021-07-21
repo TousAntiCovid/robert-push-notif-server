@@ -12,6 +12,7 @@ import com.eatthepath.pushy.apns.server.RejectionReason;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http2.Http2Headers;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -23,7 +24,9 @@ import javax.net.ssl.SSLSession;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -38,11 +41,11 @@ import static org.awaitility.Awaitility.await;
  * application context configuration.
  * <p>
  * Static methods
- * {@link APNsServersManager#awaitMainAcceptedQueueContainsAtLeast(int)},
- * {@link APNsServersManager#awaitMainRejectedQueueContainsAtLeast(int)},
- * {@link APNsServersManager#awaitSecondaryAcceptedQueueContainsAtLeast(int)},
+ * {@link APNsServersManager#awaitMainAcceptedQueueContainsAtLeast(int, Duration)},
+ * {@link APNsServersManager#awaitMainRejectedQueueContainsAtLeast(int, Duration)},
+ * {@link APNsServersManager#awaitSecondaryAcceptedQueueContainsAtLeast(int, Duration)},
  * and
- * {@link APNsServersManager#awaitSecondaryRejectedQueueContainsAtLeast(int)}
+ * {@link APNsServersManager#awaitSecondaryRejectedQueueContainsAtLeast(int, Duration)}
  * can be used to fetch notifications received by Apns Server.
  */
 @Slf4j
@@ -64,6 +67,10 @@ public class APNsServersManager implements TestExecutionListener {
 
     protected static NioEventLoopGroup SECONDARY_SERVER_EVENT_LOOP_GROUP;
 
+    private static final Map<String, RejectionReason> MAIN_REJECTION_REASON_PER_TOKEN_MAP = new HashMap<>();
+
+    private static final Map<String, RejectionReason> SECONDARY_REJECTION_REASON_PER_TOKEN_MAP = new HashMap<>();
+
     protected static final Resource CA_CERTIFICATE_FILENAME = new ClassPathResource("/apns/ca.pem");
 
     protected static final Resource SERVER_CERTIFICATES_FILENAME = new ClassPathResource("/apns/server-certs.pem");
@@ -77,6 +84,11 @@ public class APNsServersManager implements TestExecutionListener {
     static {
         MAIN_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
         SECONDARY_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
+        SECONDARY_REJECTION_REASON_PER_TOKEN_MAP.put("987654321", RejectionReason.BAD_DEVICE_TOKEN);
+        SECONDARY_REJECTION_REASON_PER_TOKEN_MAP.put("123456789", RejectionReason.BAD_DEVICE_TOKEN);
+        MAIN_REJECTION_REASON_PER_TOKEN_MAP.put("987654321", RejectionReason.BAD_DEVICE_TOKEN);
+        MAIN_REJECTION_REASON_PER_TOKEN_MAP.put("112233445566", RejectionReason.BAD_MESSAGE_ID);
+
         System.setProperty("robert.push.server.apns.main-server-port", String.valueOf(MAIN_SERVER_PORT));
         System.setProperty(
                 "robert.push.server.apns.secondary-server-port", String.valueOf(SECONDARY_SERVER_PORT)
@@ -87,19 +99,23 @@ public class APNsServersManager implements TestExecutionListener {
     public APNsServersManager() {
 
         mainApnsServer = buildMockApnsServer(
-                MAIN_SERVER_EVENT_LOOP_GROUP, new TestMockApnsServerListener(ApnServerType.MAIN)
+                MAIN_SERVER_EVENT_LOOP_GROUP,
+                new TestMockApnsServerListener(ApnServerType.MAIN),
+                MAIN_REJECTION_REASON_PER_TOKEN_MAP
         );
         mainApnsServer.start(MAIN_SERVER_PORT);
 
         secondaryApnsServer = buildMockApnsServer(
-                SECONDARY_SERVER_EVENT_LOOP_GROUP, new TestMockApnsServerListener(ApnServerType.SECONDARY)
+                SECONDARY_SERVER_EVENT_LOOP_GROUP,
+                new TestMockApnsServerListener(ApnServerType.SECONDARY),
+                SECONDARY_REJECTION_REASON_PER_TOKEN_MAP
         );
         secondaryApnsServer.start(SECONDARY_SERVER_PORT);
     }
 
     @SneakyThrows
     private MockApnsServer buildMockApnsServer(NioEventLoopGroup nioEventLoopGroup,
-            MockApnsServerListener listener) {
+            MockApnsServerListener listener, Map<String, RejectionReason> rejectionReasonPerTokenMap) {
         return new MockApnsServerBuilder()
                 .setServerCredentials(
                         SERVER_CERTIFICATES_FILENAME.getInputStream(),
@@ -107,7 +123,7 @@ public class APNsServersManager implements TestExecutionListener {
                 )
                 .setTrustedClientCertificateChain(CA_CERTIFICATE_FILENAME.getInputStream())
                 .setEventLoopGroup(nioEventLoopGroup)
-                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory())
+                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory(rejectionReasonPerTokenMap))
                 .setListener(listener)
                 .build();
     }
@@ -166,7 +182,10 @@ public class APNsServersManager implements TestExecutionListener {
         SECONDARY
     }
 
+    @RequiredArgsConstructor
     private class CustomValidationPushNotificationHandlerFactory implements PushNotificationHandlerFactory {
+
+        private final Map<String, RejectionReason> rejectionReasonPerTokenMap;
 
         /**
          * Constructs a new push notification handler that unconditionally accepts all
@@ -178,7 +197,7 @@ public class APNsServersManager implements TestExecutionListener {
          */
         @Override
         public PushNotificationHandler buildHandler(final SSLSession sslSession) {
-            return new CustomValidationPushNotificationHandler();
+            return new CustomValidationPushNotificationHandler(rejectionReasonPerTokenMap);
         }
     }
 
@@ -190,9 +209,12 @@ public class APNsServersManager implements TestExecutionListener {
      * 987654321</li>
      * </ul>
      */
+    @RequiredArgsConstructor
     private class CustomValidationPushNotificationHandler implements PushNotificationHandler {
 
         private static final String APNS_PATH_PREFIX = "/3/device/";
+
+        private final Map<String, RejectionReason> rejectionReasonPerTokenMap;
 
         @Override
         public void handlePushNotification(Http2Headers headers, ByteBuf payload) throws RejectedNotificationException {
@@ -200,15 +222,10 @@ public class APNsServersManager implements TestExecutionListener {
 
             if (pathSequence != null) {
                 final String pathString = pathSequence.toString();
+                final String deviceToken = pathString.substring(APNS_PATH_PREFIX.length());
 
-                if (pathSequence.toString().equals(APNS_PATH_PREFIX)) {
-                    throw new RejectedNotificationException(RejectionReason.MISSING_DEVICE_TOKEN);
-                } else if (pathString.startsWith(APNS_PATH_PREFIX)) {
-                    final String deviceToken = pathString.substring(APNS_PATH_PREFIX.length());
-
-                    if (deviceToken.contains("987654321")) {
-                        throw new RejectedNotificationException(RejectionReason.BAD_DEVICE_TOKEN);
-                    }
+                if (rejectionReasonPerTokenMap.containsKey(deviceToken)) {
+                    throw new RejectedNotificationException(rejectionReasonPerTokenMap.get(deviceToken));
                 }
             }
         }
@@ -231,9 +248,13 @@ public class APNsServersManager implements TestExecutionListener {
             switch (apnServerType) {
                 case MAIN:
                     MAIN_ACCEPTED_PUSH_NOTIFICATIONS.add(pushNotification);
+                    log.info("main accepted push notifications : {}", MAIN_ACCEPTED_PUSH_NOTIFICATIONS.size());
                     break;
                 case SECONDARY:
                     SECONDARY_ACCEPTED_PUSH_NOTIFICATIONS.add(pushNotification);
+                    log.info(
+                            "secondary accepted push notifications : {}", SECONDARY_ACCEPTED_PUSH_NOTIFICATIONS.size()
+                    );
                     break;
                 default:
                     throw new UnsupportedOperationException("Apn server type [" + apnServerType + "]is not managed !");
@@ -246,9 +267,11 @@ public class APNsServersManager implements TestExecutionListener {
             switch (apnServerType) {
                 case MAIN:
                     MAIN_REJECTED_NOTIFICATIONS.add(pushNotification);
+                    log.info("main rejected push notifications : {}", MAIN_REJECTED_NOTIFICATIONS.size());
                     break;
                 case SECONDARY:
                     SECONDARY_REJECTED_NOTIFICATIONS.add(pushNotification);
+                    log.info("secondary rejected push notifications : {}", SECONDARY_REJECTED_NOTIFICATIONS.size());
                     break;
                 default:
                     throw new UnsupportedOperationException("Apn server type [" + apnServerType + "]is not managed !");

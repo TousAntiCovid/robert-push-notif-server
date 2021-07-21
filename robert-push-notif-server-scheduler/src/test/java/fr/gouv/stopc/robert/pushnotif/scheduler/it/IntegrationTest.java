@@ -2,7 +2,6 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.it;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.RobertPushNotifSchedulerApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlConfig;
@@ -14,7 +13,6 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
-@ActiveProfiles("dev")
 @SpringBootTest(classes = { RobertPushNotifSchedulerApplication.class })
 @TestExecutionListeners(listeners = { APNsServersManager.class,
         PostgreSqlManager.class }, mergeMode = MERGE_WITH_DEFAULTS)

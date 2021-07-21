@@ -16,18 +16,17 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.it.APNsServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.it.ItTools.getRandomNumberInRange;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 @IntegrationTest
-@ActiveProfiles({ "dev", "one-apns-server" })
+@ActiveProfiles({ "dev" })
 // TODO : voir si il y a une autre méthode pour gérer les 2 conf différentes
 // pour les 2 scénarios.
 @DirtiesContext
-class NominalCaseIntegrationTest {
+class NominalCaseTwoApnsServerUsedIntegrationTest {
 
     public static final LocalDateTime TOMORROW_PLANNED_DATE = LocalDateTime
             .from(LocalDate.now().atStartOfDay().plusDays(1));
@@ -36,7 +35,7 @@ class NominalCaseIntegrationTest {
     PushInfoToolsDao pushInfoToolsDao;
 
     @Test
-    void should_correctly_manage_nominal_cases() {
+    void should_correctly_manage_2_apns_servers_() {
 
         // Given
         loadData();
@@ -45,15 +44,22 @@ class NominalCaseIntegrationTest {
         List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(
                 1, Duration.ofSeconds(30)
         );
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(
+        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(
+                1, Duration.ofSeconds(30)
+        );
+        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
                 2, Duration.ofSeconds(30)
         );
-
+        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(
+                1, Duration.ofSeconds(30)
+        );
         assertThat(notificationSentToMainApnServer).hasSize(1);
-        assertThat(notificationRejectedByMainApnServer).hasSize(2);
+        assertThat(notificationSentToSecondaryApnServer).hasSize(1);
+        assertThat(notificationRejectedBySecondaryApnServer).hasSize(2);
+        assertThat(notificationRejectedByMainApnServer).hasSize(1);
 
         assertThat(pushInfoToolsDao.findByToken("A-TOK1111111111111111"))
-                .as("Check the status of the notification that has been correctly sent to APNs server")
+                .as("Check the status of the notification that has been correctly sent to secondary APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
@@ -70,8 +76,8 @@ class NominalCaseIntegrationTest {
                         )
                 );
 
-        assertThat(notificationSentToMainApnServer.get(0))
-                .as("Check the content of the notification received on the APNs server side")
+        assertThat(notificationSentToSecondaryApnServer.get(0))
+                .as("Check the content of the notification received on the secondary APNs server side")
                 .satisfies(notif -> assertThat(notif.getPushType()).isEqualTo(PushType.BACKGROUND))
                 .satisfies(notif -> assertThat(notif.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE))
                 .satisfies(notif -> assertThat(notif.getToken()).isEqualTo("a1111111111111111"))
@@ -90,22 +96,8 @@ class NominalCaseIntegrationTest {
                                 .isEqualTo("{\"aps\":{\"badge\":0,\"content-available\":1}}")
                 );
 
-        assertThat(pushInfoToolsDao.findByToken("FUTURE-1111111111111112"))
-                .as("This notification is not pushed because its planned date is in future")
-                .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getNextPlannedPush())
-                                .isEqualTo(TOMORROW_PLANNED_DATE)
-                );
-
         assertThat(pushInfoToolsDao.findByToken("987654321"))
-                .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
+                .as("Check the status of the notification that has been rejected by all APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
@@ -122,24 +114,42 @@ class NominalCaseIntegrationTest {
                         )
                 );
 
-        assertThat(pushInfoToolsDao.findByToken("112233445566"))
-                .as(
-                        "Check the status of the notification that has been rejected by APNs server - notif is not deactivated"
-                )
+        assertThat(pushInfoToolsDao.findByToken("123456789"))
+                .as("Check the status of the notification that has been correctly sent to main APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
+                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
+                .satisfies(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
+                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
+                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
                 .satisfies(
-                        pushInfo -> assertThat(pushInfo.getLastFailurePush())
+                        pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
                                 .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
                 )
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadMessageId"))
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
                                 LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
                         )
+                );
+
+        assertThat(notificationSentToMainApnServer.get(0))
+                .as("Check the content of the notification received on the main APNs server side")
+                .satisfies(notif -> assertThat(notif.getPushType()).isEqualTo(PushType.BACKGROUND))
+                .satisfies(notif -> assertThat(notif.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE))
+                .satisfies(notif -> assertThat(notif.getToken()).isEqualTo("123456789"))
+                .satisfies(notif -> assertThat(notif.getTopic()).isEqualTo("test"))
+                .satisfies(
+                        notif -> assertThat(notif.getExpiration())
+                                .isCloseTo(
+                                        Instant.now().plus(Duration.ofDays(1)), within(
+                                                30,
+                                                ChronoUnit.SECONDS
+                                        )
+                                )
+                )
+                .satisfies(
+                        notif -> assertThat(notif.getPayload())
+                                .isEqualTo("{\"aps\":{\"badge\":0,\"content-available\":1}}")
                 );
     }
 
@@ -161,19 +171,6 @@ class NominalCaseIntegrationTest {
 
         pushInfoToolsDao.insert(acceptedPushNotif);
 
-        // This notification will be sent tomorrow not today
-        PushInfo pushNotifInFuture = PushInfo.builder()
-                .id(2L)
-                .token("FUTURE-1111111111111112")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .nextPlannedPush(TOMORROW_PLANNED_DATE)
-                .build();
-
-        pushInfoToolsDao.insert(pushNotifInFuture);
-
         PushInfo badTokenNotif = PushInfo.builder()
                 .id(3L)
                 .token("987654321")
@@ -191,9 +188,9 @@ class NominalCaseIntegrationTest {
 
         pushInfoToolsDao.insert(badTokenNotif);
 
-        PushInfo rejectedNotifThatShouldNotBeDeactivated = PushInfo.builder()
+        PushInfo acceptedOnMainApnServerOnlyPushNotif = PushInfo.builder()
                 .id(4L)
-                .token("112233445566")
+                .token("123456789")
                 .locale("fr_FR")
                 .timezone("Europe/Paris")
                 .active(true)
@@ -206,7 +203,7 @@ class NominalCaseIntegrationTest {
                 )
                 .build();
 
-        pushInfoToolsDao.insert(rejectedNotifThatShouldNotBeDeactivated);
+        pushInfoToolsDao.insert(acceptedOnMainApnServerOnlyPushNotif);
 
     }
 }

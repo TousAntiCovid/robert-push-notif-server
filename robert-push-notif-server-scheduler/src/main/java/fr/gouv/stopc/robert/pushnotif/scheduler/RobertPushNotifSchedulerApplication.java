@@ -13,6 +13,7 @@ import java.util.TimeZone;
 public class RobertPushNotifSchedulerApplication {
 
     // TODO : FORCER L'APPLICATION A TOURNER EN UTC !!
+    // SI ON LE MET DANS LE MAIN ==> LES TESTS NE PASSENT PLUS !!!
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC")); // It will set UTC timezone

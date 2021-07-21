@@ -5,6 +5,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,9 +19,12 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.it.ItTools.getRandomNumbe
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
+@ActiveProfiles({ "dev", "one-apns-server" })
 class VolumetryIntegrationTest {
 
     private static final int PUSH_NOTIF_COUNT = 10_007;
+
+    private static final int WAITING_DURATION_SEC = 60;
 
     @Autowired
     PushInfoToolsDao pushInfoToolsDao;
@@ -35,7 +39,7 @@ class VolumetryIntegrationTest {
 
         // Then
         List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(
-                PUSH_NOTIF_COUNT, Duration.ofSeconds(600)
+                PUSH_NOTIF_COUNT, Duration.ofSeconds(WAITING_DURATION_SEC)
         );
 
         assertThat(notificationSentToMainApnServer).hasSize(PUSH_NOTIF_COUNT);
