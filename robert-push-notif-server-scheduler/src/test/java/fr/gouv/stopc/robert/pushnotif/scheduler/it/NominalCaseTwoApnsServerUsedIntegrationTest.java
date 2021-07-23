@@ -47,19 +47,19 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(
                 1, Duration.ofSeconds(30)
         );
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
+        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(
                 2, Duration.ofSeconds(30)
         );
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(
+        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
                 1, Duration.ofSeconds(30)
         );
         assertThat(notificationSentToMainApnServer).hasSize(1);
         assertThat(notificationSentToSecondaryApnServer).hasSize(1);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(2);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
+        assertThat(notificationRejectedByMainApnServer).hasSize(2);
+        assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
 
         assertThat(pushInfoToolsDao.findByToken("A-TOK1111111111111111"))
-                .as("Check the status of the notification that has been correctly sent to secondary APNs server")
+                .as("Check the status of the notification that has been correctly sent to main APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
@@ -76,8 +76,8 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                         )
                 );
 
-        assertThat(notificationSentToSecondaryApnServer.get(0))
-                .as("Check the content of the notification received on the secondary APNs server side")
+        assertThat(notificationSentToMainApnServer.get(0))
+                .as("Check the content of the notification received on the main APNs server side")
                 .satisfies(notif -> assertThat(notif.getPushType()).isEqualTo(PushType.BACKGROUND))
                 .satisfies(notif -> assertThat(notif.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE))
                 .satisfies(notif -> assertThat(notif.getToken()).isEqualTo("a1111111111111111"))
@@ -115,7 +115,7 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 );
 
         assertThat(pushInfoToolsDao.findByToken("123456789"))
-                .as("Check the status of the notification that has been correctly sent to main APNs server")
+                .as("Check the status of the notification that has been correctly sent to secondary APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
@@ -132,8 +132,8 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                         )
                 );
 
-        assertThat(notificationSentToMainApnServer.get(0))
-                .as("Check the content of the notification received on the main APNs server side")
+        assertThat(notificationSentToSecondaryApnServer.get(0))
+                .as("Check the content of the notification received on the secondary APNs server side")
                 .satisfies(notif -> assertThat(notif.getPushType()).isEqualTo(PushType.BACKGROUND))
                 .satisfies(notif -> assertThat(notif.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE))
                 .satisfies(notif -> assertThat(notif.getToken()).isEqualTo("123456789"))
@@ -188,7 +188,7 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
 
         pushInfoToolsDao.insert(badTokenNotif);
 
-        PushInfo acceptedOnMainApnServerOnlyPushNotif = PushInfo.builder()
+        PushInfo acceptedOnSecondaryApnServerOnlyPushNotif = PushInfo.builder()
                 .id(4L)
                 .token("123456789")
                 .locale("fr_FR")
@@ -203,7 +203,7 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 )
                 .build();
 
-        pushInfoToolsDao.insert(acceptedOnMainApnServerOnlyPushNotif);
+        pushInfoToolsDao.insert(acceptedOnSecondaryApnServerOnlyPushNotif);
 
     }
 }

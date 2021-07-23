@@ -84,10 +84,11 @@ public class APNsServersManager implements TestExecutionListener {
     static {
         MAIN_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
         SECONDARY_SERVER_EVENT_LOOP_GROUP = new NioEventLoopGroup(2);
-        SECONDARY_REJECTION_REASON_PER_TOKEN_MAP.put("987654321", RejectionReason.BAD_DEVICE_TOKEN);
-        SECONDARY_REJECTION_REASON_PER_TOKEN_MAP.put("123456789", RejectionReason.BAD_DEVICE_TOKEN);
         MAIN_REJECTION_REASON_PER_TOKEN_MAP.put("987654321", RejectionReason.BAD_DEVICE_TOKEN);
+        MAIN_REJECTION_REASON_PER_TOKEN_MAP.put("123456789", RejectionReason.BAD_DEVICE_TOKEN);
         MAIN_REJECTION_REASON_PER_TOKEN_MAP.put("112233445566", RejectionReason.BAD_MESSAGE_ID);
+
+        SECONDARY_REJECTION_REASON_PER_TOKEN_MAP.put("987654321", RejectionReason.BAD_DEVICE_TOKEN);
 
         System.setProperty("robert.push.server.apns.main-server-port", String.valueOf(MAIN_SERVER_PORT));
         System.setProperty(

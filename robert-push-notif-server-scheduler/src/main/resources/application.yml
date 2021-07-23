@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: ${ROBERT_PUSH_SERVER_DB_URL:jdbc:postgresql://localhost:5432/push}
+    username: ${ROBERT_PUSH_SERVER_DB_USR:robert-push}
+    password: ${ROBERT_PUSH_SERVER_DB_PWD:robert}
+
+
+
+robert.push.server:
+  ## Min/Max Push Notification Hours
+  min-push-hour: ${ROBERT_PUSH_SERVER_MIN_PUSH_HOUR:8}
+  max-push-hour: ${ROBERT_PUSH_SERVER_MAX_PUSH_HOUR:20}
+
+  scheduler:
+    delay-in-ms=2000:
+  max-number-of-outstanding-notification: 10000
+
+  apns:
+    clients:
+      - host: ${ROBERT_PUSH_SERVER_APNS_HOST:api.sandbox.push.apple.com}
+        port: 443
+      - host: api.sandbox.push.apple.com
+        port: 443
+    inactive-rejection-reason: ${ROBERT_PUSH_SERVER_APNS_INACTIVE_REJECTION_REASON:BadDeviceToken,DeviceTokenNotForTopic}
+    auth-token-file: ${ROBERT_PUSH_SERVER_APNS_AUTH_TOKEN_FILE_LOCATION:file:/srv/token.p8}
+    auth-key-id: ${ROBERT_PUSH_SERVER_APNS_AUTH_KEY_ID:key}
+    team-id: ${ROBERT_PUSH_SERVER_APNS_TEAM_ID:team}
+    topic: ${ROBERT_PUSH_SERVER_APNS_TOPIC:topic}
+    apns-secondary-enable: ${ROBERT_PUSH_SERVER_APNS_SECONDARY_ENABLE:true}
+
+    #path to the trusted certificate chain
+    trusted-client-certificate-chain:
