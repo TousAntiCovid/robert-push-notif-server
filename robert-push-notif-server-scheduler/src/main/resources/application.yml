@@ -12,8 +12,18 @@ robert.push.server:
   max-push-hour: ${ROBERT_PUSH_SERVER_MAX_PUSH_HOUR:20}
 
   scheduler:
-    delay-in-ms=2000:
+    delay-in-ms: 2000
+
   max-number-of-outstanding-notification: 10000
+
+  # max number of notification that could be push per rateLimitingRefillDurationInSec interval
+  rate-limiting-capacity: 100
+
+  # the period within tokens will be fully regenerated ( in seconds)
+  # e.g : 100 request per sec will be configured :
+  # - rateLimitingCapacity : 100
+  # - rateLimitingRefillDurationInSec : 1
+  rate-limiting-refill-duration-in-sec: 1
 
   apns:
     clients:

@@ -12,10 +12,18 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.PropertyLoader;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BlockingBucket;
+import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.Refill;
+import io.github.bucket4j.TimeMeter;
+import io.github.bucket4j.local.LockFreeBucket;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -35,13 +43,26 @@ public class ApnsPushNotificationService {
 
     private Semaphore semaphore;
 
+    private BlockingBucket rateLimitingBucket;
+
     public ApnsPushNotificationService(
             PropertyLoader propertyLoader, PushInfoDao pushInfoDao,
             ApnsClientFactory apnsClientFactory) {
         this.propertyLoader = propertyLoader;
         this.pushInfoDao = pushInfoDao;
         this.apnsClientFactory = apnsClientFactory;
+
         semaphore = new Semaphore(propertyLoader.getMaxNumberOfOutstandingNotification());
+
+        Bandwidth limit = Bandwidth.classic(
+                propertyLoader.getRateLimitingCapacity(),
+                Refill.intervally(
+                        propertyLoader.getRateLimitingCapacity(),
+                        Duration.ofSeconds(propertyLoader.getRateLimitingRefillDurationInSec())
+                )
+        );
+        BucketConfiguration configuration = Bucket4j.builder().addLimit(limit).build().getConfiguration();
+        this.rateLimitingBucket = new LockFreeBucket(configuration, TimeMeter.SYSTEM_MILLISECONDS);
     }
 
     public int getAvailablePermits() {
@@ -71,6 +92,7 @@ public class ApnsPushNotificationService {
 
     private void sendNotification(PushInfo push, Queue<TacApnsClient> apnsClientsQueue) {
         try {
+            rateLimitingBucket.consume(1);
             semaphore.acquire();
             final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
