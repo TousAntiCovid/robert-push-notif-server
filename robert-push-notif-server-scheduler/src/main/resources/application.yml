@@ -3,8 +3,13 @@ spring:
     url: ${ROBERT_PUSH_SERVER_DB_URL:jdbc:postgresql://localhost:5432/push}
     username: ${ROBERT_PUSH_SERVER_DB_USR:robert-push}
     password: ${ROBERT_PUSH_SERVER_DB_PWD:robert}
-
-
+  jdbc:
+    template:
+      fetch-size: 10000
+  task:
+    scheduling:
+      shutdown:
+        await-termination: true
 
 robert.push.server:
   ## Min/Max Push Notification Hours
@@ -17,7 +22,7 @@ robert.push.server:
   max-number-of-outstanding-notification: 10000
 
   # max number of notification that could be push per rateLimitingRefillDurationInSec interval
-  rate-limiting-capacity: 100
+  rate-limiting-capacity: 200
 
   # the period within tokens will be fully regenerated ( in seconds)
   # e.g : 100 request per sec will be configured :
