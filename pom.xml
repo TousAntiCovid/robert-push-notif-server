@@ -19,7 +19,6 @@
 	<description>Server of notifications</description>
 
 	<modules>
-		<module>robert-push-notif-server-batch</module>
 		<module>robert-push-notif-server-ws-rest</module>
 		<module>robert-push-notif-server-database</module>
 		<module>robert-push-notif-server-common</module>
