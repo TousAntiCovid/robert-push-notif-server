@@ -1,3 +1,6 @@
+logging:
+  file:
+    path: ./target/logs
 
 
 robert.push.server:

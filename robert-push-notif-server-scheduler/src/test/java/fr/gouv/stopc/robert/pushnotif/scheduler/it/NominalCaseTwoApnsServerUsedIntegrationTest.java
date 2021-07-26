@@ -23,8 +23,6 @@ import static org.assertj.core.api.Assertions.within;
 
 @IntegrationTest
 @ActiveProfiles({ "dev" })
-// TODO : voir si il y a une autre méthode pour gérer les 2 conf différentes
-// pour les 2 scénarios.
 @DirtiesContext
 class NominalCaseTwoApnsServerUsedIntegrationTest {
 
