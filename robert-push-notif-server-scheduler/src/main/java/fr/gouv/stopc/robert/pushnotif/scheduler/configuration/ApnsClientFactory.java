@@ -3,6 +3,8 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
+import fr.gouv.stopc.robert.pushnotif.scheduler.utils.MicrometerApnsClientMetricsListener;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,12 +21,15 @@ public class ApnsClientFactory {
 
     private final PropertyLoader propertyLoader;
 
+    private final MeterRegistry meterRegistry;
+
     @Getter
     private List<TacApnsClient> apnsClients;
 
-    public ApnsClientFactory(PropertyLoader propertyLoader)
+    public ApnsClientFactory(PropertyLoader propertyLoader, MeterRegistry meterRegistry)
             throws NoSuchAlgorithmException, IOException, InvalidKeyException {
         this.propertyLoader = propertyLoader;
+        this.meterRegistry = meterRegistry;
         initApnsClient();
     }
 
@@ -34,6 +39,12 @@ public class ApnsClientFactory {
 
         for (ApnsClientDefinition apnsClientDefinition : propertyLoader.getApns().getClients()) {
 
+            final MicrometerApnsClientMetricsListener listener = new MicrometerApnsClientMetricsListener(
+                    meterRegistry,
+                    "notifications", "apns", "host", apnsClientDefinition.getHost(), "port",
+                    "" + apnsClientDefinition.getPort()
+            );
+
             ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(apnsClientDefinition.getHost(), apnsClientDefinition.getPort())
                     .setSigningKey(
@@ -42,7 +53,8 @@ public class ApnsClientFactory {
                                     this.propertyLoader.getApns().getTeamId(),
                                     this.propertyLoader.getApns().getAuthKeyId()
                             )
-                    );
+                    )
+                    .setMetricsListener(listener);
 
             if (propertyLoader.getApns().getTrustedClientCertificateChain() != null) {
                 apnsClientBuilder.setTrustedServerCertificateChain(

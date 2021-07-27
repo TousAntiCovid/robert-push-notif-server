@@ -11,9 +11,10 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
-@SpringBootTest(classes = { RobertPushNotifSchedulerApplication.class })
+@SpringBootTest(classes = { RobertPushNotifSchedulerApplication.class }, webEnvironment = DEFINED_PORT)
 @TestExecutionListeners(listeners = { APNsServersManager.class,
         PostgreSqlManager.class }, mergeMode = MERGE_WITH_DEFAULTS)
 @Retention(RUNTIME)

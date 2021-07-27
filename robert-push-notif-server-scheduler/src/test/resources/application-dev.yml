@@ -14,12 +14,12 @@ robert.push.server:
         - host: localhost
           port: 2197
       inactive-rejection-reason: BadDeviceToken
-      auth-token-file: /apns/token-auth-private-key.p8
+      auth-token-file: classpath:/apns/token-auth-private-key.p8
       auth-key-id: key-id
       team-id: team-id
       topic: test
 
       #path to the trusted certificate chain
-      trusted-client-certificate-chain: /apns/ca.pem
+      trusted-client-certificate-chain: classpath:/apns/ca.pem
 
     scheduler.delay-in-ms: 2000

@@ -7,6 +7,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.PropertyLoader;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -36,6 +37,7 @@ public class Scheduler {
     private final ApnsPushNotificationService apnsPushNotificationService;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
+    @Timed(value = "push.notifier.time", description = "processing time to push notification")
     public void sendNotifications() throws InterruptedException {
 
         log.info("beginning");

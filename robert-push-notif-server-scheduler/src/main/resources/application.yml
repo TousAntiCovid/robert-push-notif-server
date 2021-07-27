@@ -11,13 +11,19 @@ spring:
       shutdown:
         await-termination: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, prometheus
+
 robert.push.server:
   ## Min/Max Push Notification Hours
   min-push-hour: ${ROBERT_PUSH_SERVER_MIN_PUSH_HOUR:8}
   max-push-hour: ${ROBERT_PUSH_SERVER_MAX_PUSH_HOUR:20}
 
   scheduler:
-    delay-in-ms: 2000
+    delay-in-ms: 30000
 
   max-number-of-outstanding-notification: 10000
 
