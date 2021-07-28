@@ -1,7 +1,8 @@
 logging:
   file:
     path: ./target/logs
-
+  level:
+    fr.gouv.stopc : DEBUG
 
 robert.push.server:
     # Min/Max Push Notification Hours

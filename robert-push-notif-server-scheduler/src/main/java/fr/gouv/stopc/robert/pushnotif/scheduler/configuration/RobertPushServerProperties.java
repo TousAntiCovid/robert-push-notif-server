@@ -20,30 +20,21 @@ import javax.validation.constraints.Positive;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PropertyLoader {
+public class RobertPushServerProperties {
 
     @Min(0)
     @Max(22)
-    private Integer minPushHour;
+    private int minPushHour;
 
     @Min(1)
     @Max(23)
-    private Integer maxPushHour;
+    private int maxPushHour;
 
     @Positive
     private int maxNumberOfOutstandingNotification;
 
-    // max number of notification that could be push per
-    // rateLimitingRefillDurationInSec interval
     @Positive
-    private int rateLimitingCapacity;
-
-    // the period within tokens will be fully regenerated ( in seconds)
-    // e.g : 100 request per sec will be configured :
-    // - rateLimitingCapacity : 100
-    // - rateLimitingRefillDurationInSec : 1
-    @Positive
-    private int rateLimitingRefillDurationInSec;
+    private int maxNotificationsPerSecond;
 
     @Valid
     private ApnsDefinition apns;

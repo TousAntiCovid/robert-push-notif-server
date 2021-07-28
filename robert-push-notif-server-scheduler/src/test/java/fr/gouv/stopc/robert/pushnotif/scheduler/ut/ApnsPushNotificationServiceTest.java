@@ -1,23 +1,34 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.ut;
 
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsPushNotification;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientDefinition;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsDefinition;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.PropertyLoader;
+import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
-import org.assertj.core.data.Percentage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ApnsPushNotificationServiceTest {
@@ -28,74 +39,128 @@ public class ApnsPushNotificationServiceTest {
     @Mock
     private ApnsClientFactory apnsClientFactory;
 
-    ApnsPushNotificationService fastService;
+    @Mock
+    private ApnsClient apnsClient;
 
-    ApnsPushNotificationService slowService;
+    ApnsPushNotificationService service;
 
     @BeforeEach
     public void init() {
 
-        PropertyLoader propertyLoaderWithFastNotificationSending = PropertyLoader.builder()
-                .rateLimitingCapacity(1)
-                .rateLimitingRefillDurationInSec(1)
-                .maxNumberOfOutstandingNotification(50)
-                .apns(
-                        ApnsDefinition.builder()
-                                .authKeyId("key-id")
-                                .topic("topic")
-                                .clients(
-                                        Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
-                                        )
-                                )
-                                .build()
-                )
-                .build();
+        SimpleApnsPushNotification apnsPushNotification = new SimpleApnsPushNotification("token", "topic", "payload");
 
-        PropertyLoader propertyLoaderWithSlowNotificationSending = PropertyLoader.builder()
-                .rateLimitingCapacity(1)
-                .rateLimitingRefillDurationInSec(2)
-                .maxNumberOfOutstandingNotification(50)
-                .apns(
-                        ApnsDefinition.builder()
-                                .authKeyId("key-id")
-                                .topic("topic")
-                                .clients(
-                                        Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
-                                        )
-                                )
-                                .build()
-                )
-                .build();
+        PushNotificationFuture apnsAcceptedPushNotifCompletableFuture = new PushNotificationFuture<SimpleApnsPushNotification, PushNotificationFuture>(
+                apnsPushNotification
+        );
+        apnsAcceptedPushNotifCompletableFuture.complete(new AcceptedPushNotificationResponse());
 
-        fastService = new ApnsPushNotificationService(
-                propertyLoaderWithFastNotificationSending, pushInfoDao, apnsClientFactory
-        );
-        slowService = new ApnsPushNotificationService(
-                propertyLoaderWithSlowNotificationSending, pushInfoDao, apnsClientFactory
-        );
+        var apnsClientList = new ArrayList<TacApnsClient>();
+        apnsClientList.add(new TacApnsClient(apnsClient, "localhost", 443));
+
+        when(apnsClientFactory.getApnsClients()).thenReturn(apnsClientList);
+        when(apnsClient.sendNotification(any())).thenReturn(apnsAcceptedPushNotifCompletableFuture);
     }
 
     @Test
-    public void shouldTakeIntoAccountRateLimiting() {
+    public void shouldThrottleNotificationSending() {
+
+        // given
+        RobertPushServerProperties robertPushServerProperties = RobertPushServerProperties
+                .builder()
+                .maxNotificationsPerSecond(1)
+                .maxNumberOfOutstandingNotification(100)
+                .apns(
+                        ApnsDefinition.builder()
+                                .authKeyId("key-id")
+                                .topic("topic")
+                                .clients(
+                                        Collections.singletonList(
+                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                        )
+                                )
+                                .build()
+                )
+                .build();
+
+        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
-        long currentTimeBeforeSlowSendingNotif = System.currentTimeMillis();
-        IntStream.range(0, 3).forEach(i -> slowService.sendPushNotification(pushInfo));
-        long currentTimeAfterSlowSendingNotif = System.currentTimeMillis();
+        // when
+        long currentTimeBeforeSendingNotif = System.currentTimeMillis();
+        IntStream.range(0, 5).forEach(i -> service.sendPushNotification(pushInfo));
+        long currentTimeAfterSendingNotif = System.currentTimeMillis();
 
-        long durationSlowSendingNotif = currentTimeAfterSlowSendingNotif - currentTimeBeforeSlowSendingNotif;
+        long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;
 
-        long currentTimeBeforeFastSendingNotif = System.currentTimeMillis();
-        IntStream.range(0, 3).forEach(i -> fastService.sendPushNotification(pushInfo));
-        long currentTimeAfterFastSendingNotif = System.currentTimeMillis();
+        // then
+        assertThat(durationSendingNotif).isGreaterThan(3000);
 
-        long durationFastSendingNotif = currentTimeAfterFastSendingNotif - currentTimeBeforeFastSendingNotif;
+    }
 
-        assertThat(durationSlowSendingNotif).isCloseTo(2 * durationFastSendingNotif, Percentage.withPercentage(5));
+    @Test
+    public void shouldSendNotificationFastly() {
 
+        // given
+        RobertPushServerProperties robertPushServerProperties = RobertPushServerProperties
+                .builder()
+                .maxNotificationsPerSecond(100)
+                .maxNumberOfOutstandingNotification(100)
+                .apns(
+                        ApnsDefinition.builder()
+                                .authKeyId("key-id")
+                                .topic("topic")
+                                .clients(
+                                        Collections.singletonList(
+                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                        )
+                                )
+                                .build()
+                )
+                .build();
+
+        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
+
+        PushInfo pushInfo = PushInfo.builder().token("123456789").build();
+
+        // when
+        long currentTimeBeforeSendingNotif = System.currentTimeMillis();
+        IntStream.range(0, 100).forEach(i -> service.sendPushNotification(pushInfo));
+        long currentTimeAfterSendingNotif = System.currentTimeMillis();
+
+        long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;
+
+        // then
+        assertThat(durationSendingNotif).isLessThan(1000);
+
+    }
+
+    class AcceptedPushNotificationResponse implements PushNotificationResponse {
+
+        @Override
+        public ApnsPushNotification getPushNotification() {
+            return null;
+        }
+
+        @Override
+        public boolean isAccepted() {
+            return true;
+        }
+
+        @Override
+        public UUID getApnsId() {
+            return null;
+        }
+
+        @Override
+        public String getRejectionReason() {
+            return null;
+        }
+
+        @Override
+        public Optional<Instant> getTokenInvalidationTimestamp() {
+            return Optional.empty();
+        }
     }
 
 }

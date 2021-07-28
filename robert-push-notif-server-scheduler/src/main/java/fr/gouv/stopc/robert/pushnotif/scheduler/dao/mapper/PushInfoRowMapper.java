@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 @Component
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
@@ -33,6 +33,6 @@ public class PushInfoRowMapper implements RowMapper<PushInfo> {
     }
 
     private LocalDateTime convertTimestampToInstant(final Timestamp timestamp) {
-        return timestamp != null ? LocalDateTime.ofInstant(timestamp.toInstant(), ZoneId.of("UTC")) : null;
+        return timestamp != null ? LocalDateTime.ofInstant(timestamp.toInstant(), ZoneOffset.UTC) : null;
     }
 }

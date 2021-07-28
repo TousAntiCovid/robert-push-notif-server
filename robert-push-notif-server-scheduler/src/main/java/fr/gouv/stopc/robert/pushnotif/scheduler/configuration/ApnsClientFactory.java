@@ -13,52 +13,51 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Component
 @Slf4j
 public class ApnsClientFactory {
 
-    private final PropertyLoader propertyLoader;
+    private final RobertPushServerProperties robertPushServerProperties;
 
     private final MeterRegistry meterRegistry;
 
     @Getter
-    private List<TacApnsClient> apnsClients;
+    private final List<TacApnsClient> apnsClients;
 
-    public ApnsClientFactory(PropertyLoader propertyLoader, MeterRegistry meterRegistry)
+    public ApnsClientFactory(RobertPushServerProperties robertPushServerProperties, MeterRegistry meterRegistry)
             throws NoSuchAlgorithmException, IOException, InvalidKeyException {
-        this.propertyLoader = propertyLoader;
+        this.robertPushServerProperties = robertPushServerProperties;
         this.meterRegistry = meterRegistry;
-        initApnsClient();
+        this.apnsClients = Collections.unmodifiableList(initApnsClient());
     }
 
-    private void initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
+    private List<TacApnsClient> initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
-        this.apnsClients = new ArrayList<>();
+        var apnsClients = new ArrayList<TacApnsClient>();
 
-        for (ApnsClientDefinition apnsClientDefinition : propertyLoader.getApns().getClients()) {
+        for (ApnsClientDefinition apnsClientDefinition : robertPushServerProperties.getApns().getClients()) {
 
             final MicrometerApnsClientMetricsListener listener = new MicrometerApnsClientMetricsListener(
-                    meterRegistry,
-                    "notifications", "apns", "host", apnsClientDefinition.getHost(), "port",
-                    "" + apnsClientDefinition.getPort()
+                    meterRegistry, apnsClientDefinition.getHost(), apnsClientDefinition.getPort()
             );
 
             ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
                     .setApnsServer(apnsClientDefinition.getHost(), apnsClientDefinition.getPort())
                     .setSigningKey(
                             ApnsSigningKey.loadFromInputStream(
-                                    this.propertyLoader.getApns().getAuthTokenFile().getInputStream(),
-                                    this.propertyLoader.getApns().getTeamId(),
-                                    this.propertyLoader.getApns().getAuthKeyId()
+                                    this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream(),
+                                    this.robertPushServerProperties.getApns().getTeamId(),
+                                    this.robertPushServerProperties.getApns().getAuthKeyId()
                             )
                     )
                     .setMetricsListener(listener);
 
-            if (propertyLoader.getApns().getTrustedClientCertificateChain() != null) {
+            if (robertPushServerProperties.getApns().getTrustedClientCertificateChain() != null) {
                 apnsClientBuilder.setTrustedServerCertificateChain(
-                        propertyLoader.getApns().getTrustedClientCertificateChain().getInputStream()
+                        robertPushServerProperties.getApns().getTrustedClientCertificateChain().getInputStream()
                 );
             }
 
@@ -69,6 +68,7 @@ public class ApnsClientFactory {
                     )
             );
         }
+        return apnsClients;
     }
 
 }

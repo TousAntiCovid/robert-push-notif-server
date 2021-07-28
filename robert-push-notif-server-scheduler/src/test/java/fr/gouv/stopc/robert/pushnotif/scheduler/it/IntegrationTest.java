@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.it;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.RobertPushNotifSchedulerApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.Sql;
@@ -11,10 +10,10 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
-@SpringBootTest(classes = { RobertPushNotifSchedulerApplication.class }, webEnvironment = DEFINED_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestExecutionListeners(listeners = { APNsServersManager.class,
         PostgreSqlManager.class }, mergeMode = MERGE_WITH_DEFAULTS)
 @Retention(RUNTIME)

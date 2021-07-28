@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -18,44 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This is a fork of
  * https://github.com/jchambers/pushy/tree/master/micrometer-metrics-listener In
  * order to customize the metrics name.
- * <p>
- * An {@link ApnsClientMetricsListener} implementation that gathers and reports
- * metrics using the <a href="http://micrometer.io/">Micrometer application
- * monitoring library</a>. A {@code MicrometerApnsClientMetricsListener} is
- * intended to be used with a single {@link ApnsClient} instance; to gather
- * metrics from multiple clients, callers should create multiple listeners.
- * </p>
- * <p>
- * Callers provide a {@link io.micrometer.core.instrument.MeterRegistry} to the
- * {@code MicrometerApnsClientMetricsListener} at construction time, and the
- * listener populates the registry with the following metrics:
- * </p>
- * <dl>
- * <dt>{@value #NOTIFICATION_TIMER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Timer} that measures the time
- * between sending notifications and receiving a reply (whether accepted or
- * rejected) from the APNs server.</dd>
- * <dt>{@value #WRITE_FAILURES_COUNTER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Counter} that measures the number
- * and rate of failures to send notifications to the APNs server.</dd>
- * <dt>{@value #SENT_NOTIFICATIONS_COUNTER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Counter} that measures the number
- * and rate of notifications successfully sent to the APNs server.</dd>
- * <dt>{@value #ACCEPTED_NOTIFICATIONS_COUNTER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Counter} that measures the number
- * and rate of notifications accepted by the APNs server.</dd>
- * <dt>{@value #REJECTED_NOTIFICATIONS_COUNTER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Counter} that measures the number
- * and rate of notifications rejected by the APNs server.</dd>
- * <dt>{@value #OPEN_CONNECTIONS_GAUGE_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Gauge} that indicates number of
- * open connections.</dd>
- * <dt>{@value #CONNECTION_FAILURES_COUNTER_NAME}</dt>
- * <dd>A {@link io.micrometer.core.instrument.Counter} that measures the number
- * and rate of failed attempts to connect to the APNs server.</dd>
- * </dl>
- *
- * @author <a href="https://github.com/jchambers">Jon Chambers</a>
  */
 public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsListener {
 
@@ -74,8 +35,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
     private final AtomicInteger openConnections = new AtomicInteger(0);
 
     private final Counter connectionFailures;
-
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     /**
      * The name of a {@link io.micrometer.core.instrument.Timer} that measures
@@ -125,35 +84,13 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      * registry with the given list of tags.
      *
      * @param meterRegistry the registry to which to add metrics
-     * @param tags          an optional list of tags to attach to metrics; may be
-     *                      {@code null} or empty, in which case no tags are added
+     * @param host          the apns server host
+     * @param port          the apns server port
      */
-    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, final List<String> tags) {
-        this(meterRegistry, tags != null ? tags.toArray(EMPTY_STRING_ARRAY) : null);
-    }
+    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, String host, int port) {
 
-    /**
-     * Constructs a new Micrometer metrics listener that adds metrics to the given
-     * registry with the given list of tags.
-     *
-     * @param meterRegistry    the registry to which to add metrics
-     * @param tagKeysAndValues an optional list of tag keys/values to attach to
-     *                         metrics; must be an even number of strings
-     *                         representing alternating key/value pairs
-     */
-    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, final String... tagKeysAndValues) {
-        this(meterRegistry, Tags.of(tagKeysAndValues));
-    }
+        Iterable<Tag> tags = Tags.of("host", host, "port", "" + port);
 
-    /**
-     * Constructs a new Micrometer metrics listener that adds metrics to the given
-     * registry with the given list of tags.
-     *
-     * @param meterRegistry the registry to which to add metrics
-     * @param tags          an optional collection of tags to attach to metrics; may
-     *                      be empty
-     */
-    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, final Iterable<Tag> tags) {
         this.notificationStartTimes = new ConcurrentHashMap<>();
         this.notificationTimer = meterRegistry.timer(NOTIFICATION_TIMER_NAME, tags);
 

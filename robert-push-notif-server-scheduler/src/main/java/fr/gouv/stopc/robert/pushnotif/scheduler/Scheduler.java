@@ -3,10 +3,11 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import fr.gouv.stopc.robert.pushnotif.common.PushDate;
 import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.PropertyLoader;
+import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +33,14 @@ public class Scheduler {
 
     private final PushInfoDao pushInfoDao;
 
-    private final PropertyLoader propertyLoader;
+    private final RobertPushServerProperties robertPushServerProperties;
 
     private final ApnsPushNotificationService apnsPushNotificationService;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
-    @Timed(value = "push.notifier.time", description = "processing time to push notification")
+    @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
+    @Counted(value = "push.notifier.calls", description = "count each time this method is called")
     public void sendNotifications() throws InterruptedException {
-
-        log.info("beginning");
 
         // use a RowCallBackHandler in order to process a large resultset on a per-row
         // basis.
@@ -52,14 +52,13 @@ public class Scheduler {
         do {
             log.info(
                     "it remains {} active threads",
-                    propertyLoader.getMaxNumberOfOutstandingNotification()
+                    robertPushServerProperties.getMaxNumberOfOutstandingNotification()
                             - apnsPushNotificationService.getAvailablePermits()
             );
-            TimeUnit.SECONDS.sleep(1);
-        } while (apnsPushNotificationService.getAvailablePermits() < propertyLoader
+            TimeUnit.SECONDS.sleep(10);
+        } while (apnsPushNotificationService.getAvailablePermits() < robertPushServerProperties
                 .getMaxNumberOfOutstandingNotification());
 
-        log.info("end");
     }
 
     @RequiredArgsConstructor
@@ -84,8 +83,8 @@ public class Scheduler {
         PushDate pushDate = PushDate.builder()
                 .lastPushDate(TimeUtils.getNowAtTimeZoneUTC())
                 .timezone(push.getTimezone())
-                .minPushHour(this.propertyLoader.getMinPushHour())
-                .maxPushHour(this.propertyLoader.getMaxPushHour())
+                .minPushHour(this.robertPushServerProperties.getMinPushHour())
+                .maxPushHour(this.robertPushServerProperties.getMaxPushHour())
                 .build();
 
         TimeUtils.getNextPushDate(pushDate).ifPresent(

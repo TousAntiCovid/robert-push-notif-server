@@ -34,21 +34,47 @@ class NominalCaseIntegrationTest {
     PushInfoToolsDao pushInfoToolsDao;
 
     @Test
-    void should_correctly_manage_nominal_cases() {
+    void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
         // Given
-        loadData();
+        PushInfo acceptedPushNotif = PushInfo.builder()
+                .id(1L)
+                .token("A-TOK1111111111111111")
+                .locale("fr_FR")
+                .timezone("Europe/Paris")
+                .active(true)
+                .deleted(false)
+                .nextPlannedPush(
+                        LocalDateTime.from(
+                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                        )
+                )
+                .build();
+
+        pushInfoToolsDao.insert(acceptedPushNotif);
+
+        // This notification will be sent tomorrow not today
+        PushInfo pushNotifInFuture = PushInfo.builder()
+                .id(2L)
+                .token("FUTURE-1111111111111112")
+                .locale("fr_FR")
+                .timezone("Europe/Paris")
+                .active(true)
+                .deleted(false)
+                .nextPlannedPush(TOMORROW_PLANNED_DATE)
+                .build();
+
+        pushInfoToolsDao.insert(pushNotifInFuture);
+
+        // When - triggering of the scheduled task
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(
-                1, Duration.ofSeconds(30)
-        );
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(
-                2, Duration.ofSeconds(30)
-        );
+        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(1);
+        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(0);
 
         assertThat(notificationSentToMainApnServer).hasSize(1);
-        assertThat(notificationRejectedByMainApnServer).hasSize(2);
+        assertThat(notificationRejectedByMainApnServer).hasSize(0);
 
         assertThat(pushInfoToolsDao.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
@@ -101,6 +127,36 @@ class NominalCaseIntegrationTest {
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush())
                                 .isEqualTo(TOMORROW_PLANNED_DATE)
                 );
+    }
+
+    @Test
+    void should_deactivate_notification_when_apns_server_replies_with_is_invalid_token_reason() {
+        // Given
+        PushInfo badTokenNotif = PushInfo.builder()
+                .id(3L)
+                .token("987654321")
+                .locale("fr_FR")
+                .timezone("Europe/Paris")
+                .active(true)
+                .deleted(false)
+                .nextPlannedPush(
+                        LocalDateTime.from(
+                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                        )
+                )
+                .build();
+
+        pushInfoToolsDao.insert(badTokenNotif);
+
+        // When - triggering of the scheduled task
+
+        // Then
+        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
+        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
+
+        assertThat(notificationSentToMainApnServer).hasSize(0);
+        assertThat(notificationRejectedByMainApnServer).hasSize(1);
 
         assertThat(pushInfoToolsDao.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
@@ -119,6 +175,36 @@ class NominalCaseIntegrationTest {
                                 LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
                         )
                 );
+    }
+
+    @Test
+    void should_not_deactivate_notification_when_apns_server_replies_with_no_invalid_token_reason() {
+        // Given
+        PushInfo rejectedNotifThatShouldNotBeDeactivated = PushInfo.builder()
+                .id(4L)
+                .token("112233445566")
+                .locale("fr_FR")
+                .timezone("Europe/Paris")
+                .active(true)
+                .deleted(false)
+                .nextPlannedPush(
+                        LocalDateTime.from(
+                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                        )
+                )
+                .build();
+
+        pushInfoToolsDao.insert(rejectedNotifThatShouldNotBeDeactivated);
+
+        // When - triggering of the scheduled task
+
+        // Then
+        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
+        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
+
+        assertThat(notificationSentToMainApnServer).hasSize(0);
+        assertThat(notificationRejectedByMainApnServer).hasSize(1);
 
         assertThat(pushInfoToolsDao.findByToken("112233445566"))
                 .as(
@@ -141,70 +227,4 @@ class NominalCaseIntegrationTest {
                 );
     }
 
-    private void loadData() {
-        PushInfo acceptedPushNotif = PushInfo.builder()
-                .id(1L)
-                .token("A-TOK1111111111111111")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
-                )
-                .build();
-
-        pushInfoToolsDao.insert(acceptedPushNotif);
-
-        // This notification will be sent tomorrow not today
-        PushInfo pushNotifInFuture = PushInfo.builder()
-                .id(2L)
-                .token("FUTURE-1111111111111112")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .nextPlannedPush(TOMORROW_PLANNED_DATE)
-                .build();
-
-        pushInfoToolsDao.insert(pushNotifInFuture);
-
-        PushInfo badTokenNotif = PushInfo.builder()
-                .id(3L)
-                .token("987654321")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
-                )
-                .build();
-
-        pushInfoToolsDao.insert(badTokenNotif);
-
-        PushInfo rejectedNotifThatShouldNotBeDeactivated = PushInfo.builder()
-                .id(4L)
-                .token("112233445566")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
-                )
-                .build();
-
-        pushInfoToolsDao.insert(rejectedNotifThatShouldNotBeDeactivated);
-
-    }
 }

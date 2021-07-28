@@ -9,29 +9,29 @@ import java.time.LocalDateTime;
 @Builder
 public class PushInfo {
 
-    Long id;
+    private Long id;
 
-    String token;
+    private String token;
 
-    String timezone;
+    private String timezone;
 
-    String locale;
+    private String locale;
 
-    LocalDateTime nextPlannedPush;
+    private LocalDateTime nextPlannedPush;
 
-    LocalDateTime lastSuccessfulPush;
+    private LocalDateTime lastSuccessfulPush;
 
-    LocalDateTime lastFailurePush;
+    private LocalDateTime lastFailurePush;
 
-    String lastErrorCode;
+    private String lastErrorCode;
 
-    int successfulPushSent;
+    private int successfulPushSent;
 
-    int failedPushSent;
+    private int failedPushSent;
 
-    LocalDateTime creationDate;
+    private LocalDateTime creationDate;
 
-    boolean active;
+    private boolean active;
 
-    boolean deleted;
+    private boolean deleted;
 }
