@@ -6,7 +6,6 @@ import com.eatthepath.pushy.apns.PushType;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
@@ -23,7 +22,6 @@ import static org.assertj.core.api.Assertions.within;
 
 @IntegrationTest
 @ActiveProfiles({ "dev" })
-@DirtiesContext
 class NominalCaseTwoApnsServerUsedIntegrationTest {
 
     @Autowired

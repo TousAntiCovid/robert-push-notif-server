@@ -2,7 +2,6 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.it;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,10 +18,10 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.it.ItTools.getRandomNumbe
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
-@ActiveProfiles({ "dev", "one-apns-server" })
+@ActiveProfiles({ "dev" })
 class VolumetryIntegrationTest {
 
-    private static final int PUSH_NOTIF_COUNT = 10_007;
+    private static final int PUSH_NOTIF_COUNT = 100;
 
     private static final int WAITING_DURATION_SEC = 60;
 
@@ -30,7 +29,7 @@ class VolumetryIntegrationTest {
     PushInfoToolsDao pushInfoToolsDao;
 
     // This test class is useful to do test with volumetry
-    @Disabled
+    // @Disabled
     @Test
     void should_correctly_sent_large_amount_of_notification_to_apns_servers() {
 
