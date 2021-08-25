@@ -1,6 +1,6 @@
 logging:
   file:
-    path: ./target/logs
+    name: ./target/logs/test.log
   level:
     fr.gouv.stopc : DEBUG
 
