@@ -24,3 +24,8 @@ robert.push.server:
       trusted-client-certificate-chain: classpath:/apns/ca.pem
 
     scheduler.delay-in-ms: 2000
+
+spring:
+  cloud:
+    vault:
+      enabled: false
