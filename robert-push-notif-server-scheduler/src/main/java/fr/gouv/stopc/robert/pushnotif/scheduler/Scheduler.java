@@ -39,7 +39,7 @@ public class Scheduler {
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
-    @Counted(value = "push.notifier.calls", description = "count each time this method is called")
+    @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() throws InterruptedException {
 
         // use a RowCallBackHandler in order to process a large resultset on a per-row
