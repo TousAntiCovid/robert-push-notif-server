@@ -14,7 +14,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class PostgreSqlManager implements TestExecutionListener {
 
-    private static final JdbcDatabaseContainer POSTGRE = new PostgreSQLContainer(DockerImageName.parse("postgres:9.6"))
+    private static final JdbcDatabaseContainer<?> POSTGRE = new PostgreSQLContainer<>(DockerImageName.parse("postgres:9.6"))
             .withDatabaseName("push")
             .withUsername("robert-push")
             .withPassword("robert")
@@ -23,7 +23,6 @@ public class PostgreSqlManager implements TestExecutionListener {
     static {
         POSTGRE.start();
         System.setProperty("spring.datasource.url", POSTGRE.getJdbcUrl());
-        System.setProperty("spring.datasource.driver-class-name", POSTGRE.getDriverClassName());
         System.setProperty("spring.datasource.username", POSTGRE.getUsername());
         System.setProperty("spring.datasource.password", POSTGRE.getPassword());
 

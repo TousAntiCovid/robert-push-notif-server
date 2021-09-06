@@ -11,6 +11,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 import java.util.List;
+import java.util.Map;
+
+import static java.util.Map.entry;
 
 @Component
 @RequiredArgsConstructor
@@ -47,8 +50,9 @@ public class PushInfoToolsDao {
     }
 
     public PushInfo findByToken(String token) {
-        final MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("token", token);
+        final var parameters = Map.of(
+                "token", token
+        );
         return jdbcTemplate.queryForObject("select * from push where token = :token", parameters, pushInfoRowMapper);
     }
 

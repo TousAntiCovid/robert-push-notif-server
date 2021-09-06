@@ -2,7 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RateLimitedApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.utils.MicrometerApnsClientMetricsListener;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
@@ -25,7 +25,7 @@ public class ApnsClientFactory {
     private final MeterRegistry meterRegistry;
 
     @Getter
-    private final List<TacApnsClient> apnsClients;
+    private final List<RateLimitedApnsClient> apnsClients;
 
     public ApnsClientFactory(RobertPushServerProperties robertPushServerProperties, MeterRegistry meterRegistry)
             throws NoSuchAlgorithmException, IOException, InvalidKeyException {
@@ -34,18 +34,18 @@ public class ApnsClientFactory {
         this.apnsClients = Collections.unmodifiableList(initApnsClient());
     }
 
-    private List<TacApnsClient> initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
+    private List<RateLimitedApnsClient> initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
-        var apnsClients = new ArrayList<TacApnsClient>();
+        var apnsClients = new ArrayList<RateLimitedApnsClient>();
 
-        for (ApnsClientDefinition apnsClientDefinition : robertPushServerProperties.getApns().getClients()) {
+        for (RobertPushServerProperties.ApnsClient apnsClient : robertPushServerProperties.getApns().getClients()) {
 
             final MicrometerApnsClientMetricsListener listener = new MicrometerApnsClientMetricsListener(
-                    meterRegistry, apnsClientDefinition.getHost(), apnsClientDefinition.getPort()
+                    meterRegistry, apnsClient.getHost(), apnsClient.getPort()
             );
 
             ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
-                    .setApnsServer(apnsClientDefinition.getHost(), apnsClientDefinition.getPort())
+                    .setApnsServer(apnsClient.getHost(), apnsClient.getPort())
                     .setSigningKey(
                             ApnsSigningKey.loadFromInputStream(
                                     this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream(),
@@ -62,9 +62,9 @@ public class ApnsClientFactory {
             }
 
             apnsClients.add(
-                    new TacApnsClient(
-                            apnsClientBuilder.build(), apnsClientDefinition.getHost(),
-                            apnsClientDefinition.getPort()
+                    new RateLimitedApnsClient(
+                            apnsClientBuilder.build(), apnsClient.getHost(),
+                            apnsClient.getPort()
                     )
             );
         }

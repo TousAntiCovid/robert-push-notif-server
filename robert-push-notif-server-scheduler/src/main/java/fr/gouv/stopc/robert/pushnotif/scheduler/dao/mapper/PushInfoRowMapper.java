@@ -10,7 +10,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-@Component
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
     @Override

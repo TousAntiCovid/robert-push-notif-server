@@ -2,4 +2,4 @@ robert.push.server:
   apns:
     clients:
       - host: localhost
-        port: 443
+        port: ${MAIN_SERVER_PORT}

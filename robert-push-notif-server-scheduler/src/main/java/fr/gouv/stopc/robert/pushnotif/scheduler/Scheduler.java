@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
@@ -46,9 +48,8 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new MyRowCallbackHandler(apnsPushNotificationService)
+                new SendNotificationRowCallbackHandler(apnsPushNotificationService)
         );
-
         do {
             log.info(
                     "it remains {} active threads",
@@ -62,7 +63,7 @@ public class Scheduler {
     }
 
     @RequiredArgsConstructor
-    private class MyRowCallbackHandler implements RowCallbackHandler {
+    private class SendNotificationRowCallbackHandler<Truc> implements RowCallbackHandler {
 
         private final ApnsPushNotificationService apnsPushNotificationService;
 
@@ -75,7 +76,8 @@ public class Scheduler {
             setNextPlannedPushDate(pushInfo);
             pushInfoDao.updateNextPlannedPushDate(pushInfo);
 
-            apnsPushNotificationService.sendPushNotification(pushInfo);
+            apnsPushNotificationService.sendPushNotification(pushInfo)
+            .whenComplte((result, error) -> count-- );
         }
     }
 

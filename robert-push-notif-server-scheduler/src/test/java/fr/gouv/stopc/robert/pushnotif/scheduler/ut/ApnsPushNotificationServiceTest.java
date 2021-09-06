@@ -1,15 +1,12 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.ut;
 
-import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientDefinition;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RateLimitedApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsDefinition;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
@@ -40,7 +37,7 @@ public class ApnsPushNotificationServiceTest {
     private ApnsClientFactory apnsClientFactory;
 
     @Mock
-    private ApnsClient apnsClient;
+    private com.eatthepath.pushy.apns.ApnsClient apnsClient;
 
     ApnsPushNotificationService service;
 
@@ -54,8 +51,8 @@ public class ApnsPushNotificationServiceTest {
         );
         apnsAcceptedPushNotifCompletableFuture.complete(new AcceptedPushNotificationResponse());
 
-        var apnsClientList = new ArrayList<TacApnsClient>();
-        apnsClientList.add(new TacApnsClient(apnsClient, "localhost", 443));
+        var apnsClientList = new ArrayList<RateLimitedApnsClient>();
+        apnsClientList.add(new RateLimitedApnsClient(apnsClient, "localhost", 443));
 
         when(apnsClientFactory.getApnsClients()).thenReturn(apnsClientList);
         when(apnsClient.sendNotification(any())).thenReturn(apnsAcceptedPushNotifCompletableFuture);
@@ -70,12 +67,12 @@ public class ApnsPushNotificationServiceTest {
                 .maxNotificationsPerSecond(1)
                 .maxNumberOfOutstandingNotification(100)
                 .apns(
-                        ApnsDefinition.builder()
+                        RobertPushServerProperties.ApnsDefinition.builder()
                                 .authKeyId("key-id")
                                 .topic("topic")
                                 .clients(
                                         Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                                RobertPushServerProperties.ApnsClient.builder().host("localhost").port(443).build()
                                         )
                                 )
                                 .build()
@@ -107,12 +104,12 @@ public class ApnsPushNotificationServiceTest {
                 .maxNotificationsPerSecond(100)
                 .maxNumberOfOutstandingNotification(100)
                 .apns(
-                        ApnsDefinition.builder()
+                        RobertPushServerProperties.ApnsDefinition.builder()
                                 .authKeyId("key-id")
                                 .topic("topic")
                                 .clients(
                                         Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                                RobertPushServerProperties.ApnsClient.builder().host("localhost").port(443).build()
                                         )
                                 )
                                 .build()

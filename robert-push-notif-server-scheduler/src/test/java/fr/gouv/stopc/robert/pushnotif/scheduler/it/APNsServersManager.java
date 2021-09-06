@@ -1,19 +1,12 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.it;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import com.eatthepath.pushy.apns.server.MockApnsServer;
-import com.eatthepath.pushy.apns.server.MockApnsServerBuilder;
-import com.eatthepath.pushy.apns.server.ParsingMockApnsServerListenerAdapter;
-import com.eatthepath.pushy.apns.server.PushNotificationHandler;
-import com.eatthepath.pushy.apns.server.PushNotificationHandlerFactory;
-import com.eatthepath.pushy.apns.server.RejectedNotificationException;
-import com.eatthepath.pushy.apns.server.RejectionReason;
+import com.eatthepath.pushy.apns.server.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http2.Http2Headers;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.TestContext;
@@ -46,7 +39,6 @@ import static org.awaitility.Awaitility.await;
  * {@link APNsServersManager#awaitSecondaryRejectedQueueContainsAtLeast(int)}
  * can be used to fetch notifications received by Apns Server.
  */
-@Slf4j
 public class APNsServersManager implements TestExecutionListener {
 
     private static final APNsServerExecutionContext MAIN_APNS_SERVER_EXEC_CONTEXT = new APNsServerExecutionContext();
@@ -59,35 +51,34 @@ public class APNsServersManager implements TestExecutionListener {
 
     protected static final Resource SERVER_KEY_FILENAME = new ClassPathResource("/apns/server-key.pem");
 
-    public static final int MAIN_SERVER_PORT = 443;
+    public static final int MAIN_SERVER_PORT = ItTools.getRandomNumberInRange(30000, 34999);
 
-    public static final int SECONDARY_SERVER_PORT = 2197;
+    public static final int SECONDARY_SERVER_PORT = ItTools.getRandomNumberInRange(35000, 40000);
 
     static {
-        try {
-            MockApnsServer mainApnsServer = buildMockApnsServer(
-                    MAIN_APNS_SERVER_EXEC_CONTEXT,
-                    Map.of(
-                            "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                            "123456789", RejectionReason.BAD_DEVICE_TOKEN,
-                            "8888888888", RejectionReason.BAD_DEVICE_TOKEN,
-                            "999999999", RejectionReason.BAD_TOPIC,
-                            "112233445566", RejectionReason.BAD_MESSAGE_ID
-                    )
-            );
-            mainApnsServer.start(MAIN_SERVER_PORT);
+        System.setProperty("MAIN_SERVER_PORT", String.valueOf(MAIN_SERVER_PORT));
+        System.setProperty("SECONDARY_SERVER_PORT", String.valueOf(SECONDARY_SERVER_PORT));
 
-            MockApnsServer secondaryApnsServer = buildMockApnsServer(
-                    SECONDARY_APNS_SERVER_EXEC_CONTEXT,
-                    Map.of(
-                            "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                            "8888888888", RejectionReason.PAYLOAD_EMPTY
-                    )
-            );
-            secondaryApnsServer.start(SECONDARY_SERVER_PORT);
-        } catch (Exception e) {
-            throw new UnsupportedOperationException(e);
-        }
+        MockApnsServer mainApnsServer = buildMockApnsServer(
+                MAIN_APNS_SERVER_EXEC_CONTEXT,
+                Map.of(
+                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
+                        "123456789", RejectionReason.BAD_DEVICE_TOKEN,
+                        "8888888888", RejectionReason.BAD_DEVICE_TOKEN,
+                        "999999999", RejectionReason.BAD_TOPIC,
+                        "112233445566", RejectionReason.BAD_MESSAGE_ID
+                )
+        );
+        mainApnsServer.start(MAIN_SERVER_PORT);
+
+        MockApnsServer secondaryApnsServer = buildMockApnsServer(
+                SECONDARY_APNS_SERVER_EXEC_CONTEXT,
+                Map.of(
+                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
+                        "8888888888", RejectionReason.PAYLOAD_EMPTY
+                )
+        );
+        secondaryApnsServer.start(SECONDARY_SERVER_PORT);
     }
 
     @SneakyThrows
