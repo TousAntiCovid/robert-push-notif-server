@@ -29,7 +29,7 @@ public class Scheduler {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final PushInfoRowMapper rowMapper;
+    private final PushInfoRowMapper rowMapper = new PushInfoRowMapper();
 
     private final PushInfoDao pushInfoDao;
 
@@ -46,7 +46,7 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new MyRowCallbackHandler(apnsPushNotificationService)
+                new PushNotificationRowCallbackHandler(apnsPushNotificationService)
         );
 
         do {
@@ -62,7 +62,7 @@ public class Scheduler {
     }
 
     @RequiredArgsConstructor
-    private class MyRowCallbackHandler implements RowCallbackHandler {
+    private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
 
         private final ApnsPushNotificationService apnsPushNotificationService;
 

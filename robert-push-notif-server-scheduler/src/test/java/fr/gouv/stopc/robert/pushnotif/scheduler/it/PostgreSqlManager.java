@@ -23,10 +23,8 @@ public class PostgreSqlManager implements TestExecutionListener {
     static {
         POSTGRE.start();
         System.setProperty("spring.datasource.url", POSTGRE.getJdbcUrl());
-        System.setProperty("spring.datasource.driver-class-name", POSTGRE.getDriverClassName());
         System.setProperty("spring.datasource.username", POSTGRE.getUsername());
         System.setProperty("spring.datasource.password", POSTGRE.getPassword());
-
     }
 
 }

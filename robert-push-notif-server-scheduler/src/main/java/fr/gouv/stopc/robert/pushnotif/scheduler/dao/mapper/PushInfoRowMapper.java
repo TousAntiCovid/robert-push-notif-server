@@ -2,7 +2,6 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,7 +9,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-@Component
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
     @Override

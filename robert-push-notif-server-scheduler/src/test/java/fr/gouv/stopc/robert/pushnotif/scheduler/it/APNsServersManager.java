@@ -13,7 +13,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http2.Http2Headers;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.TestContext;
@@ -46,7 +45,6 @@ import static org.awaitility.Awaitility.await;
  * {@link APNsServersManager#awaitSecondaryRejectedQueueContainsAtLeast(int)}
  * can be used to fetch notifications received by Apns Server.
  */
-@Slf4j
 public class APNsServersManager implements TestExecutionListener {
 
     private static final APNsServerExecutionContext MAIN_APNS_SERVER_EXEC_CONTEXT = new APNsServerExecutionContext();

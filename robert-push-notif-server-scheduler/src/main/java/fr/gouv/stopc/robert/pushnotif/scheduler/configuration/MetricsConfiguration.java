@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Configuration;
 public class MetricsConfiguration {
 
     @Bean
-    public TimedAspect timedAspect(MeterRegistry registry) {
+    public TimedAspect timedAspect(final MeterRegistry registry) {
         return new TimedAspect(registry);
     }
 
     @Bean
-    public CountedAspect countedAspect(MeterRegistry registry) {
+    public CountedAspect countedAspect(final MeterRegistry registry) {
         return new CountedAspect(registry);
     }
 
