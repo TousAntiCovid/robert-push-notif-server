@@ -38,7 +38,8 @@ public class ApnsClientFactory {
 
         var apnsClients = new ArrayList<TacApnsClient>();
 
-        for (ApnsClientDefinition apnsClientDefinition : robertPushServerProperties.getApns().getClients()) {
+        for (RobertPushServerProperties.ApnsClient apnsClientDefinition : robertPushServerProperties.getApns()
+                .getClients()) {
 
             final MicrometerApnsClientMetricsListener listener = new MicrometerApnsClientMetricsListener(
                     meterRegistry, apnsClientDefinition.getHost(), apnsClientDefinition.getPort()

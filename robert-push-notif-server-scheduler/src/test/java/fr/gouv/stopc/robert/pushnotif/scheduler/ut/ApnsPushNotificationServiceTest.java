@@ -7,9 +7,7 @@ import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientDefinition;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsDefinition;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
@@ -70,12 +68,13 @@ public class ApnsPushNotificationServiceTest {
                 .maxNotificationsPerSecond(1)
                 .maxNumberOfOutstandingNotification(100)
                 .apns(
-                        ApnsDefinition.builder()
+                        RobertPushServerProperties.Apns.builder()
                                 .authKeyId("key-id")
                                 .topic("topic")
                                 .clients(
                                         Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                                RobertPushServerProperties.ApnsClient.builder().host("localhost")
+                                                        .port(443).build()
                                         )
                                 )
                                 .build()
@@ -107,12 +106,13 @@ public class ApnsPushNotificationServiceTest {
                 .maxNotificationsPerSecond(100)
                 .maxNumberOfOutstandingNotification(100)
                 .apns(
-                        ApnsDefinition.builder()
+                        RobertPushServerProperties.Apns.builder()
                                 .authKeyId("key-id")
                                 .topic("topic")
                                 .clients(
                                         Collections.singletonList(
-                                                ApnsClientDefinition.builder().host("localhost").port(443).build()
+                                                RobertPushServerProperties.ApnsClient.builder().host("localhost")
+                                                        .port(443).build()
                                         )
                                 )
                                 .build()
