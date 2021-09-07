@@ -59,35 +59,31 @@ public class APNsServersManager implements TestExecutionListener {
 
     protected static final Resource SERVER_KEY_FILENAME = new ClassPathResource("/apns/server-key.pem");
 
-    public static final int MAIN_SERVER_PORT = 443;
+    public static final int MAIN_SERVER_PORT = 2198;
 
     public static final int SECONDARY_SERVER_PORT = 2197;
 
     static {
-        try {
-            MockApnsServer mainApnsServer = buildMockApnsServer(
-                    MAIN_APNS_SERVER_EXEC_CONTEXT,
-                    Map.of(
-                            "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                            "123456789", RejectionReason.BAD_DEVICE_TOKEN,
-                            "8888888888", RejectionReason.BAD_DEVICE_TOKEN,
-                            "999999999", RejectionReason.BAD_TOPIC,
-                            "112233445566", RejectionReason.BAD_MESSAGE_ID
-                    )
-            );
-            mainApnsServer.start(MAIN_SERVER_PORT);
+        MockApnsServer mainApnsServer = buildMockApnsServer(
+                MAIN_APNS_SERVER_EXEC_CONTEXT,
+                Map.of(
+                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
+                        "123456789", RejectionReason.BAD_DEVICE_TOKEN,
+                        "8888888888", RejectionReason.BAD_DEVICE_TOKEN,
+                        "999999999", RejectionReason.BAD_TOPIC,
+                        "112233445566", RejectionReason.BAD_MESSAGE_ID
+                )
+        );
+        mainApnsServer.start(MAIN_SERVER_PORT);
 
-            MockApnsServer secondaryApnsServer = buildMockApnsServer(
-                    SECONDARY_APNS_SERVER_EXEC_CONTEXT,
-                    Map.of(
-                            "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                            "8888888888", RejectionReason.PAYLOAD_EMPTY
-                    )
-            );
-            secondaryApnsServer.start(SECONDARY_SERVER_PORT);
-        } catch (Exception e) {
-            throw new UnsupportedOperationException(e);
-        }
+        MockApnsServer secondaryApnsServer = buildMockApnsServer(
+                SECONDARY_APNS_SERVER_EXEC_CONTEXT,
+                Map.of(
+                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
+                        "8888888888", RejectionReason.PAYLOAD_EMPTY
+                )
+        );
+        secondaryApnsServer.start(SECONDARY_SERVER_PORT);
     }
 
     @SneakyThrows

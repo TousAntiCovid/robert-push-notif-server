@@ -11,7 +11,7 @@ robert.push.server:
     apns:
       clients:
         - host: localhost
-          port: 443
+          port: 2198
         - host: localhost
           port: 2197
       inactive-rejection-reason: BadDeviceToken
