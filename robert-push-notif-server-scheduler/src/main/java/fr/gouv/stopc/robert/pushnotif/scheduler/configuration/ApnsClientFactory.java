@@ -2,7 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
 import fr.gouv.stopc.robert.pushnotif.scheduler.utils.MicrometerApnsClientMetricsListener;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
@@ -25,7 +25,7 @@ public class ApnsClientFactory {
     private final MeterRegistry meterRegistry;
 
     @Getter
-    private final List<TacApnsClient> apnsClients;
+    private final List<ApnsClientDecorator> apnsClients;
 
     public ApnsClientFactory(RobertPushServerProperties robertPushServerProperties, MeterRegistry meterRegistry)
             throws NoSuchAlgorithmException, IOException, InvalidKeyException {
@@ -34,9 +34,10 @@ public class ApnsClientFactory {
         this.apnsClients = Collections.unmodifiableList(initApnsClient());
     }
 
-    private List<TacApnsClient> initApnsClient() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
+    private List<ApnsClientDecorator> initApnsClient()
+            throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
-        var apnsClients = new ArrayList<TacApnsClient>();
+        var apnsClients = new ArrayList<ApnsClientDecorator>();
 
         for (RobertPushServerProperties.ApnsClient apnsClientDefinition : robertPushServerProperties.getApns()
                 .getClients()) {
@@ -63,7 +64,7 @@ public class ApnsClientFactory {
             }
 
             apnsClients.add(
-                    new TacApnsClient(
+                    new ApnsClientDecorator(
                             apnsClientBuilder.build(), apnsClientDefinition.getHost(),
                             apnsClientDefinition.getPort()
                     )

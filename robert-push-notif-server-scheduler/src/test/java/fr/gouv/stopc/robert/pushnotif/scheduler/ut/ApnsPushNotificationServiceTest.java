@@ -5,8 +5,8 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.TacApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
@@ -52,8 +52,8 @@ public class ApnsPushNotificationServiceTest {
         );
         apnsAcceptedPushNotifCompletableFuture.complete(new AcceptedPushNotificationResponse());
 
-        var apnsClientList = new ArrayList<TacApnsClient>();
-        apnsClientList.add(new TacApnsClient(apnsClient, "localhost", 443));
+        var apnsClientList = new ArrayList<ApnsClientDecorator>();
+        apnsClientList.add(new ApnsClientDecorator(apnsClient, "localhost", 443));
 
         when(apnsClientFactory.getApnsClients()).thenReturn(apnsClientList);
         when(apnsClient.sendNotification(any())).thenReturn(apnsAcceptedPushNotifCompletableFuture);

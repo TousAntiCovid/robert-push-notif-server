@@ -90,14 +90,14 @@ public class ApnsPushNotificationService {
         this.sendNotification(push, new ConcurrentLinkedQueue<>(apnsClientFactory.getApnsClients()));
     }
 
-    private void sendNotification(PushInfo push, Queue<TacApnsClient> apnsClientsQueue) {
+    private void sendNotification(PushInfo push, Queue<ApnsClientDecorator> apnsClientsQueue) {
         try {
             rateLimitingBucket.consume(1);
             semaphore.acquire();
             final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
 
-            TacApnsClient apnsClient = apnsClientsQueue.poll();
+            ApnsClientDecorator apnsClient = apnsClientsQueue.poll();
             sendNotificationFuture = apnsClient.sendNotification(pushNotification);
 
             sendNotificationFuture.whenComplete((response, cause) -> {

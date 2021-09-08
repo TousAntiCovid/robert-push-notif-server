@@ -4,20 +4,16 @@ import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
+import lombok.RequiredArgsConstructor;
 
-public class TacApnsClient {
+@RequiredArgsConstructor
+public class ApnsClientDecorator {
 
     private final ApnsClient apnsClient;
 
     private final String host;
 
     private final int port;
-
-    public TacApnsClient(ApnsClient apnsClient, String host, int port) {
-        this.apnsClient = apnsClient;
-        this.host = host;
-        this.port = port;
-    }
 
     public <T extends ApnsPushNotification> PushNotificationFuture<T, PushNotificationResponse<T>> sendNotification(
             final T notification) {
