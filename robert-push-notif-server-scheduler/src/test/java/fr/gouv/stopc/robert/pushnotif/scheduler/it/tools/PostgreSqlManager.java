@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler.it.tools;
 
 import org.springframework.test.context.TestExecutionListener;
 import org.testcontainers.containers.JdbcDatabaseContainer;

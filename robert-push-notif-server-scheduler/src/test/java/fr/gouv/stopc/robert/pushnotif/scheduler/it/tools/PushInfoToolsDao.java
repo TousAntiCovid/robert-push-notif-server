@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler.it.tools;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;

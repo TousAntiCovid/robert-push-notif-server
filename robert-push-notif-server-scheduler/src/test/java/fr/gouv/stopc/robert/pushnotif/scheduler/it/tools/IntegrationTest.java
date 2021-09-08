@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler.it.tools;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestExecutionListeners;

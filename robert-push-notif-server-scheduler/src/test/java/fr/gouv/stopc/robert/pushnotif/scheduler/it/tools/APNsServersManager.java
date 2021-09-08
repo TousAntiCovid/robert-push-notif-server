@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler.it.tools;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.server.MockApnsServer;

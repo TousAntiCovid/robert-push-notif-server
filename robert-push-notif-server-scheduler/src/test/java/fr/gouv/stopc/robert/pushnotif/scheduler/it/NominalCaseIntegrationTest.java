@@ -4,6 +4,8 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.IntegrationTest;
+import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.PushInfoToolsDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -16,9 +18,9 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.ItTools.getRandomNumberInRange;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.ItTools.getRandomNumberInRange;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
