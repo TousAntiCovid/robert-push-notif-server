@@ -126,7 +126,7 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static List<ApnsPushNotification> awaitAcceptedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
             int count) {
-        await().atMost(Duration.ofSeconds(20))
+        await().atMost(Duration.ofSeconds(40))
                 .pollInterval(Duration.ofSeconds(1))
                 .until(() -> queue.size() >= count);
 
@@ -145,7 +145,7 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static List<ApnsPushNotification> awaitRejectedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
             int count) {
-        await().atMost(Duration.ofSeconds(20))
+        await().atMost(Duration.ofSeconds(40))
                 .pollInterval(Duration.ofSeconds(1))
                 .until(() -> queue.size() >= count);
 

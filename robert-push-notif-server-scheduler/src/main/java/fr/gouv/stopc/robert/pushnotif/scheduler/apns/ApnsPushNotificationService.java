@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -65,8 +66,32 @@ public class ApnsPushNotificationService {
         this.rateLimitingBucket = new LockFreeBucket(configuration, TimeMeter.SYSTEM_MILLISECONDS);
     }
 
-    public int getAvailablePermits() {
-        return this.semaphore.availablePermits();
+    public void waitUntilNoActivity(Duration toleranceDuration) {
+        try {
+            // first attempt
+            isDetectedSomeActivity();
+            // As the monitoring of the end of activity is not 100% efficient
+            // e.g in case of latency during reading in database
+            do {
+                TimeUnit.SECONDS.sleep(TimeUnit.SECONDS.convert(toleranceDuration));
+            } while (isDetectedSomeActivity());
+        } catch (InterruptedException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
+    private boolean isDetectedSomeActivity() throws InterruptedException {
+        var count = 0;
+        do {
+            log.info(
+                    "it remains {} active threads",
+                    robertPushServerProperties.getMaxNumberOfOutstandingNotification()
+                            - semaphore.availablePermits()
+            );
+            count++;
+            TimeUnit.SECONDS.sleep(5);
+        } while (semaphore.availablePermits() < robertPushServerProperties.getMaxNumberOfOutstandingNotification());
+        return (count > 1);
     }
 
     private SimpleApnsPushNotification buildPushNotification(PushInfo push) {

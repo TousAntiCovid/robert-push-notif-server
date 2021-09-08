@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -40,7 +40,7 @@ public class Scheduler {
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
-    public void sendNotifications() throws InterruptedException {
+    public void sendNotifications() {
 
         // use a RowCallBackHandler in order to process a large resultset on a per-row
         // basis.
@@ -49,15 +49,7 @@ public class Scheduler {
                 new PushNotificationRowCallbackHandler(apnsPushNotificationService)
         );
 
-        do {
-            log.info(
-                    "it remains {} active threads",
-                    robertPushServerProperties.getMaxNumberOfOutstandingNotification()
-                            - apnsPushNotificationService.getAvailablePermits()
-            );
-            TimeUnit.SECONDS.sleep(10);
-        } while (apnsPushNotificationService.getAvailablePermits() < robertPushServerProperties
-                .getMaxNumberOfOutstandingNotification());
+        apnsPushNotificationService.waitUntilNoActivity(Duration.ofSeconds(10));
 
     }
 
