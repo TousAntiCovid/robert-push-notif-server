@@ -13,7 +13,7 @@ default:
 
 stages:
   - build
-  - integration-tests
+  - deploy
 
 build:
   image: maven:3.8.1-adoptopenjdk-11
@@ -28,3 +28,13 @@ build:
         - "**/target/surefire-reports/TEST-*.xml"
         - "**/target/failsafe-reports/TEST-*.xml"
 
+deploy int:
+  stage: deploy
+  variables:
+    APP_VERSION: develop-SNAPSHOT
+  trigger:
+    project: stemcovid19/infrastructure/functional-zone/services/push-server/pushserver-ansible
+    branch: master
+    strategy: depend
+  only:
+    - develop
