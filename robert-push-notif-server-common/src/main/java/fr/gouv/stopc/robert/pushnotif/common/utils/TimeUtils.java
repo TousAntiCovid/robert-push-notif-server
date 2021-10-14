@@ -76,13 +76,6 @@ public final class TimeUtils {
         );
     }
 
-    public static Date getNowAtTimeZoneUTCBis() {
-        return Date.from(
-                LocalDateTime.now().atZone(ZoneId.systemDefault())
-                        .toInstant()
-        );
-    }
-
     public static Date getNowZoneUTC() {
         LocalDateTime datetime = LocalDateTime.now().atZone(ZoneId.systemDefault())
                 .withZoneSameInstant(ZoneId.of(UTC)).toLocalDateTime();
