@@ -14,9 +14,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TimeUtilsTest {
 
@@ -387,4 +385,5 @@ public class TimeUtilsTest {
         // When && Then
         assertTrue(TimeUtils.isDateBetween(now, dateDebut, dateFin));
     }
+
 }

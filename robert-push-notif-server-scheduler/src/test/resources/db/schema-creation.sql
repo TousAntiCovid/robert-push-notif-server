@@ -1,0 +1,21 @@
+-- creation of the schema that is automatically done by jpa on robert-push-notif-server-ws-rest module
+drop table if exists push;
+create sequence if not exists push_id_seq;
+create table push (
+    id bigint not null DEFAULT nextval('push_id_seq'::regclass),
+    active boolean,
+    creation_date timestamp without time zone,
+    deleted boolean,
+    failed_push_sent integer,
+    last_error_code character varying(255),
+    last_failure_push timestamp without time zone,
+    last_successful_push timestamp without time zone,
+    locale character varying(255) not null,
+    next_planned_push timestamp without time zone,
+    successful_push_sent integer,
+    timezone character varying(255) not null,
+    token character varying(255) UNIQUE not null,
+    CONSTRAINT push_pkey PRIMARY KEY(id)
+);
+create index idx_token on push (token);
+

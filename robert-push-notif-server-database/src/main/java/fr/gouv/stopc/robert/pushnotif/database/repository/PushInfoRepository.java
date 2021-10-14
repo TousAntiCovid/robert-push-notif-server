@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface PushInfoRepository extends JpaRepository<PushInfo, Long> {
 
     Optional<PushInfo> findByToken(String token);
+
 }
