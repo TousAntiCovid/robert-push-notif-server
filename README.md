@@ -6,7 +6,7 @@ The following was discovered as part of building the push-notification scheduler
 
 2. The push notification characteristics must be kept as is. A lot of subtle choices are missing documentation and make the system working for different iOS version (11, 12, 13+ ...).
 
-3. Notifications are sent before on `api.push.apple.com`. When the APNS server returns an error _bad device token_ then an attempt to send the notification through `api.sandbox.push.apple.com`. This behavior make it possible to test notifications to a locally compiled Xcode and/or a TestFlight applications.
+3. Notifications are sent before on `api.push.apple.com`. When the APNS server returns an error _bad device token_ then the push notif server attempts to send the notification through `api.sandbox.push.apple.com`. This behavior makes it possible to test notifications to a locally compiled Xcode and/or a TestFlight applications.
 
 4. At some point the mobile app was probably deployed as multiple different applications in the Apple Store. That's why there was multiple _channel-id_ (fr.gouv.stopcovid.ios and fr.gouv.stopcovid-int.ios). Now there is only one _channel-id_.
 
