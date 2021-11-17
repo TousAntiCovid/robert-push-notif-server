@@ -167,6 +167,28 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.7</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>6.4.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>3.9.0.2155</version>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
@@ -184,64 +206,22 @@
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>${maven.jar.plugin.version}</version>
 				</plugin>
-
 				<plugin>
 					<groupId>pl.project13.maven</groupId>
 					<artifactId>git-commit-id-plugin</artifactId>
 					<version>2.2.4</version>
 				</plugin>
-				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.4</version>
-					<executions>
-						<execution>
-							<id>pre-unit-agent</id>
-							<goals>
-								<goal>prepare-agent</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>post-unit-test</id>
-							<phase>test</phase>
-							<goals>
-								<goal>report</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>pre-integration-tests</id>
-							<goals>
-								<goal>prepare-agent-integration</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>post-integration-test</id>
-							<goals>
-								<goal>report-integration</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>merge</id>
-							<goals>
-								<goal>merge</goal>
-							</goals>
-							<configuration>
-								<fileSets>
-									<fileSet
-										implementation="org.apache.maven.shared.model.fileset.FileSet">
-										<directory>${project.basedir}</directory>
-										<includes>
-											<include>**/*.exec</include>
-										</includes>
-									</fileSet>
-								</fileSets>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>gitlab-maven</id>
+			<url>https://gitlab.inria.fr/api/v4/projects/30750/packages/maven</url>
+		</repository>
+	</repositories>
+
 	<distributionManagement>
 		<repository>
 			<id>gitlab-maven</id>
