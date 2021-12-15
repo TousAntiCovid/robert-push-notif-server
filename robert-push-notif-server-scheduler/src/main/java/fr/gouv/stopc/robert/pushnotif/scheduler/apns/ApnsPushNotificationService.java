@@ -171,7 +171,7 @@ public class ApnsPushNotificationService {
                     // APNs server. Note that this is distinct from a rejection from
                     // the server, and indicates that something went wrong when actually
                     // sending the notification or waiting for a reply.
-                    log.warn("Push Notification sent by {} failed => {}", apnsClient.getId(), cause);
+                    log.warn("Push Notification sent by {} failed", apnsClient.getId(), cause);
                     push.setLastErrorCode(StringUtils.truncate(cause.getMessage(), 255));
                     push.setLastFailurePush(LocalDateTime.now());
                     push.setFailedPushSent(push.getFailedPushSent() + 1);
