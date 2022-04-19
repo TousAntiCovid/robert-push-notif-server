@@ -38,8 +38,9 @@
     <commons-lang3.version>3.11</commons-lang3.version>
     <testcontainers.version>1.15.3</testcontainers.version>
     <log4j2.version>2.17.0</log4j2.version>
-  <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
-	</properties>
+    <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
+    <spring-cloud.version>Hoxton.SR5</spring-cloud.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -68,6 +69,14 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
       <dependency>
         <groupId>javax.inject</groupId>
         <artifactId>javax.inject</artifactId>
@@ -192,7 +201,7 @@
         <artifactId>sonar-maven-plugin</artifactId>
         <version>3.9.0.2155</version>
       </plugin>
-    <plugin>
+      <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
       </plugin>
@@ -202,19 +211,18 @@
         <plugin>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
-        <executions>
+          <executions>
             <execution>
               <goals>
-        <goal>build-info</goal>
-          </goals>
-          </execution>
+                <goal>build-info</goal>
+              </goals>
+            </execution>
           </executions>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${maven.jar.plugin.version}</version>
-
         </plugin>
       </plugins>
     </pluginManagement>
