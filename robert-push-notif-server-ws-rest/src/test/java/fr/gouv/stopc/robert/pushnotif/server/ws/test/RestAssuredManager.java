@@ -13,7 +13,6 @@ public class RestAssuredManager implements TestExecutionListener {
 
     public static RequestSpecification givenBaseHeaders() {
         return given()
-                .accept(JSON)
                 .contentType(JSON);
     }
 
