@@ -14,15 +14,17 @@ public class PsqlManager implements TestExecutionListener {
 
     static JdbcTemplate jdbcTemplate;
 
-    private static final JdbcDatabaseContainer POSTGRE = new PostgreSQLContainer(DockerImageName.parse("postgres:9.6"));
+    private static final JdbcDatabaseContainer POSTGRES = new PostgreSQLContainer(
+            DockerImageName.parse("postgres:9.6")
+    );
 
     private static Integer lastPushInfosDatatableCount = 0;
 
     static {
-        POSTGRE.start();
-        System.setProperty("spring.datasource.url", POSTGRE.getJdbcUrl());
-        System.setProperty("spring.datasource.username", POSTGRE.getUsername());
-        System.setProperty("spring.datasource.password", POSTGRE.getPassword());
+        POSTGRES.start();
+        System.setProperty("spring.datasource.url", POSTGRES.getJdbcUrl());
+        System.setProperty("spring.datasource.username", POSTGRES.getUsername());
+        System.setProperty("spring.datasource.password", POSTGRES.getPassword());
     }
 
     @Override
@@ -53,11 +55,6 @@ public class PsqlManager implements TestExecutionListener {
                         .build()
         );
         lastPushInfosDatatableCount = countPushInfos();
-    }
-
-    public static void disableToken(String token) {
-        final String query = "update push set active = ? where token = ?";
-        jdbcTemplate.update(query, false, token);
     }
 
     public static int pushInfosCountDifferenceSinceLastUpdate() {
