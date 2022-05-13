@@ -12,5 +12,5 @@ import org.springframework.web.bind.annotation.RestController;
 public interface IUnregisterPushNotificationController {
 
     @DeleteMapping(path = UriConstants.TOKEN_PATH_VARIABLE)
-    ResponseEntity unregister(@PathVariable(name = "token", required = true) String pushToken);
+    ResponseEntity unregister(@PathVariable(name = "token") String pushToken);
 }
