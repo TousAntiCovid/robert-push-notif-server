@@ -93,7 +93,7 @@ public class PsqlManager implements TestExecutionListener {
         return jdbcTemplate.queryForObject("select * from push where token = '" + token + "'", new PushInfoRowMapper());
     }
 
-    public static Integer countPushInfos() {
+    private static Integer countPushInfos() {
         return jdbcTemplate.queryForObject("select count(*) from push", Integer.class);
     }
 }
