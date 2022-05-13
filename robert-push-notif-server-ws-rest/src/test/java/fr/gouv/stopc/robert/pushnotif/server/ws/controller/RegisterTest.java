@@ -5,7 +5,7 @@ import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
 import org.junit.jupiter.api.Test;
 
-import static fr.gouv.stopc.robert.pushnotif.server.ws.test.MatcherFactory.isLocalTimeBetween8amAnd7pm;
+import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isLocalTimeBetween8amAnd7pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,7 +17,7 @@ public class RegisterTest {
 
     @Test
     public void created_when_new_pushToken_is_sent() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -53,7 +53,7 @@ public class RegisterTest {
     @Test
     public void created_and_activated_when_already_existing_inactive_token_is_sent() {
 
-        addPushToken(
+        givenOnePushInfoSuchAs(
                 PushInfo.builder()
                         .token("PushToken")
                         .locale("fr-FR")
@@ -93,7 +93,7 @@ public class RegisterTest {
     @Test
     public void created_and_activated_when_already_existing_deleted_token_is_sent() {
 
-        addPushToken(
+        givenOnePushInfoSuchAs(
                 PushInfo.builder()
                         .token("PushToken")
                         .locale("fr-FR")
@@ -134,7 +134,7 @@ public class RegisterTest {
     @Test
     public void created_when_already_registered_but_with_different_values() {
 
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -165,7 +165,7 @@ public class RegisterTest {
 
     @Test
     public void method_not_allowed_when_using_get_method() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
 
         givenBaseHeaders()
                 .when()
@@ -188,7 +188,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_body_is_empty() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .when()
                 .post("/internal/api/v1/push-token")
@@ -210,7 +210,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_token_is_null() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -237,7 +237,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_token_is_an_empty_string() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -265,7 +265,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_locale_is_null() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -292,7 +292,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_locale_is_an_empty_string() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -320,7 +320,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_timezone_is_null() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -347,7 +347,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_timezone_is_an_empty_string() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
                         PushInfoVo.builder()
@@ -375,7 +375,7 @@ public class RegisterTest {
 
     @Test
     public void bad_request_when_timezone_is_invalid() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
 
         givenBaseHeaders()
                 .body(

@@ -7,28 +7,38 @@ import org.junit.jupiter.api.Test;
 import static fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils.getNowZoneUTC;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @IntegrationTest
 public class UnregisterTest {
 
     @Test
     public void existing_pushtoken_is_deleted() {
-        loadOneFrPushToken("PushToken");
+        givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .delete("/internal/api/v1/push-token/" + "PushToken")
                 .then()
                 .statusCode(ACCEPTED.value())
                 .body(is(emptyString()));
-        assertThat(getPushInfoByToken("PushToken").isDeleted()).isTrue();
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("deleted", is(true))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
     public void existing_already_deleted_pushtoken_is_still_deleted() {
-        addPushToken(
+        givenOnePushInfoSuchAs(
                 PushInfo.builder()
                         .token("PushToken")
                         .locale("fr-FR")
@@ -43,8 +53,14 @@ public class UnregisterTest {
                 .then()
                 .statusCode(ACCEPTED.value())
                 .body(is(emptyString()));
-        assertThat(getPushInfoByToken("PushToken").isDeleted()).isTrue();
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                hasProperty("deleted", is(true))
+                        )
+                )
+        );
     }
 
     @Test
@@ -54,6 +70,6 @@ public class UnregisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body(is(emptyOrNullString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(getPushInfos(), hasSize(0));
     }
 }
