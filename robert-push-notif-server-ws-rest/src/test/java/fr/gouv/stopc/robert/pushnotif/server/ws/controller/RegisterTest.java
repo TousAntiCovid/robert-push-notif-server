@@ -5,21 +5,15 @@ import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
-import java.util.Date;
-
-import static fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils.getNowZoneUTC;
+import static fr.gouv.stopc.robert.pushnotif.server.ws.test.MatcherFactory.isLocalTimeBetween8amAnd7pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
-import static java.time.ZoneId.systemDefault;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.http.HttpStatus.*;
 
 @IntegrationTest
 public class RegisterTest {
-
-    Date tomorrowMidnight = Date.from(LocalDate.now().plusDays(1).atStartOfDay(systemDefault()).toInstant());
 
     @Test
     public void created_when_new_pushToken_is_sent() {
@@ -37,7 +31,23 @@ public class RegisterTest {
                 .then()
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(1);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(2),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("locale", is("fr-FR")),
+                                        hasProperty("timezone", is("Europe/Paris"))
+                                ),
+                                allOf(
+                                        hasProperty("token", is("OtherPushToken")),
+                                        hasProperty("locale", is("fr-FR")),
+                                        hasProperty("timezone", is("Europe/Paris"))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -50,7 +60,7 @@ public class RegisterTest {
                         .timezone("Europe/Paris")
                         .deleted(false)
                         .active(false)
-                        .nextPlannedPush(getNowZoneUTC())
+                        .nextPlannedPush(defaultNextPlannedPushDate)
                         .build()
         );
         givenBaseHeaders()
@@ -66,16 +76,18 @@ public class RegisterTest {
                 .then()
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
-        assertThat(getPushInfoByToken("PushToken"))
-                .extracting(
-                        PushInfo::isActive,
-                        PushInfo::getNextPlannedPush
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("active", is(true)),
+                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                )
+                        )
                 )
-                .containsExactly(
-                        true,
-                        tomorrowMidnight
-                );
+        );
     }
 
     @Test
@@ -87,8 +99,8 @@ public class RegisterTest {
                         .locale("fr-FR")
                         .timezone("Europe/Paris")
                         .deleted(true)
-                        .active(true)
-                        .nextPlannedPush(getNowZoneUTC())
+                        .active(false)
+                        .nextPlannedPush(defaultNextPlannedPushDate)
                         .build()
         );
         givenBaseHeaders()
@@ -104,16 +116,19 @@ public class RegisterTest {
                 .then()
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
-        assertThat(getPushInfoByToken("PushToken"))
-                .extracting(
-                        PushInfo::isDeleted,
-                        PushInfo::getNextPlannedPush
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("deleted", equalTo(false)),
+                                        hasProperty("active", equalTo(true)),
+                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                )
+                        )
                 )
-                .containsExactly(
-                        false,
-                        tomorrowMidnight
-                );
+        );
     }
 
     @Test
@@ -133,30 +148,42 @@ public class RegisterTest {
                 .then()
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
-        assertThat(getPushInfoByToken("PushToken"))
-                .extracting(
-                        PushInfo::getLocale,
-                        PushInfo::getTimezone,
-                        PushInfo::getNextPlannedPush
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("locale", is("en-EN")),
+                                        hasProperty("timezone", is("Europe/London")),
+                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                )
+                        )
                 )
-                .containsExactly(
-                        "en-EN",
-                        "Europe/London",
-                        tomorrowMidnight
-                );
+        );
     }
 
     @Test
     public void method_not_allowed_when_using_get_method() {
         loadOneFrPushToken("PushToken");
+
         givenBaseHeaders()
                 .when()
                 .get("/internal/api/v1/push-token")
                 .then()
                 .statusCode(METHOD_NOT_ALLOWED.value())
                 .body(is(emptyOrNullString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -168,7 +195,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body(is(emptyOrNullString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -185,7 +222,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("token", is("Token is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -203,7 +250,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("token", is("Token is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -220,7 +277,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("locale", is("Locale is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -238,7 +305,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("locale", is("Locale is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -255,7 +332,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("timezone", is("Timezone is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -273,7 +360,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body("timezone", is("Timezone is mandatory"));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 
     @Test
@@ -292,6 +389,17 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value())
                 .body(is(emptyOrNullString()));
-        assertThat(pushInfosCountDifferenceSinceLastUpdate()).isEqualTo(0);
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("timezone", is("Europe/Paris")),
+                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
+                                )
+                        )
+                )
+        );
     }
 }

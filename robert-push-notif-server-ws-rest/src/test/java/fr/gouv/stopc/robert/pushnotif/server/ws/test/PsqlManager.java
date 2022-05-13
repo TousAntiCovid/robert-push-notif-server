@@ -8,7 +8,12 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import static fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils.getNowZoneUTC;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.List;
+
+import static fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils.UTC;
 
 public class PsqlManager implements TestExecutionListener {
 
@@ -16,6 +21,10 @@ public class PsqlManager implements TestExecutionListener {
 
     private static final JdbcDatabaseContainer POSTGRES = new PostgreSQLContainer(
             DockerImageName.parse("postgres:9.6")
+    );
+
+    public static Date defaultNextPlannedPushDate = Date.from(
+            ZonedDateTime.now().withZoneSameInstant(ZoneId.of(UTC)).toInstant()
     );
 
     private static Integer lastPushInfosDatatableCount = 0;
@@ -45,16 +54,16 @@ public class PsqlManager implements TestExecutionListener {
         jdbcTemplate = testContext.getApplicationContext().getBean(JdbcTemplate.class);
     }
 
-    public static void loadOneFrPushToken(String token) {
-        addPushToken(
-                PushInfo.builder()
-                        .token(token)
-                        .locale("fr-FR")
-                        .timezone("Europe/Paris")
-                        .nextPlannedPush(getNowZoneUTC())
-                        .build()
-        );
+    public static PushInfo loadOneFrPushToken(String token) {
+        PushInfo pushInfo = PushInfo.builder()
+                .token(token)
+                .locale("fr-FR")
+                .timezone("Europe/Paris")
+                .nextPlannedPush(defaultNextPlannedPushDate)
+                .build();
+        addPushToken(pushInfo);
         lastPushInfosDatatableCount = countPushInfos();
+        return pushInfo;
     }
 
     public static int pushInfosCountDifferenceSinceLastUpdate() {
@@ -88,6 +97,10 @@ public class PsqlManager implements TestExecutionListener {
 
     public static PushInfo getPushInfoByToken(String token) {
         return jdbcTemplate.queryForObject("select * from push where token = '" + token + "'", new PushInfoRowMapper());
+    }
+
+    public static List<PushInfo> getPushInfos() {
+        return jdbcTemplate.query("select * from push", new PushInfoRowMapper());
     }
 
     private static Integer countPushInfos() {

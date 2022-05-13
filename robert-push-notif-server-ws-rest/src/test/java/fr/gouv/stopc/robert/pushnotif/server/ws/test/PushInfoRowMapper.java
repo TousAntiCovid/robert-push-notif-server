@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
@@ -17,7 +18,7 @@ public class PushInfoRowMapper implements RowMapper<PushInfo> {
                 .locale(rs.getString("locale"))
                 .active(rs.getBoolean("active"))
                 .deleted(rs.getBoolean("deleted"))
-                .nextPlannedPush(rs.getDate("next_planned_push"))
+                .nextPlannedPush(Date.from(rs.getTimestamp("next_planned_push").toInstant()))
                 .build();
     }
 }
