@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -36,15 +37,15 @@ public class PushNotifController implements PushTokenApi {
         }
         final var dbPushInfos = pushInfoRepository.findByToken(pushRequest.getToken());
         dbPushInfos.ifPresentOrElse(
-                push -> {
-                    if (!push.isActive() || push.isDeleted()) {
-                        push.setNextPlannedPush(generateDateTomorrowBetween8amAnd7pm());
+                foundPushInfos -> {
+                    if (!foundPushInfos.isActive() || foundPushInfos.isDeleted()) {
+                        foundPushInfos.setNextPlannedPush(generateDateTomorrowBetween8amAnd7pm());
                     }
-                    push.setDeleted(false);
-                    push.setActive(true);
-                    push.setTimezone(pushRequest.getTimezone());
-                    push.setLocale(pushRequest.getLocale());
-                    this.pushInfoRepository.save(push);
+                    foundPushInfos.setDeleted(false);
+                    foundPushInfos.setActive(true);
+                    foundPushInfos.setTimezone(pushRequest.getTimezone());
+                    foundPushInfos.setLocale(pushRequest.getLocale());
+                    this.pushInfoRepository.save(foundPushInfos);
                 },
                 () -> this.pushInfoRepository.save(
                         PushInfo.builder()
@@ -70,9 +71,10 @@ public class PushNotifController implements PushTokenApi {
     }
 
     private LocalDateTime generateDateTomorrowBetween8amAnd7pm() {
+        Random random = ThreadLocalRandom.current();
         return LocalDateTime.of(
                 LocalDate.now().plusDays(1),
-                LocalTime.of(new Random().nextInt(11) + 8, new Random().nextInt(60))
+                LocalTime.of(random.nextInt(11) + 8, random.nextInt(60))
         );
     }
 }
