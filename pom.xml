@@ -30,15 +30,15 @@
     <properties>
         <java.version>11</java.version>
         <lombok.version>1.18.24</lombok.version>
-        <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
-        <javax-rs.version>2.1.1</javax-rs.version>
-        <javax.validation.version>2.0.1.Final</javax.validation.version>
-        <postgresql.version>42.2.12</postgresql.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
-        <testcontainers.version>1.15.3</testcontainers.version>
-        <log4j2.version>2.17.0</log4j2.version>
-        <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
-    </properties>
+    <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
+    <javax-rs.version>2.1.1</javax-rs.version>
+    <javax.validation.version>2.0.1.Final</javax.validation.version>
+    <postgresql.version>42.2.12</postgresql.version>
+    <commons-lang3.version>3.11</commons-lang3.version>
+    <testcontainers.version>1.15.3</testcontainers.version>
+    <log4j2.version>2.17.0</log4j2.version>
+  <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
+  </properties>
 
     <dependencies>
         <dependency>

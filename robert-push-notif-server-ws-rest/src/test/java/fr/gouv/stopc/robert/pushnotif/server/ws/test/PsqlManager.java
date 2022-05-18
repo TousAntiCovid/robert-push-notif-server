@@ -1,6 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.server.ws.test;
 
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.server.ws.model.PushInfo;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.test.context.TestContext;
@@ -11,12 +11,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
-
-import static fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils.UTC;
 
 public class PsqlManager implements TestExecutionListener {
 
@@ -26,9 +22,7 @@ public class PsqlManager implements TestExecutionListener {
             DockerImageName.parse("postgres:9.6")
     );
 
-    public static Date defaultNextPlannedPushDate = Date.from(
-            ZonedDateTime.now().withZoneSameInstant(ZoneId.of(UTC)).toInstant()
-    );
+    public static LocalDateTime defaultNextPlannedPushDate = LocalDateTime.now();
 
     static {
         POSTGRES.start();
@@ -98,7 +92,7 @@ public class PsqlManager implements TestExecutionListener {
                     .locale(rs.getString("locale"))
                     .active(rs.getBoolean("active"))
                     .deleted(rs.getBoolean("deleted"))
-                    .nextPlannedPush(Date.from(rs.getTimestamp("next_planned_push").toInstant()))
+                    .nextPlannedPush((rs.getTimestamp("next_planned_push").toLocalDateTime()))
                     .build();
         }
     }

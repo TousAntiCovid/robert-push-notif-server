@@ -1,8 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.server.ws.controller;
 
-import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.server.api.model.PushRequest;
+import fr.gouv.stopc.robert.pushnotif.server.ws.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
-import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .locale("fr-FR")
                                 .timezone("Europe/Paris")
@@ -66,7 +66,7 @@ public class RegisterTest {
         );
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("PushToken")
                                 .locale("fr-FR")
                                 .timezone("Europe/Paris")
@@ -106,7 +106,7 @@ public class RegisterTest {
         );
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("PushToken")
                                 .locale("fr-FR")
                                 .timezone("Europe/Paris")
@@ -147,7 +147,7 @@ public class RegisterTest {
         );
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("PushToken")
                                 .locale("fr-FR")
                                 .timezone("Pacific/Auckland")
@@ -179,7 +179,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("PushToken")
                                 .locale("en-EN")
                                 .timezone("Europe/London")
@@ -255,7 +255,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .locale("fr-FR")
                                 .timezone("Europe/Paris")
                                 .build()
@@ -263,7 +263,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("token", is("Token is mandatory"));
+                .body("token", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -282,7 +282,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("")
                                 .locale("fr-FR")
                                 .timezone("Europe/Paris")
@@ -291,7 +291,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("token", is("Token is mandatory"));
+                .body("token", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -310,7 +310,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .timezone("Europe/Paris")
                                 .build()
@@ -318,7 +318,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("locale", is("Locale is mandatory"));
+                .body("locale", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -337,7 +337,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .locale("")
                                 .timezone("Europe/Paris")
@@ -346,7 +346,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("locale", is("Locale is mandatory"));
+                .body("locale", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -365,7 +365,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .locale("fr-FR")
                                 .build()
@@ -373,7 +373,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("timezone", is("Timezone is mandatory"));
+                .body("timezone", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -392,7 +392,7 @@ public class RegisterTest {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .locale("fr-FR")
                                 .timezone("")
@@ -401,7 +401,7 @@ public class RegisterTest {
                 .post("/internal/api/v1/push-token")
                 .then()
                 .statusCode(BAD_REQUEST.value())
-                .body("timezone", is("Timezone is mandatory"));
+                .body("timezone", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
@@ -421,7 +421,7 @@ public class RegisterTest {
 
         givenBaseHeaders()
                 .body(
-                        PushInfoVo.builder()
+                        PushRequest.builder()
                                 .token("OtherPushToken")
                                 .locale("fr-FR")
                                 .timezone("Europe/Invalid")
@@ -429,8 +429,7 @@ public class RegisterTest {
                 )
                 .post("/internal/api/v1/push-token")
                 .then()
-                .statusCode(BAD_REQUEST.value())
-                .body(is(emptyOrNullString()));
+                .statusCode(BAD_REQUEST.value());
         assertThat(
                 getPushInfos(), allOf(
                         hasSize(1),
