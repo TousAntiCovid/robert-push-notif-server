@@ -22,7 +22,6 @@
 
     <modules>
         <module>robert-push-notif-server-ws-rest</module>
-        <module>robert-push-notif-server-database</module>
         <module>robert-push-notif-server-common</module>
         <module>robert-push-notif-server-scheduler</module>
     </modules>
