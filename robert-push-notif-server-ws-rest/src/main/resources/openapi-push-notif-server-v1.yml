@@ -17,12 +17,9 @@ paths:
       summary: Create a Push
       description: |-
         Request the creation of a push. Nothing is returned.
-
-
-
-
       operationId: registerPushToken
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -72,14 +69,16 @@ components:
             The value of the token of the device to be notified.
 
           type: string
+          minLength: 1
         locale:
           description: The language of the device to be notified.
           type: string
+          minLength: 1
         timezone:
           description: |-
             The timezone of the device to be notified.
-
           type: string
+          minLength: 1
       required:
         - token
         - locale
