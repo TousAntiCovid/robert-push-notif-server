@@ -4,6 +4,8 @@ import fr.gouv.stopc.robert.pushnotif.server.ws.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import org.junit.jupiter.api.Test;
 
+import java.time.ZoneOffset;
+
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
 import static java.time.LocalDateTime.now;
@@ -44,7 +46,7 @@ public class UnregisterTest {
                         .timezone("Europe/Paris")
                         .deleted(true)
                         .active(false)
-                        .nextPlannedPush(now())
+                        .nextPlannedPush(now().toInstant(ZoneOffset.UTC))
                         .build()
         );
         givenBaseHeaders()

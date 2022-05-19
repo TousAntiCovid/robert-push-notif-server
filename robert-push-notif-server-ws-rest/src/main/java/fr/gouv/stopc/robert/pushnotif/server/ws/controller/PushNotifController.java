@@ -12,10 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -70,11 +67,11 @@ public class PushNotifController implements PushTokenApi {
         }).orElse(ResponseEntity.status(BAD_REQUEST).build());
     }
 
-    private LocalDateTime generateDateTomorrowBetween8amAnd7pm() {
+    private Instant generateDateTomorrowBetween8amAnd7pm() {
         Random random = ThreadLocalRandom.current();
         return LocalDateTime.of(
                 LocalDate.now().plusDays(1),
                 LocalTime.of(random.nextInt(11) + 8, random.nextInt(60))
-        );
+        ).toInstant(ZoneOffset.UTC);
     }
 }
