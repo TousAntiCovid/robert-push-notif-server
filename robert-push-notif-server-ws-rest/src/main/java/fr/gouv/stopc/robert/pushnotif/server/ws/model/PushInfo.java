@@ -59,7 +59,6 @@ public class PushInfo {
 
     @CreatedDate
     @Column(name = "creation_date", updatable = false)
-    @Convert(converter = TimeStampInstantAttributeConverter.class)
     private Instant creationDate;
 
     @Column(name = "active")
