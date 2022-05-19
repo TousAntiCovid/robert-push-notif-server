@@ -1,0 +1,18 @@
+server:
+  port: ${ROBERT_PUSH_SERVER_PORT:9096}
+
+spring:
+  datasource:
+    url: ${ROBERT_PUSH_SERVER_DB_URL:jdbc:postgresql://localhost:5432/push}
+    username: ${ROBERT_PUSH_SERVER_DB_USR:robert-push}
+    password: ${ROBERT_PUSH_SERVER_DB_PWD:robert}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+management:
+  server.port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: info,health,metrics,prometheus
