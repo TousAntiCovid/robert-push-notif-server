@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class DateInstantConverterTest {
 
-    private final TimestampLocalDateTimeConverter dateInstantConverter = new TimestampLocalDateTimeConverter();
+    private final TimeStampInstantAttributeConverter dateInstantConverter = new TimeStampInstantAttributeConverter();
 
     @Test
     public void localDateTime_to_date() {

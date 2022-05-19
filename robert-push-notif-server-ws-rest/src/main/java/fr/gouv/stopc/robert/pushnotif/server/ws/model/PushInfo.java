@@ -1,6 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.server.ws.model;
 
-import fr.gouv.stopc.robert.pushnotif.server.ws.repository.TimestampLocalDateTimeConverter;
+import fr.gouv.stopc.robert.pushnotif.server.ws.repository.TimeStampInstantAttributeConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "PUSH", indexes = { @Index(name = "IDX_TOKEN", columnList = "token") })
@@ -37,14 +37,16 @@ public class PushInfo {
     private String locale;
 
     @Column(name = "next_planned_push")
-    private LocalDateTime nextPlannedPush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant nextPlannedPush;
 
     @Column(name = "last_successful_push")
-    @Convert(converter = TimestampLocalDateTimeConverter.class)
-    private LocalDateTime lastSuccessfulPush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant lastSuccessfulPush;
 
     @Column(name = "last_failure_push ")
-    private LocalDateTime lastFailurePush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant lastFailurePush;
 
     @Column(name = "last_error_code")
     private String lastErrorCode;
@@ -57,8 +59,8 @@ public class PushInfo {
 
     @CreatedDate
     @Column(name = "creation_date", updatable = false)
-    @Convert(converter = TimestampLocalDateTimeConverter.class)
-    private LocalDateTime creationDate;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant creationDate;
 
     @Column(name = "active")
     private boolean active;
