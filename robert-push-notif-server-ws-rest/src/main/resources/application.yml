@@ -10,6 +10,13 @@ spring:
     hibernate:
       ddl-auto: update
 
+# Min/Max Push Notification Hours
+robert:
+  push:
+    server:
+      minPushHour: 8
+      maxPushHour: 19
+
 management:
   server.port: 8081
   endpoints:

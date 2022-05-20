@@ -6,6 +6,11 @@ import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isTimeBetween8amAnd7Pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
@@ -15,6 +20,14 @@ import static org.springframework.http.HttpStatus.*;
 
 @IntegrationTest
 public class RegisterTest {
+
+    final LocalDateTime tomorrow8am = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0);
+
+    public ZoneOffset offsetOf(ZoneId zoneId) {
+        return zoneId.getRules().getOffset(Instant.now());
+    }
+
+    final LocalDateTime tomorrow7pm = LocalDateTime.now().plusDays(1).withHour(19).withMinute(0).withSecond(0);
 
     @Test
     public void created_when_new_pushToken_is_sent() {
