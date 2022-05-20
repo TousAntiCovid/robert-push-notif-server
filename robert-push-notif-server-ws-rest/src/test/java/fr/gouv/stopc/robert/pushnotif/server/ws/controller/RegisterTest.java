@@ -65,6 +65,42 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
+    public void created_with_zone_offset_11_has_nextPushDate_setup_between_7pm_and_6am_next_day_utc() {
+        givenOneFrPushInfoWith("PushToken");
+        givenBaseHeaders()
+                .body(
+                        PushRequest.builder()
+                                .token("OtherPushToken")
+                                .locale("en-EN")
+                                .timezone("Pacific/Kosrae")
+                                .build()
+                )
+                .when()
+                .post("/internal/api/v1/push-token")
+                .then()
+                .statusCode(CREATED.value())
+                .body(is(emptyString()));
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(2),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("locale", is("fr-FR")),
+                                        hasProperty("timezone", is("Europe/Paris"))
+                                ),
+                                allOf(
+                                        hasProperty("token", is("OtherPushToken")),
+                                        hasProperty("locale", is("en-EN")),
+                                        hasProperty("timezone", is("Pacific/Kosrae")),
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Kosrae"))
+                                )
+                        )
+                )
+        );
+    }
+
+    @RepeatedTest(1000)
     public void created_and_activated_when_already_existing_inactive_token_is_sent() {
 
         givenOnePushInfoSuchAs(
