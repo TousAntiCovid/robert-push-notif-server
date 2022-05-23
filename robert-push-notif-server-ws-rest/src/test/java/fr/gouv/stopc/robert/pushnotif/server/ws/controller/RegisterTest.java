@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isTimeBetween8amAnd7Pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -94,6 +93,7 @@ public class RegisterTest {
                                         hasProperty("locale", is("en-EN")),
                                         hasProperty("timezone", is("Pacific/Kosrae")),
                                         hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Kosrae"))
+
                                 )
                         )
                 )

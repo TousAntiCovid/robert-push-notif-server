@@ -2,6 +2,8 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.test;
 
 import fr.gouv.stopc.robert.pushnotif.server.ws.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.repository.PushInfoRepository;
+import org.flywaydb.core.Flyway;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -15,7 +17,9 @@ import java.util.List;
 
 public class PsqlManager implements TestExecutionListener {
 
-    static PushInfoRepository pushInfoRepository;
+    private static PushInfoRepository pushInfoRepository;
+
+    private static JdbcTemplate jdbcTemplate;
 
     private static final JdbcDatabaseContainer POSTGRES = new PostgreSQLContainer(
             DockerImageName.parse("postgres:9.6")
@@ -32,12 +36,15 @@ public class PsqlManager implements TestExecutionListener {
 
     @Override
     public void beforeTestMethod(final TestContext testContext) {
-        pushInfoRepository.deleteAll();
+        jdbcTemplate.execute("drop schema public cascade;");
+        jdbcTemplate.execute("create schema public;");
+        testContext.getApplicationContext().getBean(Flyway.class).migrate();
     }
 
     @Override
     public void beforeTestClass(final TestContext testContext) {
         pushInfoRepository = testContext.getApplicationContext().getBean(PushInfoRepository.class);
+        jdbcTemplate = testContext.getApplicationContext().getBean(JdbcTemplate.class);
     }
 
     public static void givenOneFrPushInfoWith(final String token) {
