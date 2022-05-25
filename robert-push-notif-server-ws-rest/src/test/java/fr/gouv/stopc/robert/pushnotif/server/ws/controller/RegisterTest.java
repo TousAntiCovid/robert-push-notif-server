@@ -3,6 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.controller;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isLocalTimeBetween8amAnd7pm;
@@ -50,7 +51,7 @@ public class RegisterTest {
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void created_and_activated_when_already_existing_inactive_token_is_sent() {
 
         givenOnePushInfoSuchAs(
@@ -90,7 +91,7 @@ public class RegisterTest {
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void created_and_activated_when_already_existing_deleted_token_is_sent() {
 
         givenOnePushInfoSuchAs(
@@ -131,7 +132,7 @@ public class RegisterTest {
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void created_when_already_registered_but_with_different_values() {
 
         givenOneFrPushInfoWith("PushToken");
