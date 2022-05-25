@@ -3,9 +3,10 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.controller;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isLocalTimeBetween8amAnd7pm;
+import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isTimeBetween8amAnd7Pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,7 +51,7 @@ public class RegisterTest {
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void created_and_activated_when_already_existing_inactive_token_is_sent() {
 
         givenOnePushInfoSuchAs(
@@ -83,14 +84,14 @@ public class RegisterTest {
                                 allOf(
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("active", is(true)),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void created_and_activated_when_already_existing_deleted_token_is_sent() {
 
         givenOnePushInfoSuchAs(
@@ -124,14 +125,55 @@ public class RegisterTest {
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("deleted", equalTo(false)),
                                         hasProperty("active", equalTo(true)),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
         );
     }
 
-    @Test
+    @RepeatedTest(1000)
+    public void created_and_activated_when_updating_timezone() {
+
+        givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .token("PushToken")
+                        .locale("fr-FR")
+                        .timezone("Europe/Paris")
+                        .deleted(true)
+                        .active(false)
+                        .nextPlannedPush(defaultNextPlannedPushDate)
+                        .build()
+        );
+        givenBaseHeaders()
+                .body(
+                        PushInfoVo.builder()
+                                .token("PushToken")
+                                .locale("fr-FR")
+                                .timezone("Pacific/Auckland")
+                                .build()
+                )
+                .when()
+                .post("/internal/api/v1/push-token")
+                .then()
+                .statusCode(CREATED.value())
+                .body(is(emptyString()));
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("deleted", equalTo(false)),
+                                        hasProperty("active", equalTo(true)),
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Auckland"))
+                                )
+                        )
+                )
+        );
+    }
+
+    @RepeatedTest(1000)
     public void created_when_already_registered_but_with_different_values() {
 
         givenOneFrPushInfoWith("PushToken");
@@ -156,7 +198,7 @@ public class RegisterTest {
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("locale", is("en-EN")),
                                         hasProperty("timezone", is("Europe/London")),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
