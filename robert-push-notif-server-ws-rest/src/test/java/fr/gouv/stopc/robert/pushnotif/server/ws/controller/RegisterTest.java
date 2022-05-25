@@ -133,6 +133,47 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
+    public void created_and_activated_when_updating_timezone() {
+
+        givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .token("PushToken")
+                        .locale("fr-FR")
+                        .timezone("Europe/Paris")
+                        .deleted(true)
+                        .active(false)
+                        .nextPlannedPush(defaultNextPlannedPushDate)
+                        .build()
+        );
+        givenBaseHeaders()
+                .body(
+                        PushInfoVo.builder()
+                                .token("PushToken")
+                                .locale("fr-FR")
+                                .timezone("Pacific/Auckland")
+                                .build()
+                )
+                .when()
+                .post("/internal/api/v1/push-token")
+                .then()
+                .statusCode(CREATED.value())
+                .body(is(emptyString()));
+        assertThat(
+                getPushInfos(), allOf(
+                        hasSize(1),
+                        contains(
+                                allOf(
+                                        hasProperty("token", is("PushToken")),
+                                        hasProperty("deleted", equalTo(false)),
+                                        hasProperty("active", equalTo(true)),
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Auckland"))
+                                )
+                        )
+                )
+        );
+    }
+
+    @RepeatedTest(1000)
     public void created_when_already_registered_but_with_different_values() {
 
         givenOneFrPushInfoWith("PushToken");
