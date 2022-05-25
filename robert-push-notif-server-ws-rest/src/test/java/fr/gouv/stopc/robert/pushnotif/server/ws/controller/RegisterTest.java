@@ -6,7 +6,7 @@ import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isLocalTimeBetween8amAnd7pm;
+import static fr.gouv.stopc.robert.pushnotif.server.ws.test.DateInAcceptedRangeMatcher.isTimeBetween8amAnd7Pm;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.givenBaseHeaders;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -84,7 +84,7 @@ public class RegisterTest {
                                 allOf(
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("active", is(true)),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
@@ -125,7 +125,7 @@ public class RegisterTest {
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("deleted", equalTo(false)),
                                         hasProperty("active", equalTo(true)),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
@@ -157,7 +157,7 @@ public class RegisterTest {
                                         hasProperty("token", is("PushToken")),
                                         hasProperty("locale", is("en-EN")),
                                         hasProperty("timezone", is("Europe/London")),
-                                        hasProperty("nextPlannedPush", isLocalTimeBetween8amAnd7pm())
+                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                                 )
                         )
                 )
