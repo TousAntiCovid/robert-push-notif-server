@@ -3,6 +3,7 @@ package test.fr.gouv.stopc.robert.pushnotif.common.utils;
 import fr.gouv.stopc.robert.pushnotif.common.PushDate;
 import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
@@ -156,7 +157,7 @@ public class TimeUtilsTest {
         assertFalse(nextPushDate.isPresent());
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void testGetNextPushDateSucceeds() {
 
         // Given
@@ -175,7 +176,7 @@ public class TimeUtilsTest {
         assertTrue(this.isBetween(nextPushDate.get(), pushDate));
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void testGetNextPushDateSucceedsWhenLastPushDateIsNull() {
 
         // Given
@@ -193,7 +194,7 @@ public class TimeUtilsTest {
         assertTrue(this.isBetween(nextPushDate.get(), pushDate));
     }
 
-    @Test
+    @RepeatedTest(1000)
     public void testGetNextPushDateSucceedsWithAnotherTimezone() {
 
         // Given
