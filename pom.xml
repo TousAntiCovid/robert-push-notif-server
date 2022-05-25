@@ -31,6 +31,7 @@
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <lombok.version>1.18.24</lombok.version>
     <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
     <javax-rs.version>2.1.1</javax-rs.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
