@@ -13,7 +13,9 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 [ -z "$FILES" ] && exit 0
 
 # Prettify all selected files
-echo "$FILES" | xargs prettier --ignore-unknown --xml-whitespace-sensitivity=ignore --xml-tab-width 4 --write
+echo "$FILES" | grep -v '\.xml$' | xargs prettier --ignore-unknown --write
+echo "$FILES" | grep    '\.xml$' | xargs prettier --ignore-unknown --write --xml-whitespace-sensitivity ignore --tab-width 4
+
 
 # Spotlessify java source files
 mvn spotless:apply
@@ -22,3 +24,4 @@ mvn spotless:apply
 echo "$FILES" | xargs git add
 
 exit 0
+
