@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
+    <parent>
 		<groupId>fr.gouv.stopc</groupId>
 		<artifactId>robert-push-notif-server</artifactId>
 		<version>0-SNAPSHOT</version>
@@ -13,12 +13,6 @@
 	<artifactId>robert-push-notif-server-database</artifactId>
 	<name>robert-push-notif-server-database</name>
 	<description>Database Module</description>
-
-	<properties>
-		<java.version>1.8</java.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
 
 	<dependencies>
 		<dependency>

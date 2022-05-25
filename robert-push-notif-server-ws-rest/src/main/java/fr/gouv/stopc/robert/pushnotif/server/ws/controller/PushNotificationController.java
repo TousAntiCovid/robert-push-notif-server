@@ -1,39 +1,35 @@
-package fr.gouv.stopc.robert.pushnotif.server.ws.controller.impl;
+package fr.gouv.stopc.robert.pushnotif.server.ws.controller;
 
 import fr.gouv.stopc.robert.pushnotif.common.PushDate;
 import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
-import fr.gouv.stopc.robert.pushnotif.server.ws.controller.IRegisterPushNotificationController;
 import fr.gouv.stopc.robert.pushnotif.server.ws.utils.PropertyLoader;
 import fr.gouv.stopc.robert.pushnotif.server.ws.vo.PushInfoVo;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.*;
 
-import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.ws.rs.Produces;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
-@Service
-public class RegisterPushNotificationControllerImpl implements IRegisterPushNotificationController {
+@RestController
+@AllArgsConstructor
+@RequestMapping(value = { "/internal/api/v1/push-token" })
+public class PushNotificationController {
 
     private final IPushInfoService pushInfoService;
 
     private final PropertyLoader propertyLoader;
 
-    @Inject
-    public RegisterPushNotificationControllerImpl(IPushInfoService pushInfoService,
-            PropertyLoader propertyLoader) {
-
-        this.pushInfoService = pushInfoService;
-        this.propertyLoader = propertyLoader;
-
-    }
-
-    @Override
-    public ResponseEntity register(@Valid PushInfoVo pushInfoVo) {
+    @PostMapping
+    @Produces(APPLICATION_JSON_VALUE)
+    public ResponseEntity register(@Valid @RequestBody PushInfoVo pushInfoVo) {
 
         return this.pushInfoService
                 .findByPushToken(pushInfoVo.getToken())
@@ -88,6 +84,16 @@ public class RegisterPushNotificationControllerImpl implements IRegisterPushNoti
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
                     });
                 });
+    }
+
+    @DeleteMapping(path = "/{token}")
+    public ResponseEntity unregister(@PathVariable(name = "token") String pushToken) {
+
+        return this.pushInfoService.findByPushToken(pushToken).map(push -> {
+            push.setDeleted(true);
+            this.pushInfoService.createOrUpdate(push);
+            return ResponseEntity.accepted().build();
+        }).orElse(ResponseEntity.badRequest().build());
     }
 
 }

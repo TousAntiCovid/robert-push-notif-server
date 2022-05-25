@@ -4,6 +4,7 @@ import fr.gouv.stopc.robert.pushnotif.database.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.database.repository.PushInfoRepository;
 import fr.gouv.stopc.robert.pushnotif.database.service.IPushInfoService;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -32,7 +33,12 @@ public class PushInfoServiceImpl implements IPushInfoService {
     @Override
     public Optional<PushInfo> createOrUpdate(PushInfo push) {
 
-        return Optional.ofNullable(push).map(this.pushInfoRepository::save);
+        try {
+            return Optional.ofNullable(push).map(this.pushInfoRepository::save);
+        } catch (ConstraintViolationException exception) {
+            final PushInfo pushInfo = this.pushInfoRepository.findByToken(push.getToken()).get();
+            return Optional.of(pushInfoRepository.save(push.withId(pushInfo.getId())));
+        }
     }
 
     @Override
