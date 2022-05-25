@@ -30,11 +30,15 @@ public class DateInAcceptedRangeMatcher extends TypeSafeDiagnosingMatcher<Date> 
 
     @Override
     protected boolean matchesSafely(Date date, Description mismatchDescription) {
-        boolean test = date.after(tomorrow8am) && date.before(tomorrow7pm);
-        if (!test) {
-            mismatchDescription.appendText("was a date equal to " + date);
+        final var validLowerBound = date.equals(tomorrow8am) || date.after(tomorrow8am);
+        final var validUpperBound = date.equals(tomorrow7pm) || date.before(tomorrow7pm);
+        if (!validLowerBound) {
+            mismatchDescription.appendText("was a value below expected bound ").appendValue(date);
         }
-        return test;
+        if (!validUpperBound) {
+            mismatchDescription.appendText("was a value above expected bound").appendValue(date);
+        }
+        return validLowerBound && validUpperBound;
 
     }
 }
