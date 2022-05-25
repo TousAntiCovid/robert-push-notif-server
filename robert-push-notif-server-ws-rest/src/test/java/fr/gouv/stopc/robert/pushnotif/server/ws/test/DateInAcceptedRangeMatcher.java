@@ -7,6 +7,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
+import static java.time.temporal.ChronoUnit.HOURS;
 import static org.hamcrest.Matchers.is;
 
 public class DateInAcceptedRangeMatcher extends TypeSafeDiagnosingMatcher<Date> {
@@ -16,22 +17,22 @@ public class DateInAcceptedRangeMatcher extends TypeSafeDiagnosingMatcher<Date> 
     }
 
     Date tomorrow8am = Date.from(
-            ZonedDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).toInstant()
+            ZonedDateTime.now().plusDays(1).withHour(8).truncatedTo(HOURS).toInstant()
     );
 
-    Date tomorrow7pm = Date.from(
-            ZonedDateTime.now().plusDays(1).withHour(19).withMinute(0).withSecond(0).toInstant()
+    Date tomorrow8pm = Date.from(
+            ZonedDateTime.now().plusDays(1).withHour(20).truncatedTo(HOURS).toInstant()
     );
 
     @Override
     public void describeTo(Description description) {
-        description.appendText("A date between " + tomorrow8am + " and " + tomorrow7pm);
+        description.appendText("A date between " + tomorrow8am + " and " + tomorrow8pm);
     }
 
     @Override
     protected boolean matchesSafely(Date date, Description mismatchDescription) {
         final var validLowerBound = date.equals(tomorrow8am) || date.after(tomorrow8am);
-        final var validUpperBound = date.equals(tomorrow7pm) || date.before(tomorrow7pm);
+        final var validUpperBound = date.equals(tomorrow8pm) || date.before(tomorrow8pm);
         if (!validLowerBound) {
             mismatchDescription.appendText("was a value below expected bound ").appendValue(date);
         }
