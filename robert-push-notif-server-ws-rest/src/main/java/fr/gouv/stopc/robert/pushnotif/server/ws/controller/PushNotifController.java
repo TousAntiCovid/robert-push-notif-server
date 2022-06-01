@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
-import java.time.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.springframework.http.HttpStatus.*;
 
 @Slf4j
@@ -40,7 +43,7 @@ public class PushNotifController implements PushTokenApi {
         if (dbPushInfos.isPresent()) {
             final var foundPushInfos = dbPushInfos.get();
             if (!foundPushInfos.isActive() || foundPushInfos.isDeleted()) {
-                foundPushInfos.setNextPlannedPush(generateDateTomorrowBetween8amAnd7pm(pushRequest.getTimezone()));
+                foundPushInfos.setNextPlannedPush(generateDateTomorrowBetweenBounds(pushRequest.getTimezone()));
             }
             foundPushInfos.setDeleted(false);
             foundPushInfos.setActive(true);
@@ -55,7 +58,7 @@ public class PushNotifController implements PushTokenApi {
                             .timezone(pushRequest.getTimezone())
                             .active(true)
                             .deleted(false)
-                            .nextPlannedPush(generateDateTomorrowBetween8amAnd7pm(pushRequest.getTimezone()))
+                            .nextPlannedPush(generateDateTomorrowBetweenBounds(pushRequest.getTimezone()))
                             .build()
             );
         }
@@ -71,16 +74,25 @@ public class PushNotifController implements PushTokenApi {
         }).orElse(ResponseEntity.status(BAD_REQUEST).build());
     }
 
-    private Instant generateDateTomorrowBetween8amAnd7pm(final String timezone) {
+    private Instant generateDateTomorrowBetweenBounds(final String timezone) {
+
         final Random random = ThreadLocalRandom.current();
-        final int durationBetweenHours = pushNotifProperties.getMaxPushHour() - pushNotifProperties.getMinPushHour();
-        final LocalDate tomorrowDate = LocalDate.now().plusDays(1);
-        return LocalDateTime.of(
-                tomorrowDate,
-                // TODO: TEST L'ENREGISTREMENT
-                LocalTime.of(
-                        random.nextInt(durationBetweenHours) + pushNotifProperties.getMinPushHour(), random.nextInt(60)
-                )
-        ).atZone(ZoneId.of(timezone)).toInstant();
+        final Integer maxPushHour = pushNotifProperties.getMaxPushHour();
+        final Integer minPushHour = pushNotifProperties.getMinPushHour();
+
+        final int durationBetweenHours;
+        // In case config requires "between 6pm and 4am" which translates in minPushHour
+        // = 18 and maxPushHour = 4
+        if (maxPushHour < minPushHour) {
+            durationBetweenHours = 24 - minPushHour + maxPushHour;
+        } else {
+            durationBetweenHours = maxPushHour - minPushHour;
+        }
+
+        return ZonedDateTime.now(ZoneId.of(timezone)).plusDays(1)
+                .withHour(random.nextInt(durationBetweenHours) + minPushHour % 24)
+                .withMinute(random.nextInt(60))
+                .toInstant()
+                .truncatedTo(MINUTES);
     }
 }
