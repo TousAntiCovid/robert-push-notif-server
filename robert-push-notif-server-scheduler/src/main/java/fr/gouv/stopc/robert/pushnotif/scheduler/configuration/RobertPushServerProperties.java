@@ -1,12 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
@@ -17,13 +14,11 @@ import javax.validation.constraints.Positive;
 
 import java.util.List;
 
-@Component
-@ConfigurationProperties(prefix = "robert.push.server")
-@Validated
-@Data
+@Getter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Validated
+@ConstructorBinding
+@ConfigurationProperties(prefix = "robert.push.server")
 public class RobertPushServerProperties {
 
     @Min(0)
@@ -43,10 +38,8 @@ public class RobertPushServerProperties {
     @Valid
     private RobertPushServerProperties.Apns apns;
 
-    @Data
+    @Value
     @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
     public static class Apns {
 
         @NotNull
@@ -70,10 +63,8 @@ public class RobertPushServerProperties {
 
     }
 
-    @Data
+    @Value
     @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class ApnsClient {
 
         @NotNull
