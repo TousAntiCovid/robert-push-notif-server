@@ -21,6 +21,7 @@ public class PostgreSqlManager implements TestExecutionListener {
             .withInitScript("db/schema-creation.sql");
 
     static {
+        POSTGRE.withCommand("-c", "log_statement=all");
         POSTGRE.start();
         System.setProperty("spring.datasource.url", POSTGRE.getJdbcUrl());
         System.setProperty("spring.datasource.username", POSTGRE.getUsername());

@@ -3,9 +3,9 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.it;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.IntegrationTest;
-import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.PushInfoToolsDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -16,9 +16,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.APNsServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.ItTools.getRandomNumberInRange;
+import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
@@ -27,7 +29,7 @@ import static org.assertj.core.api.Assertions.within;
 class NominalCaseTwoApnsServerUsedIntegrationTest {
 
     @Autowired
-    PushInfoToolsDao pushInfoToolsDao;
+    PushInfoRepository pushInfoRepository;
 
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
@@ -39,16 +41,16 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
+                .creationDate(Instant.now())
                 .nextPlannedPush(
                         LocalDateTime.from(
                                 LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
                                         .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
+                        ).toInstant(UTC)
                 )
                 .build();
 
-        pushInfoToolsDao.insert(acceptedPushNotif);
-
+        pushInfoRepository.saveAndFlush(acceptedPushNotif);
         // When -- triggering of the scheduled job
 
         // Then
@@ -63,7 +65,9 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(0);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        assertThat(pushInfoToolsDao.findByToken("A-TOK1111111111111111"))
+        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("A-TOK1111111111111111");
+        assertThat(repositoryPushInfo).isPresent();
+        assertThat(repositoryPushInfo.get())
                 .as("Check the status of the notification that has been correctly sent to main APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
@@ -73,11 +77,11 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
-                                .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
                 )
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                         )
                 );
 
@@ -112,16 +116,16 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
+                .creationDate(Instant.now())
                 .nextPlannedPush(
                         LocalDateTime.from(
                                 LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
                                         .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
+                        ).toInstant(UTC)
                 )
                 .build();
 
-        pushInfoToolsDao.insert(rejectedPushNotif);
-
+        pushInfoRepository.saveAndFlush(rejectedPushNotif);
         // When -- triggering of the scheduled job
 
         // Then
@@ -136,7 +140,9 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        assertThat(pushInfoToolsDao.findByToken("999999999"))
+        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("999999999");
+        assertThat(repositoryPushInfo).isPresent();
+        assertThat(repositoryPushInfo.get())
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )
@@ -145,14 +151,14 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
                 )
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualToIgnoringCase("BadTopic"))
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                         )
                 );
     }
@@ -167,16 +173,16 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
+                .creationDate(Instant.now())
                 .nextPlannedPush(
                         LocalDateTime.from(
                                 LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
                                         .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
+                        ).toInstant(UTC)
                 )
                 .build();
 
-        pushInfoToolsDao.insert(acceptedOnSecondaryApnServerOnlyPushNotif);
-
+        pushInfoRepository.saveAndFlush(acceptedOnSecondaryApnServerOnlyPushNotif);
         // When -- triggering of the scheduled job
 
         // Then
@@ -191,7 +197,9 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        assertThat(pushInfoToolsDao.findByToken("123456789"))
+        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("123456789");
+        assertThat(repositoryPushInfo).isPresent();
+        assertThat(repositoryPushInfo.get())
                 .as("Check the status of the notification that has been correctly sent to secondary APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
@@ -201,11 +209,11 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
-                                .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
                 )
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                         )
                 );
 
@@ -241,16 +249,16 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
+                .creationDate(Instant.now())
                 .nextPlannedPush(
                         LocalDateTime.from(
                                 LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
                                         .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
+                        ).toInstant(UTC)
                 )
                 .build();
 
-        pushInfoToolsDao.insert(badTokenNotif);
-
+        pushInfoRepository.saveAndFlush(badTokenNotif);
         // When -- triggering of the scheduled job
 
         // Then
@@ -265,21 +273,23 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
 
-        assertThat(pushInfoToolsDao.findByToken("987654321"))
+        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("987654321");
+        assertThat(repositoryPushInfo).isPresent();
+        assertThat(repositoryPushInfo.get())
                 .as("Check the status of the notification that has been rejected by all APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
                 )
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadDeviceToken"))
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                         )
                 );
 
@@ -295,15 +305,16 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .timezone("Europe/Paris")
                 .active(true)
                 .deleted(false)
+                .creationDate(Instant.now())
                 .nextPlannedPush(
                         LocalDateTime.from(
                                 LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
                                         .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        )
+                        ).toInstant(UTC)
                 )
                 .build();
 
-        pushInfoToolsDao.insert(rejectedPushNotif);
+        pushInfoRepository.saveAndFlush(rejectedPushNotif);
 
         // When -- triggering of the scheduled job
 
@@ -319,7 +330,9 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(0);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
 
-        assertThat(pushInfoToolsDao.findByToken("8888888888"))
+        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("8888888888");
+        assertThat(repositoryPushInfo).isPresent();
+        assertThat(repositoryPushInfo.get())
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )
@@ -328,14 +341,14 @@ class NominalCaseTwoApnsServerUsedIntegrationTest {
                 .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
                 )
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualToIgnoringCase("PayloadEmpty"))
                 .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
                 .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
                 .satisfies(
                         pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                         )
                 );
     }
