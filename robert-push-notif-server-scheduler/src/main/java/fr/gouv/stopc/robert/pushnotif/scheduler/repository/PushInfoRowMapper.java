@@ -1,13 +1,12 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper;
+package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
@@ -30,7 +29,7 @@ public class PushInfoRowMapper implements RowMapper<PushInfo> {
                 .build();
     }
 
-    private LocalDateTime convertTimestampToInstant(final Timestamp timestamp) {
-        return timestamp != null ? LocalDateTime.ofInstant(timestamp.toInstant(), ZoneOffset.UTC) : null;
+    private Instant convertTimestampToInstant(final Timestamp timestamp) {
+        return timestamp != null ? timestamp.toInstant() : null;
     }
 }
