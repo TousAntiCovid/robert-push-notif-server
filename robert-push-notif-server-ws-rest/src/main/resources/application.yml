@@ -6,16 +6,11 @@ spring:
     url: ${ROBERT_PUSH_SERVER_DB_URL:jdbc:postgresql://localhost:5432/push}
     username: ${ROBERT_PUSH_SERVER_DB_USR:robert-push}
     password: ${ROBERT_PUSH_SERVER_DB_PWD:robert}
-  jpa:
-    hibernate:
-      ddl-auto: update
 
 # Min/Max Push Notification Hours
-robert:
-  push:
-    server:
-      minPushHour: 8
-      maxPushHour: 19
+robert.push.server:
+  minPushHour: 8
+  maxPushHour: 19
 
 management:
   server.port: 8081

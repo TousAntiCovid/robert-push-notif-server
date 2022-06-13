@@ -4,5 +4,3 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
-    hibernate:
-      ddl-auto: none
