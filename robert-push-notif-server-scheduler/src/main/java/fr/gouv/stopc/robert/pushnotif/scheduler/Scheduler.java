@@ -1,12 +1,10 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.common.PushDate;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRowMapper;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +17,13 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Service
 @Slf4j
@@ -31,7 +34,7 @@ public class Scheduler {
 
     private final PushInfoRowMapper rowMapper = new PushInfoRowMapper();
 
-    private final PushInfoDao pushInfoDao;
+    private final PushInfoRepository pushInfoRepository;
 
     private final RobertPushServerProperties robertPushServerProperties;
 
@@ -64,29 +67,34 @@ public class Scheduler {
 
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            setNextPlannedPushDate(pushInfo);
-            pushInfoDao.updateNextPlannedPushDate(pushInfo);
+            assert pushInfo != null;
+            pushInfo.setNextPlannedPush(generateDateTomorrowBetweenBounds(pushInfo.getTimezone()));
+
+            pushInfoRepository.saveAndFlush(pushInfo);
 
             apnsPushNotificationService.sendPushNotification(pushInfo);
         }
     }
 
-    private void setNextPlannedPushDate(PushInfo push) {
-        PushDate pushDate = PushDate.builder()
-                .lastPushDate(TimeUtils.getNowAtTimeZoneUTC())
-                .timezone(push.getTimezone())
-                .minPushHour(this.robertPushServerProperties.getMinPushHour())
-                .maxPushHour(this.robertPushServerProperties.getMaxPushHour())
-                .build();
+    private Instant generateDateTomorrowBetweenBounds(final String timezone) {
 
-        TimeUtils.getNextPushDate(pushDate).ifPresent(
-                o -> push.setNextPlannedPush(
-                        LocalDateTime.ofInstant(
-                                o.toInstant(), ZoneId
-                                        .of("UTC")
-                        )
-                )
-        );
+        final Random random = ThreadLocalRandom.current();
+        final int maxPushHour = robertPushServerProperties.getMaxPushHour();
+        final int minPushHour = robertPushServerProperties.getMinPushHour();
+
+        final int durationBetweenHours;
+        // In case config requires "between 6pm and 4am" which translates in minPushHour
+        // = 18 and maxPushHour = 4
+        if (maxPushHour < minPushHour) {
+            durationBetweenHours = 24 - minPushHour + maxPushHour;
+        } else {
+            durationBetweenHours = maxPushHour - minPushHour;
+        }
+
+        return ZonedDateTime.now(ZoneId.of(timezone)).plusDays(1)
+                .withHour(random.nextInt(durationBetweenHours) + minPushHour % 24)
+                .withMinute(random.nextInt(60))
+                .toInstant()
+                .truncatedTo(MINUTES);
     }
-
 }
