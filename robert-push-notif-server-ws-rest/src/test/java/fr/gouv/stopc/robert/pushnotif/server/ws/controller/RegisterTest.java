@@ -114,7 +114,6 @@ public class RegisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -154,7 +153,6 @@ public class RegisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -195,7 +193,6 @@ public class RegisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -227,7 +224,6 @@ public class RegisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -252,7 +248,6 @@ public class RegisterTest {
                 .body(is(emptyOrNullString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -274,7 +269,6 @@ public class RegisterTest {
                 .body(is(emptyOrNullString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -301,7 +295,6 @@ public class RegisterTest {
                 .body("token", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -329,7 +322,6 @@ public class RegisterTest {
                 .body("token", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -356,7 +348,6 @@ public class RegisterTest {
                 .body("locale", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -384,7 +375,6 @@ public class RegisterTest {
                 .body("locale", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -411,7 +401,6 @@ public class RegisterTest {
                 .body("timezone", is("must not be null"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -439,7 +428,6 @@ public class RegisterTest {
                 .body("timezone", is("size must be between 1 and 2147483647"));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -467,7 +455,6 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value());
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),

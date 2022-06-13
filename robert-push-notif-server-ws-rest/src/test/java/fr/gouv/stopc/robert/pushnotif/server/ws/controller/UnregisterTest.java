@@ -26,7 +26,6 @@ public class UnregisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 allOf(
                                         hasProperty("token", is("PushToken")),
@@ -56,7 +55,6 @@ public class UnregisterTest {
                 .body(is(emptyString()));
         assertThat(
                 getPushInfos(), allOf(
-                        hasSize(1),
                         contains(
                                 hasProperty("deleted", is(true))
                         )

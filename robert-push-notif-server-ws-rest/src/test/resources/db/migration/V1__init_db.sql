@@ -19,5 +19,3 @@ create table push
 );
 
 alter sequence push_id_seq owned by push.id;
-
-create index IDX_TOKEN on push (token);
