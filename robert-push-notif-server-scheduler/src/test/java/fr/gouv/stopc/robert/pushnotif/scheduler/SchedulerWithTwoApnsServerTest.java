@@ -1,11 +1,11 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
-import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,15 +18,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.APNsServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.ItTools.getRandomNumberInRange;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 @IntegrationTest
 @ActiveProfiles({ "dev" })
-class NominalCaseTwoApnsServerUsedIntegrationTest {
+class SchedulerWithTwoApnsServerTest {
 
     @Autowired
     PushInfoRepository pushInfoRepository;

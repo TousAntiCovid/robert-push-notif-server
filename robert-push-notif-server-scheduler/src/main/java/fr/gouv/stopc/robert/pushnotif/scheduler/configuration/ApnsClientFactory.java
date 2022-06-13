@@ -3,7 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
-import fr.gouv.stopc.robert.pushnotif.scheduler.utils.MicrometerApnsClientMetricsListener;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
