@@ -1,9 +1,9 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.it;
+package fr.gouv.stopc.robert.pushnotif.scheduler;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -16,14 +16,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.LongStream;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.it.tools.ItTools.getRandomNumberInRange;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 @ActiveProfiles({ "dev" })
-class VolumetryIntegrationTest {
+class SchedulerVolumetryTest {
 
     private static final int PUSH_NOTIF_COUNT = 100;
 

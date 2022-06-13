@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @Value
 @ConstructorBinding
 @ConfigurationProperties(prefix = "robert.push.server")
-public class PushNotifProperties {
+public class RobertPushServerProperties {
 
     Integer minPushHour;
 

@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.ut;
+package fr.gouv.stopc.robert.pushnotif.scheduler.service;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
