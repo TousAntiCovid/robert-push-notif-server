@@ -4,7 +4,6 @@ import lombok.*;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.core.io.Resource;
-import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -14,9 +13,8 @@ import javax.validation.constraints.Positive;
 
 import java.util.List;
 
-@Getter
+@Value
 @Builder
-@Validated
 @ConstructorBinding
 @ConfigurationProperties(prefix = "robert.push.server")
 public class RobertPushServerProperties {
