@@ -3,11 +3,10 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
-import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
+import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
@@ -16,7 +15,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
@@ -28,29 +26,26 @@ import static org.assertj.core.api.Assertions.within;
 @ActiveProfiles({ "dev" })
 class SchedulerWithTwoApnsServerTest {
 
-    @Autowired
-    PushInfoRepository pushInfoRepository;
-
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
         // Given
-        PushInfo acceptedPushNotif = PushInfo.builder()
-                .id(1L)
-                .token("A-TOK1111111111111111")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .creationDate(Instant.now())
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        ).toInstant(UTC)
-                )
-                .build();
-
-        pushInfoRepository.saveAndFlush(acceptedPushNotif);
+        PsqlManager.givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .id(1L)
+                        .token("A-TOK1111111111111111")
+                        .locale("fr_FR")
+                        .timezone("Europe/Paris")
+                        .active(true)
+                        .deleted(false)
+                        .creationDate(Instant.now())
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                ).toInstant(UTC)
+                        )
+                        .build()
+        );
         // When -- triggering of the scheduled job
 
         // Then
@@ -65,9 +60,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(0);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("A-TOK1111111111111111");
-        assertThat(repositoryPushInfo).isPresent();
-        assertThat(repositoryPushInfo.get())
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to main APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
@@ -109,23 +102,23 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_rejected_reason_other_than_invalid_token() {
         // Given
-        PushInfo rejectedPushNotif = PushInfo.builder()
-                .id(1L)
-                .token("999999999")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .creationDate(Instant.now())
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        ).toInstant(UTC)
-                )
-                .build();
-
-        pushInfoRepository.saveAndFlush(rejectedPushNotif);
+        PsqlManager.givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .id(1L)
+                        .token("999999999")
+                        .locale("fr_FR")
+                        .timezone("Europe/Paris")
+                        .active(true)
+                        .deleted(false)
+                        .creationDate(Instant.now())
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                ).toInstant(UTC)
+                        )
+                        .build()
+        );
         // When -- triggering of the scheduled job
 
         // Then
@@ -140,9 +133,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("999999999");
-        assertThat(repositoryPushInfo).isPresent();
-        assertThat(repositoryPushInfo.get())
+        assertThat(PsqlManager.findByToken("999999999"))
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )
@@ -166,23 +157,23 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_send_notification_to_second_apns_server_when_first_replies_invalid_token_response() {
 
-        PushInfo acceptedOnSecondaryApnServerOnlyPushNotif = PushInfo.builder()
-                .id(4L)
-                .token("123456789")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .creationDate(Instant.now())
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        ).toInstant(UTC)
-                )
-                .build();
-
-        pushInfoRepository.saveAndFlush(acceptedOnSecondaryApnServerOnlyPushNotif);
+        PsqlManager.givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .id(4L)
+                        .token("123456789")
+                        .locale("fr_FR")
+                        .timezone("Europe/Paris")
+                        .active(true)
+                        .deleted(false)
+                        .creationDate(Instant.now())
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                ).toInstant(UTC)
+                        )
+                        .build()
+        );
         // When -- triggering of the scheduled job
 
         // Then
@@ -197,9 +188,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
 
-        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("123456789");
-        assertThat(repositoryPushInfo).isPresent();
-        assertThat(repositoryPushInfo.get())
+        assertThat(PsqlManager.findByToken("123456789"))
                 .as("Check the status of the notification that has been correctly sent to secondary APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
@@ -241,24 +230,23 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_deactivate_notification_when_both_server_replies_invalid_token_response() {
 
-        // Given
-        PushInfo badTokenNotif = PushInfo.builder()
-                .id(3L)
-                .token("987654321")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .creationDate(Instant.now())
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        ).toInstant(UTC)
-                )
-                .build();
-
-        pushInfoRepository.saveAndFlush(badTokenNotif);
+        PsqlManager.givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .id(3L)
+                        .token("987654321")
+                        .locale("fr_FR")
+                        .timezone("Europe/Paris")
+                        .active(true)
+                        .deleted(false)
+                        .creationDate(Instant.now())
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                ).toInstant(UTC)
+                        )
+                        .build()
+        );
         // When -- triggering of the scheduled job
 
         // Then
@@ -273,9 +261,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(1);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
 
-        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("987654321");
-        assertThat(repositoryPushInfo).isPresent();
-        assertThat(repositoryPushInfo.get())
+        assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by all APNs server")
                 .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isFalse())
                 .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
@@ -297,25 +283,24 @@ class SchedulerWithTwoApnsServerTest {
 
     @Test
     void should_correctly_update_push_status_when_send_notification_to_second_apn_server_with_rejected_reason_other_than_invalid_token() {
-        // Given
-        PushInfo rejectedPushNotif = PushInfo.builder()
-                .id(1L)
-                .token("8888888888")
-                .locale("fr_FR")
-                .timezone("Europe/Paris")
-                .active(true)
-                .deleted(false)
-                .creationDate(Instant.now())
-                .nextPlannedPush(
-                        LocalDateTime.from(
-                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                        ).toInstant(UTC)
-                )
-                .build();
 
-        pushInfoRepository.saveAndFlush(rejectedPushNotif);
-
+        PsqlManager.givenOnePushInfoSuchAs(
+                PushInfo.builder()
+                        .id(1L)
+                        .token("8888888888")
+                        .locale("fr_FR")
+                        .timezone("Europe/Paris")
+                        .active(true)
+                        .deleted(false)
+                        .creationDate(Instant.now())
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                ).toInstant(UTC)
+                        )
+                        .build()
+        );
         // When -- triggering of the scheduled job
 
         // Then
@@ -330,9 +315,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThat(notificationRejectedByMainApnServer).hasSize(0);
         assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
 
-        Optional<PushInfo> repositoryPushInfo = pushInfoRepository.findByToken("8888888888");
-        assertThat(repositoryPushInfo).isPresent();
-        assertThat(repositoryPushInfo.get())
+        assertThat(PsqlManager.findByToken("8888888888"))
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )

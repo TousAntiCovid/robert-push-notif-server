@@ -1,6 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.core.io.Resource;

@@ -2,9 +2,9 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRowMapper;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class Scheduler {
 
     private final PushInfoRowMapper rowMapper = new PushInfoRowMapper();
 
-    private final PushInfoRepository pushInfoRepository;
+    private final PushInfoDao pushInfoDao;
 
     private final RobertPushServerProperties robertPushServerProperties;
 
@@ -53,7 +53,6 @@ public class Scheduler {
         );
 
         apnsPushNotificationService.waitUntilNoActivity(Duration.ofSeconds(10));
-
     }
 
     @RequiredArgsConstructor
@@ -70,7 +69,7 @@ public class Scheduler {
             assert pushInfo != null;
             pushInfo.setNextPlannedPush(generateDateTomorrowBetweenBounds(pushInfo.getTimezone()));
 
-            pushInfoRepository.saveAndFlush(pushInfo);
+            pushInfoDao.updateNextPlannedPushDate(pushInfo);
 
             apnsPushNotificationService.sendPushNotification(pushInfo);
         }
