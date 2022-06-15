@@ -11,7 +11,8 @@ import static fr.gouv.stopc.robert.pushnotif.server.ws.test.RestAssuredManager.g
 import static java.time.LocalDateTime.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @IntegrationTest
 public class UnregisterTest {
