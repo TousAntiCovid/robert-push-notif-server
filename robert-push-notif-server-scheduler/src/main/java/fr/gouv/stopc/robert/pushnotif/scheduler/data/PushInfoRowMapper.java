@@ -1,12 +1,12 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
+package fr.gouv.stopc.robert.pushnotif.scheduler.data;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
+
+import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertTimestampToInstant;
 
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
@@ -27,9 +27,5 @@ public class PushInfoRowMapper implements RowMapper<PushInfo> {
                 .lastErrorCode(resultSet.getString("last_error_code"))
                 .nextPlannedPush(convertTimestampToInstant(resultSet.getTimestamp("next_planned_push")))
                 .build();
-    }
-
-    private Instant convertTimestampToInstant(final Timestamp timestamp) {
-        return timestamp != null ? timestamp.toInstant() : null;
     }
 }

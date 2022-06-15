@@ -9,8 +9,8 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class ApnsPushNotificationServiceTest {
 
     @Mock
-    private PushInfoRepository pushInfoRepository;
+    private PushInfoDao pushInfoDao;
 
     @Mock
     private ApnsClientFactory apnsClientFactory;
@@ -81,7 +81,7 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoRepository, apnsClientFactory);
+        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
@@ -119,7 +119,7 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoRepository, apnsClientFactory);
+        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 

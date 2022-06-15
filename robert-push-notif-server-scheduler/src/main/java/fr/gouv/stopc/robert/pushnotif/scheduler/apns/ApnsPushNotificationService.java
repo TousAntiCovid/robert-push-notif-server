@@ -10,8 +10,8 @@ import com.eatthepath.pushy.apns.util.TokenUtil;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.github.bucket4j.*;
 import io.github.bucket4j.local.LockFreeBucket;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class ApnsPushNotificationService {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final PushInfoRepository pushInfoRepository;
+    private final PushInfoDao pushInfoDao;
 
     private final ApnsClientFactory apnsClientFactory;
 
@@ -41,11 +41,10 @@ public class ApnsPushNotificationService {
     private final BlockingBucket rateLimitingBucket;
 
     public ApnsPushNotificationService(
-            final RobertPushServerProperties robertPushServerProperties,
-            final PushInfoRepository pushInfoRepository,
-            final ApnsClientFactory apnsClientFactory) {
+            RobertPushServerProperties robertPushServerProperties, PushInfoDao pushInfoDao,
+            ApnsClientFactory apnsClientFactory) {
         this.robertPushServerProperties = robertPushServerProperties;
-        this.pushInfoRepository = pushInfoRepository;
+        this.pushInfoDao = pushInfoDao;
         this.apnsClientFactory = apnsClientFactory;
 
         semaphore = new Semaphore(robertPushServerProperties.getMaxNumberOfOutstandingNotification());
@@ -130,7 +129,7 @@ public class ApnsPushNotificationService {
                         );
                         push.setLastSuccessfulPush(Instant.now());
                         push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-                        pushInfoRepository.saveAndFlush(push);
+                        pushInfoDao.updateSuccessFulPushedNotif(push);
                     } else {
                         log.debug(
                                 "Push notification sent by {} rejected by the APNs gateway: {}",
@@ -148,13 +147,13 @@ public class ApnsPushNotificationService {
                                 push.setLastErrorCode(rejectionReason);
                                 push.setLastFailurePush(Instant.now());
                                 push.setFailedPushSent(push.getFailedPushSent() + 1);
-                                pushInfoRepository.saveAndFlush(push);
+                                pushInfoDao.updateFailurePushedNotif(push);
                             }
                         } else {
                             push.setLastErrorCode(rejectionReason);
                             push.setLastFailurePush(Instant.now());
                             push.setFailedPushSent(push.getFailedPushSent() + 1);
-                            pushInfoRepository.saveAndFlush(push);
+                            pushInfoDao.updateFailurePushedNotif(push);
                         }
 
                         response.getTokenInvalidationTimestamp().ifPresent(
@@ -170,7 +169,7 @@ public class ApnsPushNotificationService {
                     push.setLastErrorCode(StringUtils.truncate(cause.getMessage(), 255));
                     push.setLastFailurePush(Instant.now());
                     push.setFailedPushSent(push.getFailedPushSent() + 1);
-                    pushInfoRepository.saveAndFlush(push);
+                    pushInfoDao.updateFailurePushedNotif(push);
                 }
             }).exceptionally(e -> {
                 log.error("Unexpected error occurred", e);

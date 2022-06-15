@@ -1,7 +1,9 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.model;
+package fr.gouv.stopc.robert.pushnotif.scheduler.data.model;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.TimeStampInstantAttributeConverter;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -34,15 +36,12 @@ public class PushInfo {
     private String locale;
 
     @Column(name = "next_planned_push")
-    @Convert(converter = TimeStampInstantAttributeConverter.class)
     private Instant nextPlannedPush;
 
     @Column(name = "last_successful_push")
-    @Convert(converter = TimeStampInstantAttributeConverter.class)
     private Instant lastSuccessfulPush;
 
     @Column(name = "last_failure_push ")
-    @Convert(converter = TimeStampInstantAttributeConverter.class)
     private Instant lastFailurePush;
 
     @Column(name = "last_error_code")
