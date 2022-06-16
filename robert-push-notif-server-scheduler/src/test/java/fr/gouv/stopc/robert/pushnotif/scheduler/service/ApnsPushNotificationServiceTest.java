@@ -81,13 +81,14 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
+        service = new ApnsPushNotificationService(robertPushServerProperties, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
         // when
         long currentTimeBeforeSendingNotif = System.currentTimeMillis();
-        IntStream.range(0, 5).forEach(i -> service.sendPushNotification(pushInfo));
+        IntStream.range(0, 5)
+                .forEach(i -> service.sendPushInfoNotification(pushInfo.getToken(), pushInfo, null, null, null));
         long currentTimeAfterSendingNotif = System.currentTimeMillis();
 
         long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;
@@ -119,13 +120,14 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, pushInfoDao, apnsClientFactory);
+        service = new ApnsPushNotificationService(robertPushServerProperties, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
         // when
         long currentTimeBeforeSendingNotif = System.currentTimeMillis();
-        IntStream.range(0, 100).forEach(i -> service.sendPushNotification(pushInfo));
+        IntStream.range(0, 100)
+                .forEach(i -> service.sendPushInfoNotification(pushInfo.getToken(), pushInfo, null, null, null));
         long currentTimeAfterSendingNotif = System.currentTimeMillis();
 
         long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;

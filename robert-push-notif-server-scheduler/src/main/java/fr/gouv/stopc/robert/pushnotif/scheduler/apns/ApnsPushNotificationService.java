@@ -3,15 +3,12 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.PushType;
-import com.eatthepath.pushy.apns.util.ApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.eatthepath.pushy.apns.util.TokenUtil;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.github.bucket4j.*;
 import io.github.bucket4j.local.LockFreeBucket;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +22,16 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 
 @Slf4j
 @Service
 public class ApnsPushNotificationService {
 
     private final RobertPushServerProperties robertPushServerProperties;
-
-    private final PushInfoDao pushInfoDao;
 
     private final ApnsClientFactory apnsClientFactory;
 
@@ -41,10 +40,9 @@ public class ApnsPushNotificationService {
     private final BlockingBucket rateLimitingBucket;
 
     public ApnsPushNotificationService(
-            RobertPushServerProperties robertPushServerProperties, PushInfoDao pushInfoDao,
+            RobertPushServerProperties robertPushServerProperties,
             ApnsClientFactory apnsClientFactory) {
         this.robertPushServerProperties = robertPushServerProperties;
-        this.pushInfoDao = pushInfoDao;
         this.apnsClientFactory = apnsClientFactory;
 
         semaphore = new Semaphore(robertPushServerProperties.getMaxNumberOfOutstandingNotification());
@@ -88,35 +86,45 @@ public class ApnsPushNotificationService {
         return (count > 1);
     }
 
-    private SimpleApnsPushNotification buildPushNotification(PushInfo push) {
+    private SimpleApnsPushNotification buildPushNotification(final String token) {
 
-        final ApnsPayloadBuilder payloadBuilder = new SimpleApnsPayloadBuilder();
-        payloadBuilder.setContentAvailable(true);
-        payloadBuilder.setBadgeNumber(0);
-
-        final String payload = payloadBuilder.build();
-        final String token = TokenUtil.sanitizeTokenString(push.getToken());
+        final String payload = new SimpleApnsPayloadBuilder()
+                .setContentAvailable(true)
+                .setBadgeNumber(0)
+                .build();
 
         return new SimpleApnsPushNotification(
-                token.toLowerCase(), this.robertPushServerProperties.getApns().getTopic(), payload,
-                Instant.now().plus(SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD), DeliveryPriority.IMMEDIATE,
+                TokenUtil.sanitizeTokenString(token).toLowerCase(),
+                this.robertPushServerProperties.getApns().getTopic(),
+                payload,
+                Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
+                DeliveryPriority.IMMEDIATE,
                 PushType.BACKGROUND
         );
-
     }
 
-    public void sendPushNotification(PushInfo push) {
-        this.sendNotification(push, new ConcurrentLinkedQueue<>(apnsClientFactory.getApnsClients()));
+    public <T> void sendPushInfoNotification(String token, T data, Consumer<T> onSuccess,
+            BiConsumer<T, String> onRejection, Consumer<T> disableToken) {
+        this.sendNotification(
+                token, data, new ConcurrentLinkedQueue<>(apnsClientFactory.getApnsClients()), onSuccess, onRejection,
+                disableToken
+        );
     }
 
-    private void sendNotification(PushInfo push, Queue<ApnsClientDecorator> apnsClientsQueue) {
+    private <T> void sendNotification(String token,
+            T data,
+            Queue<ApnsClientDecorator> apnsClientsQueue,
+            Consumer<T> onAccepted,
+            BiConsumer<T, String> onRejection,
+            Consumer<T> disableToken) {
         try {
             rateLimitingBucket.consume(1);
             semaphore.acquire();
-            final SimpleApnsPushNotification pushNotification = buildPushNotification(push);
+            final SimpleApnsPushNotification pushNotification = buildPushNotification(token);
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture;
 
             ApnsClientDecorator apnsClient = apnsClientsQueue.poll();
+            assert apnsClient != null;
             sendNotificationFuture = apnsClient.sendNotification(pushNotification);
 
             sendNotificationFuture.whenComplete((response, cause) -> {
@@ -125,11 +133,9 @@ public class ApnsPushNotificationService {
                     if (response.isAccepted()) {
                         log.debug(
                                 "Push notification sent by {} accepted by APNs gateway for the token ({})",
-                                apnsClient.getId(), push.getToken()
+                                apnsClient.getId(), token
                         );
-                        push.setLastSuccessfulPush(Instant.now());
-                        push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-                        pushInfoDao.updateSuccessFulPushedNotif(push);
+                        onAccepted.accept(data);
                     } else {
                         log.debug(
                                 "Push notification sent by {} rejected by the APNs gateway: {}",
@@ -137,23 +143,17 @@ public class ApnsPushNotificationService {
                         );
                         final String rejectionReason = response.getRejectionReason();
 
-                        if (StringUtils.isNotBlank(rejectionReason)
-                                && this.robertPushServerProperties.getApns().getInactiveRejectionReason()
-                                        .contains(rejectionReason)) {
+                        if (isRejectionReasonInSupportedReasons(rejectionReason)) {
                             if (apnsClientsQueue.size() > 0) {
-                                this.sendNotification(push, apnsClientsQueue);
+                                this.sendNotification(
+                                        token, data, apnsClientsQueue, onAccepted, onRejection, disableToken
+                                );
                             } else {
-                                push.setActive(false);
-                                push.setLastErrorCode(rejectionReason);
-                                push.setLastFailurePush(Instant.now());
-                                push.setFailedPushSent(push.getFailedPushSent() + 1);
-                                pushInfoDao.updateFailurePushedNotif(push);
+                                disableToken.accept(data);
+                                onRejection.accept(data, rejectionReason);
                             }
                         } else {
-                            push.setLastErrorCode(rejectionReason);
-                            push.setLastFailurePush(Instant.now());
-                            push.setFailedPushSent(push.getFailedPushSent() + 1);
-                            pushInfoDao.updateFailurePushedNotif(push);
+                            onRejection.accept(data, rejectionReason);
                         }
 
                         response.getTokenInvalidationTimestamp().ifPresent(
@@ -166,10 +166,7 @@ public class ApnsPushNotificationService {
                     // the server, and indicates that something went wrong when actually
                     // sending the notification or waiting for a reply.
                     log.warn("Push Notification sent by {} failed", apnsClient.getId(), cause);
-                    push.setLastErrorCode(StringUtils.truncate(cause.getMessage(), 255));
-                    push.setLastFailurePush(Instant.now());
-                    push.setFailedPushSent(push.getFailedPushSent() + 1);
-                    pushInfoDao.updateFailurePushedNotif(push);
+                    onRejection.accept(data, StringUtils.truncate(cause.getMessage(), 255));
                 }
             }).exceptionally(e -> {
                 log.error("Unexpected error occurred", e);
@@ -178,5 +175,11 @@ public class ApnsPushNotificationService {
         } catch (InterruptedException e) {
             log.error("Unexpected error occurred", e);
         }
+    }
+
+    private boolean isRejectionReasonInSupportedReasons(String rejectionReason) {
+        return StringUtils.isNotBlank(rejectionReason)
+                && this.robertPushServerProperties.getApns().getInactiveRejectionReason()
+                        .contains(rejectionReason);
     }
 }
