@@ -71,8 +71,31 @@ public class Scheduler {
 
             pushInfoDao.updateNextPlannedPushDate(pushInfo);
 
-            apnsPushNotificationService.sendPushNotification(pushInfo);
+            apnsPushNotificationService.sendPushInfoNotification(
+                    pushInfo.getToken(),
+                    pushInfo,
+                    Scheduler.this::onNotifSuccess,
+                    Scheduler.this::onNotifRejection,
+                    Scheduler.this::disableToken
+            );
         }
+    }
+
+    private void onNotifSuccess(PushInfo push) {
+        push.setLastSuccessfulPush(Instant.now());
+        push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
+        pushInfoDao.updateSuccessFulPushedNotif(push);
+    }
+
+    private void onNotifRejection(PushInfo push, String rejectionReason) {
+        push.setLastErrorCode(rejectionReason);
+        push.setLastFailurePush(Instant.now());
+        push.setFailedPushSent(push.getFailedPushSent() + 1);
+        pushInfoDao.updateFailurePushedNotif(push);
+    }
+
+    private void disableToken(PushInfo push) {
+        push.setActive(false);
     }
 
     private Instant generateDateTomorrowBetweenBounds(final String timezone) {
