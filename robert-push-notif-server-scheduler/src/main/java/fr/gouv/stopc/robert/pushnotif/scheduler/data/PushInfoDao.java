@@ -7,8 +7,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Types;
-
 import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
 
 @Component
@@ -22,7 +20,7 @@ public class PushInfoDao {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue(
-                "nextPlannedPushDate", convertInstantToTimestamp(pushInfo.getNextPlannedPush()), Types.TIMESTAMP
+                "nextPlannedPushDate", convertInstantToTimestamp(pushInfo.getNextPlannedPush())
         );
         return jdbcTemplate.update("update push set next_planned_push = :nextPlannedPushDate where id = :id", params);
     }
@@ -32,13 +30,13 @@ public class PushInfoDao {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue(
-                "lastSuccessfulPush", convertInstantToTimestamp(pushInfo.getLastSuccessfulPush()), Types.TIMESTAMP
+                "lastSuccessfulPush", convertInstantToTimestamp(pushInfo.getLastSuccessfulPush())
         );
         params.addValue("successfulPushSent", pushInfo.getSuccessfulPushSent());
 
         return jdbcTemplate.update(
-                "update push set last_successful_push = :lastSuccessfulPush," +
-                        " successful_push_sent = :successfulPushSent " +
+                "update push set last_successful_push = :lastSuccessfulPush, " +
+                        "successful_push_sent = :successfulPushSent " +
                         "where id = :id",
                 params
         );
@@ -50,7 +48,7 @@ public class PushInfoDao {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue("active", pushInfo.isActive());
-        params.addValue("lastFailurePush", convertInstantToTimestamp(pushInfo.getLastFailurePush()), Types.TIMESTAMP);
+        params.addValue("lastFailurePush", convertInstantToTimestamp(pushInfo.getLastFailurePush()));
         params.addValue("failedPushSent", pushInfo.getFailedPushSent());
         params.addValue("lastErrorCode", pushInfo.getLastErrorCode());
 

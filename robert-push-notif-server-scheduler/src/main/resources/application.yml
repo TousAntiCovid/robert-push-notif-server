@@ -10,11 +10,6 @@ spring:
     scheduling:
       shutdown:
         await-termination: true
-#  jpa:
-#    properties:
-#      hibernate:
-#        jdbc:
-#          batch_size: 1
 
 management:
   endpoints:
