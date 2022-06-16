@@ -15,12 +15,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>fr.gouv.stopc</groupId>
-      <artifactId>robert-push-notif-server-common</artifactId>
-      <version>${project.parent.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-vault-config</artifactId>
     </dependency>
