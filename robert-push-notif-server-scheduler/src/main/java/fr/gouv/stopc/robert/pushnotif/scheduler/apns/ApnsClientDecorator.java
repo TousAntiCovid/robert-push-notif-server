@@ -23,5 +23,4 @@ public class ApnsClientDecorator {
     public String getId() {
         return host + "[" + port + "]";
     }
-
 }

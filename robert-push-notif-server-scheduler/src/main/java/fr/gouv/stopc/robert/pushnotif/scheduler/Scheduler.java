@@ -3,6 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationPilot;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
@@ -17,13 +18,6 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
-import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Service
 @Slf4j
@@ -61,62 +55,18 @@ public class Scheduler {
         private final ApnsPushNotificationService apnsPushNotificationService;
 
         @Override
-        public void processRow(ResultSet resultSet) throws SQLException {
+        public void processRow(final ResultSet resultSet) throws SQLException {
             PushInfo pushInfo = rowMapper.mapRow(resultSet, resultSet.getRow());
 
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            assert pushInfo != null;
-            pushInfo.setNextPlannedPush(generateDateTomorrowBetweenBounds(pushInfo.getTimezone()));
-
-            pushInfoDao.updateNextPlannedPushDate(pushInfo);
-
-            apnsPushNotificationService.sendPushInfoNotification(
-                    pushInfo.getToken(),
-                    pushInfo,
-                    Scheduler.this::onNotifSuccess,
-                    Scheduler.this::onNotifRejection,
-                    Scheduler.this::disableToken
+            PushInfoNotificationPilot pilot = new PushInfoNotificationPilot(
+                    pushInfo, pushInfoDao, robertPushServerProperties
             );
+
+            pilot.updateNextPlannedPushToRandomTomorrow();
+
+            apnsPushNotificationService.sendNotification(pilot);
         }
-    }
-
-    private void onNotifSuccess(PushInfo push) {
-        push.setLastSuccessfulPush(Instant.now());
-        push.setSuccessfulPushSent(push.getSuccessfulPushSent() + 1);
-        pushInfoDao.updateSuccessFulPushedNotif(push);
-    }
-
-    private void onNotifRejection(PushInfo push, String rejectionReason) {
-        push.setLastErrorCode(rejectionReason);
-        push.setLastFailurePush(Instant.now());
-        push.setFailedPushSent(push.getFailedPushSent() + 1);
-        pushInfoDao.updateFailurePushedNotif(push);
-    }
-
-    private void disableToken(PushInfo push) {
-        push.setActive(false);
-    }
-
-    private Instant generateDateTomorrowBetweenBounds(final String timezone) {
-
-        final Random random = ThreadLocalRandom.current();
-        final int maxPushHour = robertPushServerProperties.getMaxPushHour();
-        final int minPushHour = robertPushServerProperties.getMinPushHour();
-
-        final int durationBetweenHours;
-        // In case config requires "between 6pm and 4am" which translates in minPushHour
-        // = 18 and maxPushHour = 4
-        if (maxPushHour < minPushHour) {
-            durationBetweenHours = 24 - minPushHour + maxPushHour;
-        } else {
-            durationBetweenHours = maxPushHour - minPushHour;
-        }
-
-        return ZonedDateTime.now(ZoneId.of(timezone)).plusDays(1)
-                .withHour(random.nextInt(durationBetweenHours) + minPushHour % 24)
-                .withMinute(random.nextInt(60))
-                .toInstant()
-                .truncatedTo(MINUTES);
     }
 }
