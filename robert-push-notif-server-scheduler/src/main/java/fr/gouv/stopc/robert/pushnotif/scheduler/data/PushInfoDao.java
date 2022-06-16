@@ -16,27 +16,27 @@ public class PushInfoDao {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Transactional
-    public int updateNextPlannedPushDate(final PushInfo pushInfo) {
-        final MapSqlParameterSource params = new MapSqlParameterSource();
+    public void updateNextPlannedPushDate(final PushInfo pushInfo) {
+        final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue(
                 "nextPlannedPushDate", convertInstantToTimestamp(pushInfo.getNextPlannedPush())
         );
-        return jdbcTemplate.update("update push set next_planned_push = :nextPlannedPushDate where id = :id", params);
+        jdbcTemplate.update("update push set next_planned_push = :nextPlannedPushDate where id = :id", params);
     }
 
     @Transactional
-    public int updateSuccessFulPushedNotif(final PushInfo pushInfo) {
-        final MapSqlParameterSource params = new MapSqlParameterSource();
+    public void updateSuccessFulPushedNotif(final PushInfo pushInfo) {
+        final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue(
                 "lastSuccessfulPush", convertInstantToTimestamp(pushInfo.getLastSuccessfulPush())
         );
         params.addValue("successfulPushSent", pushInfo.getSuccessfulPushSent());
 
-        return jdbcTemplate.update(
-                "update push set last_successful_push = :lastSuccessfulPush," +
-                        " successful_push_sent = :successfulPushSent " +
+        jdbcTemplate.update(
+                "update push set last_successful_push = :lastSuccessfulPush, " +
+                        "successful_push_sent = :successfulPushSent " +
                         "where id = :id",
                 params
         );
@@ -44,15 +44,15 @@ public class PushInfoDao {
     }
 
     @Transactional
-    public int updateFailurePushedNotif(final PushInfo pushInfo) {
-        final MapSqlParameterSource params = new MapSqlParameterSource();
+    public void updateFailurePushedNotif(final PushInfo pushInfo) {
+        final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
         params.addValue("active", pushInfo.isActive());
         params.addValue("lastFailurePush", convertInstantToTimestamp(pushInfo.getLastFailurePush()));
         params.addValue("failedPushSent", pushInfo.getFailedPushSent());
         params.addValue("lastErrorCode", pushInfo.getLastErrorCode());
 
-        return jdbcTemplate.update(
+        jdbcTemplate.update(
                 "update push set active = :active, " +
                         "last_failure_push = :lastFailurePush, " +
                         "failed_push_sent = :failedPushSent, " +
@@ -60,7 +60,6 @@ public class PushInfoDao {
                         "where id = :id",
                 params
         );
-
     }
 
 }
