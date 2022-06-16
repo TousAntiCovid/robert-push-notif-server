@@ -10,6 +10,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationPilot;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +89,11 @@ public class ApnsPushNotificationServiceTest {
         // when
         long currentTimeBeforeSendingNotif = System.currentTimeMillis();
         IntStream.range(0, 5)
-                .forEach(i -> service.sendPushInfoNotification(pushInfo.getToken(), pushInfo, null, null, null));
+                .forEach(
+                        i -> service.sendNotification(
+                                new PushInfoNotificationPilot(pushInfo, pushInfoDao, robertPushServerProperties)
+                        )
+                );
         long currentTimeAfterSendingNotif = System.currentTimeMillis();
 
         long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;
@@ -127,7 +132,11 @@ public class ApnsPushNotificationServiceTest {
         // when
         long currentTimeBeforeSendingNotif = System.currentTimeMillis();
         IntStream.range(0, 100)
-                .forEach(i -> service.sendPushInfoNotification(pushInfo.getToken(), pushInfo, null, null, null));
+                .forEach(
+                        i -> service.sendNotification(
+                                new PushInfoNotificationPilot(pushInfo, pushInfoDao, robertPushServerProperties)
+                        )
+                );
         long currentTimeAfterSendingNotif = System.currentTimeMillis();
 
         long durationSendingNotif = currentTimeAfterSendingNotif - currentTimeBeforeSendingNotif;
