@@ -3,6 +3,7 @@ logging:
     name: ./target/logs/test.log
   level:
     fr.gouv.stopc : DEBUG
+    org.flywaydb.core.internal: OFF
 
 robert.push.server:
     # Min/Max Push Notification Hours
