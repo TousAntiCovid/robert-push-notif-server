@@ -11,7 +11,6 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
@@ -82,9 +81,9 @@ public class PushInfoNotificationPilot extends NotificationPilot<PushInfo> {
 
     private Instant generateDateTomorrowBetweenBounds(final String timezone) {
 
-        final Random random = ThreadLocalRandom.current();
-        final int maxPushHour = pushServerProperties.getMaxPushHour();
-        final int minPushHour = pushServerProperties.getMinPushHour();
+        final var random = ThreadLocalRandom.current();
+        final var maxPushHour = pushServerProperties.getMaxPushHour();
+        final var minPushHour = pushServerProperties.getMinPushHour();
 
         final int durationBetweenHours;
         // In case config requires "between 6pm and 4am" which translates in minPushHour
