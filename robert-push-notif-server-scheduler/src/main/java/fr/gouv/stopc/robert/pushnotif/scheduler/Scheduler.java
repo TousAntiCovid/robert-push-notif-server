@@ -1,9 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsTemplate;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationPilot;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
@@ -32,7 +32,7 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final ApnsPushNotificationService apnsPushNotificationService;
+    private final ApnsTemplate apnsPushNotificationService;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
@@ -52,7 +52,7 @@ public class Scheduler {
     @RequiredArgsConstructor
     private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
 
-        private final ApnsPushNotificationService apnsPushNotificationService;
+        private final ApnsTemplate apnsPushNotificationService;
 
         @Override
         public void processRow(final ResultSet resultSet) throws SQLException {
@@ -60,13 +60,13 @@ public class Scheduler {
 
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            PushInfoNotificationPilot pilot = new PushInfoNotificationPilot(
+            PushInfoNotificationHandler handler = new PushInfoNotificationHandler(
                     pushInfo, pushInfoDao, robertPushServerProperties
             );
 
-            pilot.updateNextPlannedPushToRandomTomorrow();
+            handler.updateNextPlannedPushToRandomTomorrow();
 
-            apnsPushNotificationService.sendNotification(pilot);
+            apnsPushNotificationService.sendNotification(handler);
         }
     }
 }

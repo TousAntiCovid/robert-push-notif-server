@@ -6,6 +6,9 @@ import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Used to identify the APN server host & port when an error occurs
+ */
 @RequiredArgsConstructor
 public class ApnsClientDecorator {
 

@@ -6,11 +6,11 @@ import com.eatthepath.pushy.apns.PushNotificationResponse;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsTemplate;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationPilot;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ public class ApnsPushNotificationServiceTest {
     @Mock
     private ApnsClient apnsClient;
 
-    ApnsPushNotificationService service;
+    ApnsTemplate service;
 
     @BeforeEach
     public void init() {
@@ -82,7 +82,7 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, apnsClientFactory);
+        service = new ApnsTemplate(robertPushServerProperties, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
@@ -91,7 +91,7 @@ public class ApnsPushNotificationServiceTest {
         IntStream.range(0, 5)
                 .forEach(
                         i -> service.sendNotification(
-                                new PushInfoNotificationPilot(pushInfo, pushInfoDao, robertPushServerProperties)
+                                new PushInfoNotificationHandler(pushInfo, pushInfoDao, robertPushServerProperties)
                         )
                 );
         long currentTimeAfterSendingNotif = System.currentTimeMillis();
@@ -125,7 +125,7 @@ public class ApnsPushNotificationServiceTest {
                 )
                 .build();
 
-        service = new ApnsPushNotificationService(robertPushServerProperties, apnsClientFactory);
+        service = new ApnsTemplate(robertPushServerProperties, apnsClientFactory);
 
         PushInfo pushInfo = PushInfo.builder().token("123456789").build();
 
@@ -134,7 +134,7 @@ public class ApnsPushNotificationServiceTest {
         IntStream.range(0, 100)
                 .forEach(
                         i -> service.sendNotification(
-                                new PushInfoNotificationPilot(pushInfo, pushInfoDao, robertPushServerProperties)
+                                new PushInfoNotificationHandler(pushInfo, pushInfoDao, robertPushServerProperties)
                         )
                 );
         long currentTimeAfterSendingNotif = System.currentTimeMillis();

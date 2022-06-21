@@ -4,9 +4,10 @@ import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationPilot;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -17,34 +18,29 @@ import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
 
-public class PushInfoNotificationPilot extends NotificationPilot<PushInfo> {
+@RequiredArgsConstructor
+public class PushInfoNotificationHandler implements NotificationHandler<PushInfo> {
+
+    private final PushInfo notificationData;
 
     private final PushInfoDao pushInfoDao;
 
     private final RobertPushServerProperties pushServerProperties;
 
-    public PushInfoNotificationPilot(final PushInfo pushInfo,
-            final PushInfoDao pushInfoDao,
-            final RobertPushServerProperties pushServerProperties) {
-        super(pushInfo);
-        this.pushInfoDao = pushInfoDao;
-        this.pushServerProperties = pushServerProperties;
-    }
-
     @Override
-    public String getToken() {
+    public String getAppleToken() {
         return notificationData.getToken();
     }
 
     @Override
-    public void updateOnNotificationSuccess() {
+    public void onSuccess() {
         notificationData.setLastSuccessfulPush(Instant.now());
         notificationData.setSuccessfulPushSent(notificationData.getSuccessfulPushSent() + 1);
         pushInfoDao.updateSuccessFulPushedNotif(notificationData);
     }
 
     @Override
-    public void updateOnNotificationRejection(final String rejectionReason) {
+    public void onRejection(final String rejectionReason) {
         notificationData.setLastErrorCode(rejectionReason);
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
@@ -52,8 +48,12 @@ public class PushInfoNotificationPilot extends NotificationPilot<PushInfo> {
     }
 
     @Override
-    public void disableToken() {
+    public void onTokenNotFound(final String rejectionReason) {
         notificationData.setActive(false);
+        notificationData.setLastErrorCode(rejectionReason);
+        notificationData.setLastFailurePush(Instant.now());
+        notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
+        pushInfoDao.updateFailurePushedNotif(notificationData);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class PushInfoNotificationPilot extends NotificationPilot<PushInfo> {
                 .build();
 
         return new SimpleApnsPushNotification(
-                sanitizeTokenString(getToken()).toLowerCase(),
+                sanitizeTokenString(getAppleToken()).toLowerCase(),
                 topic,
                 payload,
                 Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),

@@ -2,7 +2,11 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.ApnsClientFactory;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import io.github.bucket4j.*;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BlockingBucket;
+import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.Refill;
+import io.github.bucket4j.TimeMeter;
 import io.github.bucket4j.local.LockFreeBucket;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +23,7 @@ import static org.apache.commons.lang3.StringUtils.truncate;
 
 @Slf4j
 @Service
-public class ApnsPushNotificationService {
+public class ApnsTemplate {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
@@ -29,7 +33,7 @@ public class ApnsPushNotificationService {
 
     private final BlockingBucket rateLimitingBucket;
 
-    public ApnsPushNotificationService(
+    public ApnsTemplate(
             final RobertPushServerProperties robertPushServerProperties,
             final ApnsClientFactory apnsClientFactory) {
         this.robertPushServerProperties = robertPushServerProperties;
@@ -75,68 +79,59 @@ public class ApnsPushNotificationService {
         return (count > 1);
     }
 
-    public <T> void sendNotification(final NotificationPilot<T> pilot) {
-        this.sendNotification(pilot, new ConcurrentLinkedQueue<>(apnsClientFactory.getApnsClients()));
+    public <T> void sendNotification(final NotificationHandler<T> handler) {
+        this.sendNotification(handler, new ConcurrentLinkedQueue<>(apnsClientFactory.getApnsClients()));
     }
 
-    private <T> void sendNotification(final NotificationPilot<T> notificationPilot,
+    private <T> void sendNotification(final NotificationHandler<T> notificationHandler,
             final Queue<ApnsClientDecorator> apnsClientsQueue) {
         try {
             rateLimitingBucket.consume(1);
             semaphore.acquire();
-
-            var apnsClient = apnsClientsQueue.poll();
-            assert apnsClient != null;
-            final var sendNotificationFuture = apnsClient.sendNotification(
-                    notificationPilot.buildNotification(robertPushServerProperties.getApns().getTopic())
-            );
-
-            sendNotificationFuture.whenComplete((response, cause) -> {
-                semaphore.release();
-                if (Objects.nonNull(response)) {
-                    if (response.isAccepted()) {
-                        log.debug(
-                                "Push notification sent by {} accepted by APNs gateway for the token ({})",
-                                apnsClient.getId(), notificationPilot.getToken()
-                        );
-                        notificationPilot.updateOnNotificationSuccess();
-                    } else {
-                        log.debug(
-                                "Push notification sent by {} rejected by the APNs gateway: {}",
-                                apnsClient.getId(), response.getRejectionReason()
-                        );
-                        final String rejectionReason = response.getRejectionReason();
-
-                        if (isNotBlank(rejectionReason) && this.robertPushServerProperties.getApns()
-                                .getInactiveRejectionReason().contains(rejectionReason)) {
-                            if (apnsClientsQueue.size() > 0) {
-                                this.sendNotification(notificationPilot, apnsClientsQueue);
-                            } else {
-                                notificationPilot.disableToken();
-                                notificationPilot.updateOnNotificationRejection(rejectionReason);
-                            }
-                        } else {
-                            notificationPilot.updateOnNotificationRejection(rejectionReason);
-                        }
-
-                        response.getTokenInvalidationTimestamp().ifPresent(
-                                timestamp -> log.debug("\t…and the token is invalid as of {}", timestamp)
-                        );
-                    }
-                } else {
-                    // Something went wrong when trying to send the notification to the
-                    // APNs server. Note that this is distinct from a rejection from
-                    // the server, and indicates that something went wrong when actually
-                    // sending the notification or waiting for a reply.
-                    log.warn("Push Notification sent by {} failed", apnsClient.getId(), cause);
-                    notificationPilot.updateOnNotificationRejection(truncate(cause.getMessage(), 255));
-                }
-            }).exceptionally(e -> {
-                log.error("Unexpected error occurred", e);
-                return null;
-            });
         } catch (InterruptedException e) {
-            log.error("Unexpected error occurred", e);
+            log.error("error during rate limiting process", e);
+            return;
         }
+
+        var apnsClient = apnsClientsQueue.poll();
+        assert apnsClient != null;
+        final var sendNotificationFuture = apnsClient.sendNotification(
+                notificationHandler.buildNotification(robertPushServerProperties.getApns().getTopic())
+        );
+
+        sendNotificationFuture.whenComplete((response, cause) -> {
+            semaphore.release();
+            if (Objects.nonNull(response)) {
+                if (response.isAccepted()) {
+                    notificationHandler.onSuccess();
+                } else {
+                    final String rejectionReason = response.getRejectionReason();
+
+                    if (isNotBlank(rejectionReason) && this.robertPushServerProperties.getApns()
+                            .getInactiveRejectionReason().contains(rejectionReason)) {
+                        // errors which means to try on another apn server
+                        if (apnsClientsQueue.size() > 0) {
+                            // try next apn client in the queue
+                            this.sendNotification(notificationHandler, apnsClientsQueue);
+                        } else {
+                            // token was unsuccessful on every client, disable it
+                            notificationHandler.onTokenNotFound(rejectionReason);
+                        }
+                    } else {
+                        notificationHandler.onRejection(rejectionReason);
+                    }
+                }
+            } else {
+                // Something went wrong when trying to send the notification to the
+                // APNs server. Note that this is distinct from a rejection from
+                // the server, and indicates that something went wrong when actually
+                // sending the notification or waiting for a reply.
+                log.warn("Push Notification sent by {} failed", apnsClient.getId(), cause);
+                notificationHandler.onRejection(truncate(cause.getMessage(), 255));
+            }
+        }).exceptionally(e -> {
+            log.error("Unexpected error occurred", e);
+            return null;
+        });
     }
 }
