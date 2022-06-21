@@ -12,9 +12,6 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -50,8 +47,6 @@ public class PsqlManager implements TestExecutionListener {
             DockerImageName.parse("postgres:9.6")
     );
 
-    public static Instant defaultNextPlannedPushDate = LocalDateTime.now().toInstant(ZoneOffset.UTC);
-
     static {
         POSTGRES.withCommand("-c", "log_statement=all");
         POSTGRES.start();
@@ -70,16 +65,6 @@ public class PsqlManager implements TestExecutionListener {
     @Override
     public void beforeTestClass(final TestContext testContext) {
         jdbcTemplate = testContext.getApplicationContext().getBean(NamedParameterJdbcTemplate.class);
-    }
-
-    public static void givenOneFrPushInfoWith(final String token) {
-        PushInfo pushInfo = PushInfo.builder()
-                .token(token)
-                .locale("fr-FR")
-                .timezone("Europe/Paris")
-                .nextPlannedPush(defaultNextPlannedPushDate)
-                .build();
-        givenOnePushInfoSuchAs(pushInfo);
     }
 
     public static void givenOnePushInfoSuchAs(final PushInfo pushInfo) {
