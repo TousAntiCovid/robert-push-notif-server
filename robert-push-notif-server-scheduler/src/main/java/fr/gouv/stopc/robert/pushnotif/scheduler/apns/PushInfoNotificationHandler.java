@@ -1,11 +1,11 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.data;
+package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import lombok.RequiredArgsConstructor;
 
@@ -48,16 +48,12 @@ public class PushInfoNotificationHandler implements NotificationHandler<PushInfo
     }
 
     @Override
-    public void onTokenNotFound(final String rejectionReason) {
+    public void disableToken() {
         notificationData.setActive(false);
-        notificationData.setLastErrorCode(rejectionReason);
-        notificationData.setLastFailurePush(Instant.now());
-        notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
-        pushInfoDao.updateFailurePushedNotif(notificationData);
     }
 
     @Override
-    public SimpleApnsPushNotification buildNotification(final String topic) {
+    public SimpleApnsPushNotification buildNotification() {
 
         final String payload = new SimpleApnsPayloadBuilder()
                 .setContentAvailable(true)
@@ -66,7 +62,7 @@ public class PushInfoNotificationHandler implements NotificationHandler<PushInfo
 
         return new SimpleApnsPushNotification(
                 sanitizeTokenString(getAppleToken()).toLowerCase(),
-                topic,
+                pushServerProperties.getApns().getTopic(),
                 payload,
                 Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
                 DeliveryPriority.IMMEDIATE,

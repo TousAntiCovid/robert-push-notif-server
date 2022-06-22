@@ -32,7 +32,7 @@ class SchedulerVolumetryTest {
     // This test class is useful to do test with volumetry
     // @Disabled
     @Test
-    void should_correctly_sent_large_amount_of_notification_to_apns_servers() {
+    void should_correctly_send_large_amount_of_notification_to_apns_servers() {
 
         // Given
         rangeClosed(1, PUSH_NOTIF_COUNT).forEach(

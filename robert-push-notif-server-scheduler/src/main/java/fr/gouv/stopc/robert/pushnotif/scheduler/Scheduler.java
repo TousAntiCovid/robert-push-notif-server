@@ -1,9 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsTemplate;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.RateLimitingApnsTemplate;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
@@ -19,8 +19,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class Scheduler {
 
@@ -32,7 +32,7 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final ApnsTemplate apnsPushNotificationService;
+    private final RateLimitingApnsTemplate rateLimitingApnTemplate;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
@@ -43,16 +43,16 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new PushNotificationRowCallbackHandler(apnsPushNotificationService)
+                new PushNotificationRowCallbackHandlerv2(rateLimitingApnTemplate)
         );
 
-        apnsPushNotificationService.waitUntilNoActivity(Duration.ofSeconds(10));
+        rateLimitingApnTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
     @RequiredArgsConstructor
-    private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
+    private class PushNotificationRowCallbackHandlerv2 implements RowCallbackHandler {
 
-        private final ApnsTemplate apnsPushNotificationService;
+        private final RateLimitingApnsTemplate rateLimitingApnTemplate;
 
         @Override
         public void processRow(final ResultSet resultSet) throws SQLException {
@@ -66,7 +66,7 @@ public class Scheduler {
 
             handler.updateNextPlannedPushToRandomTomorrow();
 
-            apnsPushNotificationService.sendNotification(handler);
+            rateLimitingApnTemplate.sendNotification(handler);
         }
     }
 }

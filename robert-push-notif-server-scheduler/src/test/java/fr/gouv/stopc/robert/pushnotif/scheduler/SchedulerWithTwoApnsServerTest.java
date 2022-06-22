@@ -16,7 +16,10 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryAcceptedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryRejectedQueueContainsAtLeast;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -335,5 +338,4 @@ class SchedulerWithTwoApnsServerTest {
                         )
                 );
     }
-
 }

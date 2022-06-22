@@ -2,42 +2,36 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsClientDecorator;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsTemplate;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.FailoverApnsTemplate;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.RateLimitingApnsTemplate;
 import io.micrometer.core.instrument.MeterRegistry;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-@Component
 @Slf4j
-public class ApnsClientFactory {
+@Configuration
+@RequiredArgsConstructor
+public class ApnsClientConfiguration {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
     private final MeterRegistry meterRegistry;
 
-    @Getter
-    private final List<ApnsClientDecorator> apnsClients;
-
-    public ApnsClientFactory(RobertPushServerProperties robertPushServerProperties, MeterRegistry meterRegistry)
-            throws NoSuchAlgorithmException, IOException, InvalidKeyException {
-        this.robertPushServerProperties = robertPushServerProperties;
-        this.meterRegistry = meterRegistry;
-        this.apnsClients = Collections.unmodifiableList(initApnsClient());
-    }
-
-    private List<ApnsClientDecorator> initApnsClient()
+    @Bean
+    public ArrayList<ApnsOperations> apnsClients()
             throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
-        var apnsClients = new ArrayList<ApnsClientDecorator>();
+        var apnsClients = new ArrayList<ApnsOperations>();
 
         for (RobertPushServerProperties.ApnsClient apnsClientDefinition : robertPushServerProperties.getApns()
                 .getClients()) {
@@ -64,13 +58,19 @@ public class ApnsClientFactory {
             }
 
             apnsClients.add(
-                    new ApnsClientDecorator(
+                    new ApnsTemplate(
                             apnsClientBuilder.build(), apnsClientDefinition.getHost(),
-                            apnsClientDefinition.getPort()
+                            apnsClientDefinition.getPort(), robertPushServerProperties
                     )
             );
         }
         return apnsClients;
     }
 
+    @Bean
+    public RateLimitingApnsTemplate apnsTemplate(final ArrayList<ApnsOperations> apnsClients) {
+        return new RateLimitingApnsTemplate(
+                robertPushServerProperties, new FailoverApnsTemplate(apnsClients, robertPushServerProperties)
+        );
+    }
 }
