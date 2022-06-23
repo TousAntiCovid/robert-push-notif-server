@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 
@@ -120,10 +121,12 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static List<ApnsPushNotification> awaitAcceptedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
             int count) {
-        await().atMost(Duration.ofSeconds(80))
+        final var timeBefore = Instant.now().toEpochMilli();
+        await()
+                .atMost(180, TimeUnit.SECONDS)
                 .pollInterval(Duration.ofSeconds(1))
                 .until(() -> queue.size() >= count);
-
+        final var timeAfter = Instant.now().toEpochMilli();
         return new ArrayList<>(queue);
     }
 
@@ -139,7 +142,7 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static List<ApnsPushNotification> awaitRejectedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
             int count) {
-        await().atMost(Duration.ofSeconds(80))
+        await().atMost(Duration.ofSeconds(45))
                 .pollInterval(Duration.ofSeconds(1))
                 .until(() -> queue.size() >= count);
 

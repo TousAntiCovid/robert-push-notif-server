@@ -51,7 +51,6 @@ public class ApnsTemplate implements ApnsOperations {
         );
 
         sendNotificationFuture.whenComplete((response, cause) -> {
-            semaphore.release();
             if (Objects.nonNull(response)) {
                 if (response.isAccepted()) {
                     notificationHandler.onSuccess();
@@ -71,6 +70,7 @@ public class ApnsTemplate implements ApnsOperations {
             log.error("Unexpected error occurred", e);
             return null;
         });
+        semaphore.release();
     }
 
     @Override
