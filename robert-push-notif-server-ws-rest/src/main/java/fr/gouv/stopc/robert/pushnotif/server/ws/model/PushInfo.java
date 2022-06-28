@@ -1,32 +1,26 @@
-package fr.gouv.stopc.robert.pushnotif.database.model;
+package fr.gouv.stopc.robert.pushnotif.server.ws.model;
 
-import lombok.*;
+import fr.gouv.stopc.robert.pushnotif.server.ws.repository.TimeStampInstantAttributeConverter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Entity
 @Table(name = "PUSH", indexes = { @Index(name = "IDX_TOKEN", columnList = "token") })
-@DynamicUpdate(true)
+@DynamicUpdate
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@With
 public class PushInfo {
 
     @Id
@@ -43,16 +37,16 @@ public class PushInfo {
     private String locale;
 
     @Column(name = "next_planned_push")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date nextPlannedPush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant nextPlannedPush;
 
     @Column(name = "last_successful_push")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastSuccessfulPush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant lastSuccessfulPush;
 
     @Column(name = "last_failure_push ")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastFailurePush;
+    @Convert(converter = TimeStampInstantAttributeConverter.class)
+    private Instant lastFailurePush;
 
     @Column(name = "last_error_code")
     private String lastErrorCode;
@@ -65,8 +59,7 @@ public class PushInfo {
 
     @CreatedDate
     @Column(name = "creation_date", updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date creationDate;
+    private Instant creationDate;
 
     @Column(name = "active")
     private boolean active;

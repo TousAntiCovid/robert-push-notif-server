@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.test;
 
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 
@@ -13,7 +14,8 @@ public class RestAssuredManager implements TestExecutionListener {
 
     public static RequestSpecification givenBaseHeaders() {
         return given()
-                .contentType(JSON);
+                .contentType(JSON)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, "en-EN");
     }
 
     private static void configureRestAssured(final Integer port) {
