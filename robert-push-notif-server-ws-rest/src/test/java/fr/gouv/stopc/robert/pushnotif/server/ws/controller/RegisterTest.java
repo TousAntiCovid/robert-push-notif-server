@@ -33,18 +33,17 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("locale", is("fr-FR")),
-                                        hasProperty("timezone", is("Europe/Paris"))
-                                ),
-                                allOf(
-                                        hasProperty("token", is("OtherPushToken")),
-                                        hasProperty("locale", is("fr-FR")),
-                                        hasProperty("timezone", is("Europe/Paris"))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("locale", is("fr-FR")),
+                                hasProperty("timezone", is("Europe/Paris"))
+                        ),
+                        allOf(
+                                hasProperty("token", is("OtherPushToken")),
+                                hasProperty("locale", is("fr-FR")),
+                                hasProperty("timezone", is("Europe/Paris"))
                         )
                 )
         );
@@ -67,20 +66,18 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("locale", is("fr-FR")),
-                                        hasProperty("timezone", is("Europe/Paris"))
-                                ),
-                                allOf(
-                                        hasProperty("token", is("OtherPushToken")),
-                                        hasProperty("locale", is("en-EN")),
-                                        hasProperty("timezone", is("Pacific/Kosrae")),
-                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Kosrae"))
-
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("locale", is("fr-FR")),
+                                hasProperty("timezone", is("Europe/Paris"))
+                        ),
+                        allOf(
+                                hasProperty("token", is("OtherPushToken")),
+                                hasProperty("locale", is("en-EN")),
+                                hasProperty("timezone", is("Pacific/Kosrae")),
+                                hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Kosrae"))
                         )
                 )
         );
@@ -113,13 +110,12 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("active", is(true)),
-                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("active", is(true)),
+                                hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                         )
                 )
         );
@@ -152,14 +148,13 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("deleted", equalTo(false)),
-                                        hasProperty("active", equalTo(true)),
-                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("deleted", equalTo(false)),
+                                hasProperty("active", equalTo(true)),
+                                hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                         )
                 )
         );
@@ -192,14 +187,13 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("deleted", equalTo(false)),
-                                        hasProperty("active", equalTo(true)),
-                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Auckland"))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("deleted", equalTo(false)),
+                                hasProperty("active", equalTo(true)),
+                                hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Pacific/Auckland"))
                         )
                 )
         );
@@ -223,14 +217,13 @@ public class RegisterTest {
                 .statusCode(CREATED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("locale", is("en-EN")),
-                                        hasProperty("timezone", is("Europe/London")),
-                                        hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("locale", is("en-EN")),
+                                hasProperty("timezone", is("Europe/London")),
+                                hasProperty("nextPlannedPush", isTimeBetween8amAnd7Pm("Europe/Paris"))
                         )
                 )
         );
@@ -247,12 +240,11 @@ public class RegisterTest {
                 .statusCode(METHOD_NOT_ALLOWED.value())
                 .body(is(emptyOrNullString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -268,12 +260,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body(is(emptyOrNullString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -294,12 +285,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("token", is("must not be null"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -321,12 +311,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("token", is("size must be between 1 and 2147483647"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -347,12 +336,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("locale", is("must not be null"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -374,12 +362,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("locale", is("size must be between 1 and 2147483647"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -400,12 +387,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("timezone", is("must not be null"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -427,12 +413,11 @@ public class RegisterTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("timezone", is("size must be between 1 and 2147483647"));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );
@@ -454,13 +439,12 @@ public class RegisterTest {
                 .then()
                 .statusCode(BAD_REQUEST.value());
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("timezone", is("Europe/Paris")),
-                                        hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("timezone", is("Europe/Paris")),
+                                hasProperty("nextPlannedPush", is(defaultNextPlannedPushDate))
                         )
                 )
         );

@@ -25,12 +25,11 @@ public class UnregisterTest {
                 .statusCode(ACCEPTED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                allOf(
-                                        hasProperty("token", is("PushToken")),
-                                        hasProperty("deleted", is(true))
-                                )
+                getPushInfos(),
+                contains(
+                        allOf(
+                                hasProperty("token", is("PushToken")),
+                                hasProperty("deleted", is(true))
                         )
                 )
         );
@@ -54,10 +53,9 @@ public class UnregisterTest {
                 .statusCode(ACCEPTED.value())
                 .body(is(emptyString()));
         assertThat(
-                getPushInfos(), allOf(
-                        contains(
-                                hasProperty("deleted", is(true))
-                        )
+                getPushInfos(),
+                contains(
+                        hasProperty("deleted", is(true))
                 )
         );
     }

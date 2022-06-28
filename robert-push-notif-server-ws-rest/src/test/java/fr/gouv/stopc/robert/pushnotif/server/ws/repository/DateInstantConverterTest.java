@@ -3,8 +3,6 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.repository;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
 import java.time.*;
@@ -12,7 +10,6 @@ import java.time.*;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class DateInstantConverterTest {
 
@@ -20,7 +17,7 @@ public class DateInstantConverterTest {
 
     @Test
     public void instant_to_timestamp() {
-        int hoursBetweenUTCAndLocalTimeZone = ZonedDateTime.now().getOffset().getTotalSeconds() / 3600;
+        final var hoursBetweenUTCAndLocalTimeZone = ZonedDateTime.now().getOffset().getTotalSeconds() / 3600;
         assertThat(dateInstantConverter.convertToDatabaseColumn(Instant.ofEpochSecond(1666618560L)))
                 .hasTime(1666618560000L)
                 .hasDayOfMonth(24)
