@@ -6,7 +6,7 @@ import java.time.Duration;
 
 public interface ApnsOperations {
 
-    <T> void sendNotification(NotificationHandler<T> handler);
+    <T> void sendNotification(NotificationHandler handler);
 
     void waitUntilNoActivity(Duration toleranceDuration);
 }

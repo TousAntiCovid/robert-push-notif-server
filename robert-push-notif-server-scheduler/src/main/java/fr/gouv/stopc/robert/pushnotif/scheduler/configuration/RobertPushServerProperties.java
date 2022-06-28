@@ -22,20 +22,17 @@ public class RobertPushServerProperties {
 
     @Min(0)
     @Max(22)
-    private int minPushHour;
+    int minPushHour;
 
     @Min(1)
     @Max(23)
-    private int maxPushHour;
+    int maxPushHour;
 
     @Positive
-    private int maxNumberOfOutstandingNotification;
-
-    @Positive
-    private int maxNotificationsPerSecond;
+    int maxNotificationsPerSecond;
 
     @Valid
-    private RobertPushServerProperties.Apns apns;
+    RobertPushServerProperties.Apns apns;
 
     @Value
     @Builder

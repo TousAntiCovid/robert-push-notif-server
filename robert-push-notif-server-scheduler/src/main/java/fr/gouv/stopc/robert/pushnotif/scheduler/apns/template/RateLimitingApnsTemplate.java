@@ -1,7 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BlockingBucket;
 import io.github.bucket4j.Bucket4j;
@@ -19,19 +18,16 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
 
     private final ApnsOperations apnDelegate;
 
-    final RobertPushServerProperties robertPushServerProperties;
-
     public RateLimitingApnsTemplate(
-            final RobertPushServerProperties robertPushServerProperties,
+            final int maxNotificationsPerSecond,
             final ApnsOperations apnDelegate) {
 
         this.apnDelegate = apnDelegate;
-        this.robertPushServerProperties = robertPushServerProperties;
 
         final var limit = Bandwidth.classic(
-                robertPushServerProperties.getMaxNotificationsPerSecond(),
+                maxNotificationsPerSecond,
                 Refill.intervally(
-                        robertPushServerProperties.getMaxNotificationsPerSecond(),
+                        maxNotificationsPerSecond,
                         Duration.ofSeconds(1)
                 )
         );
@@ -40,7 +36,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public <T> void sendNotification(NotificationHandler<T> handler) {
+    public <T> void sendNotification(final NotificationHandler handler) {
 
         try {
             rateLimitingBucket.consume(1);
@@ -48,12 +44,11 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
             log.error("error during rate limiting process", e);
             return;
         }
-
         apnDelegate.sendNotification(handler);
     }
 
     @Override
-    public void waitUntilNoActivity(Duration toleranceDuration) {
+    public void waitUntilNoActivity(final Duration toleranceDuration) {
         apnDelegate.waitUntilNoActivity(toleranceDuration);
     }
 }

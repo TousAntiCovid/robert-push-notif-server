@@ -1,7 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.RateLimitingApnsTemplate;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
@@ -32,7 +32,7 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final RateLimitingApnsTemplate rateLimitingApnTemplate;
+    private final ApnsOperations apnsTemplate;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
@@ -43,16 +43,14 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new PushNotificationRowCallbackHandlerv2(rateLimitingApnTemplate)
+                new PushNotificationRowCallbackHandler()
         );
 
-        rateLimitingApnTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
+        apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
     @RequiredArgsConstructor
-    private class PushNotificationRowCallbackHandlerv2 implements RowCallbackHandler {
-
-        private final RateLimitingApnsTemplate rateLimitingApnTemplate;
+    private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
 
         @Override
         public void processRow(final ResultSet resultSet) throws SQLException {
@@ -61,12 +59,16 @@ public class Scheduler {
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
             PushInfoNotificationHandler handler = new PushInfoNotificationHandler(
-                    pushInfo, pushInfoDao, robertPushServerProperties
+                    pushInfo,
+                    pushInfoDao,
+                    robertPushServerProperties.getApns().getTopic(),
+                    robertPushServerProperties.getMinPushHour(),
+                    robertPushServerProperties.getMaxPushHour()
             );
 
             handler.updateNextPlannedPushToRandomTomorrow();
 
-            rateLimitingApnTemplate.sendNotification(handler);
+            apnsTemplate.sendNotification(handler);
         }
     }
 }

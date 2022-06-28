@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -28,7 +30,7 @@ public class ApnsClientConfiguration {
     private final MeterRegistry meterRegistry;
 
     @Bean
-    public ArrayList<ApnsOperations> apnsClients()
+    public List<ApnsOperations> apnsClients()
             throws InvalidKeyException, NoSuchAlgorithmException, IOException {
 
         var apnsClients = new ArrayList<ApnsOperations>();
@@ -60,17 +62,18 @@ public class ApnsClientConfiguration {
             apnsClients.add(
                     new ApnsTemplate(
                             apnsClientBuilder.build(), apnsClientDefinition.getHost(),
-                            apnsClientDefinition.getPort(), robertPushServerProperties
+                            apnsClientDefinition.getPort()
                     )
             );
         }
-        return apnsClients;
+        return Collections.unmodifiableList(apnsClients);
     }
 
     @Bean
-    public RateLimitingApnsTemplate apnsTemplate(final ArrayList<ApnsOperations> apnsClients) {
+    public ApnsOperations apnsTemplate(final List<ApnsOperations> apnsClients) {
         return new RateLimitingApnsTemplate(
-                robertPushServerProperties, new FailoverApnsTemplate(apnsClients, robertPushServerProperties)
+                robertPushServerProperties.getMaxNotificationsPerSecond(),
+                new FailoverApnsTemplate(apnsClients, robertPushServerProperties.getApns().getInactiveRejectionReason())
         );
     }
 }

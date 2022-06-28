@@ -121,12 +121,10 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static List<ApnsPushNotification> awaitAcceptedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
             int count) {
-        final var timeBefore = Instant.now().toEpochMilli();
         await()
                 .atMost(180, TimeUnit.SECONDS)
                 .pollInterval(Duration.ofSeconds(1))
                 .until(() -> queue.size() >= count);
-        final var timeAfter = Instant.now().toEpochMilli();
         return new ArrayList<>(queue);
     }
 

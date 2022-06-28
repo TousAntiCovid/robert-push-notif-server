@@ -10,11 +10,6 @@ spring:
     scheduling:
       shutdown:
         await-termination: true
-#  jpa:
-#    properties:
-#      hibernate:
-#        jdbc:
-#          batch_size: 1
 
 management:
   endpoints:
@@ -31,7 +26,6 @@ robert.push.server:
   scheduler:
     delay-in-ms: 30000
 
-  max-number-of-outstanding-notification: 10000
   max-notifications-per-second: 200
 
   apns:

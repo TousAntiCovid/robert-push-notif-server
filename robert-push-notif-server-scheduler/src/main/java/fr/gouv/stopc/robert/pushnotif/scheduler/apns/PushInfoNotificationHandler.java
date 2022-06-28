@@ -4,7 +4,6 @@ import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +18,17 @@ import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
 
 @RequiredArgsConstructor
-public class PushInfoNotificationHandler implements NotificationHandler<PushInfo> {
+public class PushInfoNotificationHandler implements NotificationHandler {
 
     private final PushInfo notificationData;
 
     private final PushInfoDao pushInfoDao;
 
-    private final RobertPushServerProperties pushServerProperties;
+    private final String apnsTopic;
+
+    private final int minPushHour;
+
+    private final int maxPushHour;
 
     @Override
     public String getAppleToken() {
@@ -62,7 +65,7 @@ public class PushInfoNotificationHandler implements NotificationHandler<PushInfo
 
         return new SimpleApnsPushNotification(
                 sanitizeTokenString(getAppleToken()).toLowerCase(),
-                pushServerProperties.getApns().getTopic(),
+                apnsTopic,
                 payload,
                 Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
                 DeliveryPriority.IMMEDIATE,
@@ -78,8 +81,6 @@ public class PushInfoNotificationHandler implements NotificationHandler<PushInfo
     private Instant generateDateTomorrowBetweenBounds(final String timezone) {
 
         final var random = ThreadLocalRandom.current();
-        final var maxPushHour = pushServerProperties.getMaxPushHour();
-        final var minPushHour = pushServerProperties.getMinPushHour();
 
         final int durationBetweenHours;
         // In case config requires "between 6pm and 4am" which translates in minPushHour

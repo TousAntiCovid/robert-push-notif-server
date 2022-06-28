@@ -2,24 +2,21 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Slf4j
 @RequiredArgsConstructor
 public class FailoverApnsTemplate implements ApnsOperations {
 
     private final List<ApnsOperations> apnsDelegates;
 
-    private final RobertPushServerProperties robertPushServerProperties;
+    private final List<String> inactiveRejectionReasons;
 
     @Override
-    public <T> void sendNotification(NotificationHandler<T> notificationHandler) {
+    public <T> void sendNotification(NotificationHandler notificationHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
@@ -28,10 +25,10 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     @Override
     public void waitUntilNoActivity(Duration toleranceDuration) {
-        apnsDelegates.forEach(it -> it.waitUntilNoActivity(toleranceDuration));
+        apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
-    private <T> void sendNotification(final NotificationHandler<T> notificationHandler,
+    private <T> void sendNotification(final NotificationHandler notificationHandler,
             final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
 
         final var client = queue.poll();
@@ -39,7 +36,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
         if (client == null) {
             return;
         }
-        final NotificationHandler<T> multiApnsTemplateHandler = new NotificationHandler<T>() {
+        final NotificationHandler multiApnsTemplateHandler = new NotificationHandler() {
 
             @Override
             public String getAppleToken() {
@@ -54,7 +51,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
             @Override
             public void onRejection(String rejectionMessage) {
 
-                if (robertPushServerProperties.getApns().getInactiveRejectionReason().contains(rejectionMessage)) {
+                if (inactiveRejectionReasons.contains(rejectionMessage)) {
                     // errors which means to try on another apn server
                     if (queue.size() > 0) {
                         // try next apn client in the queue
