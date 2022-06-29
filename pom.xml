@@ -22,28 +22,42 @@
 
     <modules>
         <module>robert-push-notif-server-ws-rest</module>
-        <module>robert-push-notif-server-common</module>
         <module>robert-push-notif-server-scheduler</module>
     </modules>
 
     <properties>
         <java.version>11</java.version>
         <lombok.version>1.18.24</lombok.version>
-    <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
-    <javax-rs.version>2.1.1</javax-rs.version>
-    <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <postgresql.version>42.2.12</postgresql.version>
-    <commons-lang3.version>3.11</commons-lang3.version>
-    <testcontainers.version>1.15.3</testcontainers.version>
-    <log4j2.version>2.17.0</log4j2.version>
-  <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
-  <spring-cloud.version>Hoxton.SR5</spring-cloud.version>
+        <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
+        <javax-rs.version>2.1.1</javax-rs.version>
+        <javax.validation.version>2.0.1.Final</javax.validation.version>
+        <postgresql.version>42.2.12</postgresql.version>
+        <commons-lang3.version>3.11</commons-lang3.version>
+        <testcontainers.version>1.15.3</testcontainers.version>
+        <log4j2.version>2.17.0</log4j2.version>
+        <spring-framework.version>5.2.20.RELEASE</spring-framework.version>
+    <spring-cloud.version>Hoxton.SR5</spring-cloud.version>
     </properties>
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
         <dependency>
@@ -57,11 +71,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <!-- Test dependencies -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -109,13 +135,6 @@
                 <groupId>com.eatthepath</groupId>
                 <artifactId>pushy</artifactId>
                 <version>0.14.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers</artifactId>
-                <version>${testcontainers.version}</version>
-                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,12 +1,11 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.common.PushDate;
-import fr.gouv.stopc.robert.pushnotif.common.utils.TimeUtils;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsPushNotificationService;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.mapper.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.dao.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +18,9 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class Scheduler {
 
@@ -35,7 +32,7 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final ApnsPushNotificationService apnsPushNotificationService;
+    private final ApnsOperations apnsTemplate;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
@@ -46,47 +43,32 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new PushNotificationRowCallbackHandler(apnsPushNotificationService)
+                new PushNotificationRowCallbackHandler()
         );
 
-        apnsPushNotificationService.waitUntilNoActivity(Duration.ofSeconds(10));
-
+        apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
     @RequiredArgsConstructor
     private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
 
-        private final ApnsPushNotificationService apnsPushNotificationService;
-
         @Override
-        public void processRow(ResultSet resultSet) throws SQLException {
+        public void processRow(final ResultSet resultSet) throws SQLException {
             PushInfo pushInfo = rowMapper.mapRow(resultSet, resultSet.getRow());
 
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            setNextPlannedPushDate(pushInfo);
-            pushInfoDao.updateNextPlannedPushDate(pushInfo);
+            PushInfoNotificationHandler handler = new PushInfoNotificationHandler(
+                    pushInfo,
+                    pushInfoDao,
+                    robertPushServerProperties.getApns().getTopic(),
+                    robertPushServerProperties.getMinPushHour(),
+                    robertPushServerProperties.getMaxPushHour()
+            );
 
-            apnsPushNotificationService.sendPushNotification(pushInfo);
+            handler.updateNextPlannedPushToRandomTomorrow();
+
+            apnsTemplate.sendNotification(handler);
         }
     }
-
-    private void setNextPlannedPushDate(PushInfo push) {
-        PushDate pushDate = PushDate.builder()
-                .lastPushDate(TimeUtils.getNowAtTimeZoneUTC())
-                .timezone(push.getTimezone())
-                .minPushHour(this.robertPushServerProperties.getMinPushHour())
-                .maxPushHour(this.robertPushServerProperties.getMaxPushHour())
-                .build();
-
-        TimeUtils.getNextPushDate(pushDate).ifPresent(
-                o -> push.setNextPlannedPush(
-                        LocalDateTime.ofInstant(
-                                o.toInstant(), ZoneId
-                                        .of("UTC")
-                        )
-                )
-        );
-    }
-
 }

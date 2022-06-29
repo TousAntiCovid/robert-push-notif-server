@@ -2,7 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.server.ws.controller;
 
 import fr.gouv.stopc.robert.pushnotif.server.api.PushTokenApi;
 import fr.gouv.stopc.robert.pushnotif.server.api.model.PushRequest;
-import fr.gouv.stopc.robert.pushnotif.server.ws.configuration.PushNotifProperties;
+import fr.gouv.stopc.robert.pushnotif.server.ws.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.server.ws.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.server.ws.repository.PushInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class PushNotifController implements PushTokenApi {
 
     private final PushInfoRepository pushInfoRepository;
 
-    private final PushNotifProperties pushNotifProperties;
+    private final RobertPushServerProperties robertPushServerProperties;
 
     @Override
     public ResponseEntity<Void> registerPushToken(final @Valid PushRequest pushRequest) {
@@ -77,8 +77,8 @@ public class PushNotifController implements PushTokenApi {
     private Instant generateDateTomorrowBetweenBounds(final String timezone) {
 
         final Random random = ThreadLocalRandom.current();
-        final Integer maxPushHour = pushNotifProperties.getMaxPushHour();
-        final Integer minPushHour = pushNotifProperties.getMinPushHour();
+        final Integer maxPushHour = robertPushServerProperties.getMaxPushHour();
+        final Integer minPushHour = robertPushServerProperties.getMinPushHour();
 
         final int durationBetweenHours;
         // In case config requires "between 6pm and 4am" which translates in minPushHour
