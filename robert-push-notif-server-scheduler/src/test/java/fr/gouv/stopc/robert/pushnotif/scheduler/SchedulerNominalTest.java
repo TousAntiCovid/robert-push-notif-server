@@ -35,39 +35,10 @@ class SchedulerNominalTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
-        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
         // Given
-        // givenOnePushInfoSuchAs(
-        // PushInfo.builder()
-        // .id(1L)
-        // .token("A-TOK1111111111111111")
-        // .locale("fr_FR")
-        // .timezone("Europe/Paris")
-        // .active(true)
-        // .deleted(false)
-        // .creationDate(Instant.now())
-        // .nextPlannedPush(
-        // LocalDateTime.from(
-        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-        // ).toInstant(UTC)
-        // )
-        // .build()
-        // );
-
-        // This notification will be sent tomorrow not today
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
         givenPushInfoWith(b -> b.id(2L).token("FUTURE-1111111111111112").nextPlannedPush(TOMORROW_PLANNED_DATE));
-        // givenOnePushInfoSuchAs(
-        // PushInfo.builder()
-        // .id(2L)
-        // .token("FUTURE-1111111111111112")
-        // .locale("fr_FR")
-        // .timezone("Europe/Paris")
-        // .active(true)
-        // .deleted(false)
-        // .nextPlannedPush(TOMORROW_PLANNED_DATE)
-        // .build()
-        // );
+
         // When - triggering of the scheduled task
 
         // Then
@@ -128,26 +99,10 @@ class SchedulerNominalTest {
 
     @Test
     void should_deactivate_notification_when_apns_server_replies_with_is_invalid_token_reason() {
+
         // Given
         givenPushInfoWith(b -> b.id(3L).token("987654321"));
-        // givenOnePushInfoSuchAs(
-        // PushInfo.builder()
-        // .id(3L)
-        // .token("987654321")
-        // .locale("fr_FR")
-        // .timezone("Europe/Paris")
-        // .active(true)
-        // .deleted(false)
-        // .creationDate(Instant.now())
-        // .nextPlannedPush(
-        // LocalDateTime.from(
-        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-        // )
-        // .toInstant(UTC)
-        // )
-        // .build()
-        // );
+
         // When - triggering of the scheduled task
 
         // Then
@@ -182,24 +137,6 @@ class SchedulerNominalTest {
     void should_not_deactivate_notification_when_apns_server_replies_with_no_invalid_token_reason() {
         // Given
         givenPushInfoWith(b -> b.id(4L).token("112233445566"));
-        // givenOnePushInfoSuchAs(
-        // PushInfo.builder()
-        // .id(4L)
-        // .token("112233445566")
-        // .locale("fr_FR")
-        // .timezone("Europe/Paris")
-        // .active(true)
-        // .deleted(false)
-        // .creationDate(Instant.now())
-        // .nextPlannedPush(
-        // LocalDateTime.from(
-        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-        // )
-        // .toInstant(UTC)
-        // )
-        // .build()
-        // );
 
         // When - triggering of the scheduled task
 
