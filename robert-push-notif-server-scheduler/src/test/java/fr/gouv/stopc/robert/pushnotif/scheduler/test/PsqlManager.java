@@ -85,16 +85,27 @@ public class PsqlManager implements TestExecutionListener {
             .token("00000000")
             .locale("fr-FR")
             .timezone("Europe/Paris")
-            .nextPlannedPush(
-                    LocalDateTime.from(
-                            LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                    .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                    ).toInstant(UTC)
-            )
             .creationDate(Instant.now());
 
-    public static void givenPushInfoWith(final Function<PushInfoBuilder, PushInfoBuilder> function) {
-        insert(function.apply(pushinfoBuilder).build());
+    public static void givenPushInfoWith(
+            final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilderCompletion) {
+        insert(
+                testSpecificBuilderCompletion.apply(
+                        pushinfoBuilder
+                                /*
+                                 * Set next planned push date outside of static builder to have varying
+                                 * getRandomNumberInRange results but let test specific builder override it if
+                                 * needed
+                                 */
+                                .nextPlannedPush(
+                                        LocalDateTime.from(
+                                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                        )
+                                                .toInstant(UTC)
+                                )
+                ).build()
+        );
     }
 
     public static PushInfo findByToken(String token) {

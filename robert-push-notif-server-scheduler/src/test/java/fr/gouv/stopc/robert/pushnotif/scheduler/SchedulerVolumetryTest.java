@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +15,7 @@ import java.util.UUID;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenOnePushInfoSuchAs;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.ZoneOffset.UTC;
 import static java.util.stream.LongStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,27 +35,18 @@ class SchedulerVolumetryTest {
     void should_correctly_send_large_amount_of_notification_to_apns_servers() {
 
         // Given
-        rangeClosed(1, PUSH_NOTIF_COUNT).forEach(
-                i -> givenOnePushInfoSuchAs(
-                        PushInfo.builder()
-                                .id(i)
-                                .token(UUID.randomUUID().toString())
-                                .locale("fr_FR")
-                                .timezone("Europe/Paris")
-                                .active(true)
-                                .deleted(false)
-                                .creationDate(Instant.now())
-                                .nextPlannedPush(
-                                        LocalDateTime.from(
-                                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                        ).toInstant(UTC)
-                                )
-                                .build()
-                )
-        );
-        // rangeClosed(1, PUSH_NOTIF_COUNT).forEach(i -> givenPushInfoWith(p ->
-        // p.id(i).token(randomUUID().toString())));
+        rangeClosed(1, PUSH_NOTIF_COUNT).forEach(i -> {
+            givenPushInfoWith(
+                    b -> b.id(i)
+                            .token(UUID.randomUUID().toString())
+                            .nextPlannedPush(
+                                    LocalDateTime.from(
+                                            LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+                                                    .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                    ).toInstant(UTC)
+                            )
+            );
+        });
 
         // Then
         List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(

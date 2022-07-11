@@ -19,7 +19,6 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.a
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryAcceptedQueueContainsAtLeast;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryRejectedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,22 +31,13 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
         // Given
-        PsqlManager.givenOnePushInfoSuchAs(
-                PushInfo.builder()
-                        .id(1L)
-                        .token("A-TOK1111111111111111")
-                        .locale("fr_FR")
-                        .timezone("Europe/Paris")
-                        .active(true)
-                        .deleted(false)
-                        .creationDate(Instant.now())
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                ).toInstant(UTC)
-                        )
-                        .build()
+        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111")
+        // .nextPlannedPush(
+        // LocalDateTime.from(
+        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+        // ).toInstant(UTC)
+        // )
         );
         // When -- triggering of the scheduled job
 
@@ -105,22 +95,13 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_rejected_reason_other_than_invalid_token() {
         // Given
-        PsqlManager.givenOnePushInfoSuchAs(
-                PushInfo.builder()
-                        .id(1L)
-                        .token("999999999")
-                        .locale("fr_FR")
-                        .timezone("Europe/Paris")
-                        .active(true)
-                        .deleted(false)
-                        .creationDate(Instant.now())
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                ).toInstant(UTC)
-                        )
-                        .build()
+        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("999999999")
+        // .nextPlannedPush(
+        // LocalDateTime.from(
+        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+        // ).toInstant(UTC)
+        // )
         );
         // When -- triggering of the scheduled job
 
@@ -162,22 +143,13 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_send_notification_to_second_apns_server_when_first_replies_invalid_token_response() {
 
-        PsqlManager.givenOnePushInfoSuchAs(
-                PushInfo.builder()
-                        .id(4L)
-                        .token("123456789")
-                        .locale("fr_FR")
-                        .timezone("Europe/Paris")
-                        .active(true)
-                        .deleted(false)
-                        .creationDate(Instant.now())
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                ).toInstant(UTC)
-                        )
-                        .build()
+        PsqlManager.givenPushInfoWith(b -> b.id(4L).token("123456789")
+        // .nextPlannedPush(
+        // LocalDateTime.from(
+        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+        // ).toInstant(UTC)
+        // )
         );
         // When -- triggering of the scheduled job
 
@@ -236,22 +208,13 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_deactivate_notification_when_both_server_replies_invalid_token_response() {
 
-        PsqlManager.givenOnePushInfoSuchAs(
-                PushInfo.builder()
-                        .id(3L)
-                        .token("987654321")
-                        .locale("fr_FR")
-                        .timezone("Europe/Paris")
-                        .active(true)
-                        .deleted(false)
-                        .creationDate(Instant.now())
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                ).toInstant(UTC)
-                        )
-                        .build()
+        PsqlManager.givenPushInfoWith(b -> b.id(3L).token("987654321")
+        // .nextPlannedPush(
+        // LocalDateTime.from(
+        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+        // ).toInstant(UTC)
+        // )
         );
         // When -- triggering of the scheduled job
 
@@ -293,22 +256,13 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_second_apn_server_with_rejected_reason_other_than_invalid_token() {
 
-        PsqlManager.givenOnePushInfoSuchAs(
-                PushInfo.builder()
-                        .id(1L)
-                        .token("8888888888")
-                        .locale("fr_FR")
-                        .timezone("Europe/Paris")
-                        .active(true)
-                        .deleted(false)
-                        .creationDate(Instant.now())
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
-                                ).toInstant(UTC)
-                        )
-                        .build()
+        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("8888888888")
+        // .nextPlannedPush(
+        // LocalDateTime.from(
+        // LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
+        // .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+        // ).toInstant(UTC)
+        // )
         );
         // When -- triggering of the scheduled job
 
