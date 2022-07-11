@@ -1,0 +1,4 @@
+robert.push.server:
+  max-notifications-per-second: 1
+
+  scheduler.delay-in-ms: 100000000

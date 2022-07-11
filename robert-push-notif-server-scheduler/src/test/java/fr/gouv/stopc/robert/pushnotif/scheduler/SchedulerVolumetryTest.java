@@ -20,6 +20,7 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenOne
 import static java.time.ZoneOffset.UTC;
 import static java.util.stream.LongStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 @IntegrationTest
 @ActiveProfiles({ "dev" })
@@ -54,6 +55,8 @@ class SchedulerVolumetryTest {
                                 .build()
                 )
         );
+        // rangeClosed(1, PUSH_NOTIF_COUNT).forEach(i -> givenPushInfoWith(p ->
+        // p.id(i).token(randomUUID().toString())));
 
         // Then
         List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(
@@ -63,18 +66,14 @@ class SchedulerVolumetryTest {
         assertThat(notificationSentToMainApnServer).hasSize(PUSH_NOTIF_COUNT);
 
         assertThat(PsqlManager.findAll()).hasSize(PUSH_NOTIF_COUNT)
-                .allSatisfy(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .allSatisfy(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .allSatisfy(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
-                .allSatisfy(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
-                .allSatisfy(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
-                .allSatisfy(
-                        pushInfo -> assertThat(pushInfo.getSuccessfulPushSent())
-                                .as("successful push sent must be equal to 1").isEqualTo(1)
+                .extracting(
+                        PushInfo::isActive,
+                        PushInfo::isDeleted,
+                        PushInfo::getSuccessfulPushSent,
+                        PushInfo::getFailedPushSent,
+                        PushInfo::getLastFailurePush,
+                        PushInfo::getLastErrorCode
                 )
-                .allSatisfy(
-                        pushInfo -> assertThat(pushInfo.getFailedPushSent()).as("failed push sent must be equal to 0")
-                                .isEqualTo(0)
-                );
+                .containsOnly(tuple(true, false, 1, 0, null, null));
     }
 }

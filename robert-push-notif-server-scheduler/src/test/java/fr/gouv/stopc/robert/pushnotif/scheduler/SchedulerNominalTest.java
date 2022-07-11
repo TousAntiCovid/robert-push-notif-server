@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
@@ -22,6 +21,7 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.a
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenOnePushInfoSuchAs;
 import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
@@ -78,55 +78,51 @@ class SchedulerNominalTest {
 
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
-                .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(1))
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getLastSuccessfulPush())
-                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
+                .satisfies(pushInfo -> {
+                    assertThat(pushInfo.getLastSuccessfulPush())
+                            .isCloseTo(Instant.now(), within(10, SECONDS));
+                    assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                            LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
+                    );
+                }
+                ).extracting(
+                        PushInfo::isActive,
+                        PushInfo::isDeleted,
+                        PushInfo::getFailedPushSent,
+                        PushInfo::getLastFailurePush,
+                        PushInfo::getLastErrorCode,
+                        PushInfo::getSuccessfulPushSent
                 )
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                        )
-                );
+                .containsExactly(true, false, 0, null, null, 1);
 
         assertThat(notificationSentToMainApnServer.get(0))
                 .as("Check the content of the notification received on the APNs server side")
-                .satisfies(notif -> assertThat(notif.getPushType()).isEqualTo(PushType.BACKGROUND))
-                .satisfies(notif -> assertThat(notif.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE))
-                .satisfies(notif -> assertThat(notif.getToken()).isEqualTo("a1111111111111111"))
-                .satisfies(notif -> assertThat(notif.getTopic()).isEqualTo("test"))
                 .satisfies(
-                        notif -> assertThat(notif.getExpiration())
-                                .isCloseTo(
-                                        Instant.now().plus(Duration.ofDays(1)), within(
-                                                30,
-                                                ChronoUnit.SECONDS
-                                        )
-                                )
+                        notif -> {
+                            assertThat(notif.getExpiration())
+                                    .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(30, SECONDS));
+                            assertThat(notif.getPayload())
+                                    .isEqualTo("{\"aps\":{\"badge\":0,\"content-available\":1}}");
+                        }
+                ).extracting(
+                        ApnsPushNotification::getPushType,
+                        ApnsPushNotification::getPriority,
+                        ApnsPushNotification::getToken,
+                        ApnsPushNotification::getTopic
                 )
-                .satisfies(
-                        notif -> assertThat(notif.getPayload())
-                                .isEqualTo("{\"aps\":{\"badge\":0,\"content-available\":1}}")
-                );
+                .containsExactly(PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "a1111111111111111", "test");
 
         assertThat(PsqlManager.findByToken("FUTURE-1111111111111112"))
                 .as("This notification is not pushed because its planned date is in future")
-                .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastFailurePush()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isNull())
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getNextPlannedPush())
-                                .isEqualTo(TOMORROW_PLANNED_DATE)
-                );
+                .extracting(
+                        PushInfo::isActive, PushInfo::isDeleted, PushInfo::getFailedPushSent,
+                        PushInfo::getLastFailurePush,
+                        PushInfo::getLastErrorCode,
+                        PushInfo::getSuccessfulPushSent,
+                        PushInfo::getLastSuccessfulPush,
+                        PushInfo::getNextPlannedPush
+                )
+                .containsExactly(true, false, 0, null, null, 0, null, TOMORROW_PLANNED_DATE);
     }
 
     @Test
@@ -161,22 +157,23 @@ class SchedulerNominalTest {
 
         assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
-                .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
-                        pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
+                        pushInfo -> {
+                            assertThat(pushInfo.getLastFailurePush()).isCloseTo(Instant.now(), within(10, SECONDS));
+                            assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                                    LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
+                                            .toInstant(UTC)
+                            );
+                        }
+                ).extracting(
+                        PushInfo::isActive,
+                        PushInfo::isDeleted,
+                        PushInfo::getFailedPushSent,
+                        PushInfo::getLastErrorCode,
+                        PushInfo::getSuccessfulPushSent,
+                        PushInfo::getLastSuccessfulPush
                 )
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadDeviceToken"))
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
-                                        .toInstant(UTC)
-                        )
-                );
+                .contains(false, false, 1, "BadDeviceToken", 0, null);
     }
 
     @Test
@@ -214,21 +211,22 @@ class SchedulerNominalTest {
                 .as(
                         "Check the status of the notification that has been rejected by APNs server - notif is not deactivated"
                 )
-                .satisfies(pushInfo -> assertThat(pushInfo.isActive()).isTrue())
-                .satisfies(pushInfo -> assertThat(pushInfo.isDeleted()).isFalse())
-                .satisfies(pushInfo -> assertThat(pushInfo.getFailedPushSent()).isEqualTo(1))
                 .satisfies(
-                        pushInfo -> assertThat(pushInfo.getLastFailurePush())
-                                .isCloseTo(Instant.now(), within(10, ChronoUnit.SECONDS))
+                        pushInfo -> {
+                            assertThat(pushInfo.getLastFailurePush()).isCloseTo(Instant.now(), within(10, SECONDS));
+                            assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                                    LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
+                            );
+                        }
+                ).extracting(
+                        PushInfo::isActive,
+                        PushInfo::isDeleted,
+                        PushInfo::getFailedPushSent,
+                        PushInfo::getLastErrorCode,
+                        PushInfo::getSuccessfulPushSent,
+                        PushInfo::getLastSuccessfulPush
                 )
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastErrorCode()).isEqualTo("BadMessageId"))
-                .satisfies(pushInfo -> assertThat(pushInfo.getSuccessfulPushSent()).isEqualTo(0))
-                .satisfies(pushInfo -> assertThat(pushInfo.getLastSuccessfulPush()).isNull())
-                .satisfies(
-                        pushInfo -> assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                        )
-                );
+                .contains(true, false, 1, "BadMessageId", 0, null);
     }
 
 }
