@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;

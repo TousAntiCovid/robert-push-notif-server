@@ -1,7 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;

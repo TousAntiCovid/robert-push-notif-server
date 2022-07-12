@@ -1,7 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
