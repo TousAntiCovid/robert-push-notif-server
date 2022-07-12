@@ -2,11 +2,13 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@Slf4j
 @RequiredArgsConstructor
 public class FailoverApnsTemplate implements ApnsOperations {
 
@@ -15,7 +17,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
     private final List<String> inactiveRejectionReasons;
 
     @Override
-    public <T> void sendNotification(NotificationHandler notificationHandler) {
+    public void sendNotification(NotificationHandler notificationHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
@@ -77,5 +79,16 @@ public class FailoverApnsTemplate implements ApnsOperations {
         };
 
         client.sendNotification(multiApnsTemplateHandler);
+    }
+
+    @Override
+    public void close() {
+        apnsDelegates.parallelStream().forEach(apnsTemplate -> {
+            try {
+                apnsTemplate.close();
+            } catch (Exception e) {
+                log.error("Unable to close {} gracefully", apnsTemplate, e);
+            }
+        });
     }
 }

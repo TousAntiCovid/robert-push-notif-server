@@ -32,11 +32,10 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
                 .addLimit(limit)
                 .withMillisecondPrecision()
                 .build();
-        ;
     }
 
     @Override
-    public <T> void sendNotification(final NotificationHandler handler) {
+    public void sendNotification(final NotificationHandler handler) {
 
         try {
             rateLimitingBucket.asBlocking().consume(1);
@@ -50,5 +49,10 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     @Override
     public void waitUntilNoActivity(final Duration toleranceDuration) {
         apnDelegate.waitUntilNoActivity(toleranceDuration);
+    }
+
+    @Override
+    public void close() throws Exception {
+        apnDelegate.close();
     }
 }

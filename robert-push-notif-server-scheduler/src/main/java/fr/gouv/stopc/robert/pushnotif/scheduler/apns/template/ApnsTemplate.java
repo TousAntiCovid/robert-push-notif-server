@@ -3,12 +3,15 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 import com.eatthepath.pushy.apns.ApnsClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.truncate;
 
@@ -16,14 +19,18 @@ import static org.apache.commons.lang3.StringUtils.truncate;
  * Used to identify the APN server host & port when an error occurs
  */
 @Slf4j
+@ToString
+@RequiredArgsConstructor
 public class ApnsTemplate implements ApnsOperations {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
     private final ApnsClient apnsClient;
 
+    @ToString.Include
     private final String host;
 
+    @ToString.Include
     private final int port;
 
     private final Timer notifDurationTimer;
@@ -40,7 +47,7 @@ public class ApnsTemplate implements ApnsOperations {
                 .register(meterRegistry);
     }
 
-    public <T> void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler) {
         final var pushRequestChrono = Timer.start();
 
         pendingNotifications.incrementAndGet();
@@ -79,12 +86,19 @@ public class ApnsTemplate implements ApnsOperations {
     @Override
     public void waitUntilNoActivity(Duration toleranceDuration) {
         do {
-            log.info("it remains {} pending notifications with client {}:{}", pendingNotifications.get(), host, port);
+            log.info("it remains {} pending notifications with client {}", pendingNotifications.get(), this);
             try {
                 SECONDS.sleep(toleranceDuration.getSeconds());
             } catch (InterruptedException e) {
                 log.warn("Unable to wait until all notifications are sent", e);
             }
         } while (pendingNotifications.get() != 0);
+    }
+
+    @Override
+    public void close() throws Exception {
+        log.info("Shutting down {}, gracefully waiting 1 minute", this);
+        apnsClient.close()
+                .get(1, MINUTES);
     }
 }
