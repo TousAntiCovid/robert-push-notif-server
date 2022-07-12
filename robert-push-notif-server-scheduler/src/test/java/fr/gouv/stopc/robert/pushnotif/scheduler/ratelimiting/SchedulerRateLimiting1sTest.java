@@ -51,12 +51,8 @@ public class SchedulerRateLimiting1sTest {
                 )
                 .containsOnly(tuple(true, false, 0, null, null, 1, 0));
 
-        assertThat(
-                Duration.between(
-                        before,
-                        after
-                )
-        ).isGreaterThanOrEqualTo(Duration.ofSeconds(notificationsNumber))
+        assertThat(Duration.between(before, after))
+                .isGreaterThanOrEqualTo(Duration.ofSeconds(notificationsNumber))
                 .isLessThan(Duration.ofSeconds(notificationsNumber + 10));
     }
 }

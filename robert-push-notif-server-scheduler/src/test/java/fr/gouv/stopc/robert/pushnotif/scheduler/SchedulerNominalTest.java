@@ -7,6 +7,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -14,10 +15,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -28,6 +27,9 @@ import static org.assertj.core.api.Assertions.within;
 @ActiveProfiles({ "dev", "one-apns-server" })
 @DirtiesContext
 class SchedulerNominalTest {
+
+    @Autowired
+    Scheduler scheduler;
 
     public static final Instant TOMORROW_PLANNED_DATE = LocalDateTime
             .from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC);
@@ -40,13 +42,11 @@ class SchedulerNominalTest {
         givenPushInfoWith(b -> b.id(2L).token("FUTURE-1111111111111112").nextPlannedPush(TOMORROW_PLANNED_DATE));
 
         // When - triggering of the scheduled task
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(0);
-
-        assertThat(notificationSentToMainApnServer).hasSize(1);
-        assertThat(notificationRejectedByMainApnServer).hasSize(0);
+        verifyMainServerAcceptedOne();
+        verifyMainServerRejectedNothing();
 
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
@@ -67,7 +67,7 @@ class SchedulerNominalTest {
                 )
                 .containsExactly(true, false, 0, null, null, 1);
 
-        assertThat(notificationSentToMainApnServer.get(0))
+        assertThat(getNotifsAcceptedByMainServer().get(0))
                 .as("Check the content of the notification received on the APNs server side")
                 .satisfies(
                         notif -> {
@@ -104,13 +104,11 @@ class SchedulerNominalTest {
         givenPushInfoWith(b -> b.id(3L).token("987654321"));
 
         // When - triggering of the scheduled task
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
-
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
@@ -139,13 +137,11 @@ class SchedulerNominalTest {
         givenPushInfoWith(b -> b.id(4L).token("112233445566"));
 
         // When - triggering of the scheduled task
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
-
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("112233445566"))
                 .as(

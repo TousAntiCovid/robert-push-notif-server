@@ -7,18 +7,16 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitMainRejectedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryAcceptedQueueContainsAtLeast;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.awaitSecondaryRejectedQueueContainsAtLeast;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,24 +26,23 @@ import static org.assertj.core.api.Assertions.within;
 @ActiveProfiles({ "dev" })
 class SchedulerWithTwoApnsServerTest {
 
+    @Autowired
+    Scheduler scheduler;
+
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
+
         // Given
-        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
 
         // When -- triggering of the scheduled job
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
-                0
-        );
-        assertThat(notificationSentToMainApnServer).hasSize(1);
-        assertThat(notificationSentToSecondaryApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(0);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
+        verifyMainServerAcceptedOne();
+        verifyMainServerRejectedNothing();
+        verifySecondServerRejectedNothing();
+        verifySecondServerAcceptedNothing();
 
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to main APNs server")
@@ -69,7 +66,7 @@ class SchedulerWithTwoApnsServerTest {
                 .containsExactly(true, false, 0, null, null, 1);
         ;
 
-        assertThat(notificationSentToMainApnServer.get(0))
+        assertThat(getNotifsAcceptedByMainServer().get(0))
                 .as("Check the content of the notification received on the main APNs server side")
                 .satisfies(
                         notif -> assertThat(notif.getExpiration())
@@ -88,22 +85,18 @@ class SchedulerWithTwoApnsServerTest {
 
     @Test
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_rejected_reason_other_than_invalid_token() {
+
         // Given
-        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("999999999"));
+        givenPushInfoWith(b -> b.id(1L).token("999999999"));
 
         // When -- triggering of the scheduled job
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
-                0
-        );
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationSentToSecondaryApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
+        verifySecondServerAcceptedNothing();
+        verifySecondServerRejectedNothing();
 
         assertThat(PsqlManager.findByToken("999999999"))
                 .as(
@@ -111,7 +104,7 @@ class SchedulerWithTwoApnsServerTest {
                 )
                 .satisfies(
                         pushInfo -> {
-                            assertThat(pushInfo.getLastFailurePush())
+                            assertThat(pushInfo.getLastFailurePush()).as("Last failure push")
                                     .isCloseTo(Instant.now(), within(10, SECONDS));
                             assertThat(pushInfo.getNextPlannedPush()).isAfter(
                                     LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
@@ -131,20 +124,17 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_send_notification_to_second_apns_server_when_first_replies_invalid_token_response() {
 
-        PsqlManager.givenPushInfoWith(b -> b.id(4L).token("123456789"));
+        // Given
+        givenPushInfoWith(b -> b.id(4L).token("123456789"));
+
         // When -- triggering of the scheduled job
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
-                0
-        );
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationSentToSecondaryApnServer).hasSize(1);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(0);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
+        verifySecondServerAcceptedOne();
+        verifySecondServerRejectedNothing();
 
         assertThat(PsqlManager.findByToken("123456789"))
                 .as("Check the status of the notification that has been correctly sent to secondary APNs server")
@@ -168,7 +158,7 @@ class SchedulerWithTwoApnsServerTest {
                 )
                 .containsExactly(true, false, 0, null, null, 1);
 
-        assertThat(notificationSentToSecondaryApnServer.get(0))
+        assertThat(getNotifsAcceptedBySecondServer().get(0))
                 .as("Check the content of the notification received on the secondary APNs server side")
                 .satisfies(
                         notif -> assertThat(notif.getExpiration())
@@ -189,20 +179,17 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_deactivate_notification_when_both_server_replies_invalid_token_response() {
 
-        PsqlManager.givenPushInfoWith(b -> b.id(3L).token("987654321"));
+        // Given
+        givenPushInfoWith(b -> b.id(3L).token("987654321"));
+
         // When -- triggering of the scheduled job
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(1);
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
-                1
-        );
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationSentToSecondaryApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(1);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
+        verifySecondServerAcceptedNothing();
+        verifySecondServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by all APNs server")
@@ -230,20 +217,17 @@ class SchedulerWithTwoApnsServerTest {
     @Test
     void should_correctly_update_push_status_when_send_notification_to_second_apn_server_with_rejected_reason_other_than_invalid_token() {
 
-        PsqlManager.givenPushInfoWith(b -> b.id(1L).token("8888888888"));
+        // Given
+        givenPushInfoWith(b -> b.id(1L).token("8888888888"));
+
         // When -- triggering of the scheduled job
+        scheduler.sendNotifications();
 
         // Then
-        List<ApnsPushNotification> notificationSentToMainApnServer = awaitMainAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationSentToSecondaryApnServer = awaitSecondaryAcceptedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedByMainApnServer = awaitMainRejectedQueueContainsAtLeast(0);
-        List<ApnsPushNotification> notificationRejectedBySecondaryApnServer = awaitSecondaryRejectedQueueContainsAtLeast(
-                1
-        );
-        assertThat(notificationSentToMainApnServer).hasSize(0);
-        assertThat(notificationSentToSecondaryApnServer).hasSize(0);
-        assertThat(notificationRejectedByMainApnServer).hasSize(0);
-        assertThat(notificationRejectedBySecondaryApnServer).hasSize(1);
+        verifyMainServerAcceptedNothing();
+        verifyMainServerRejectedOne();
+        verifySecondServerAcceptedNothing();
+        verifySecondServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("8888888888"))
                 .as(

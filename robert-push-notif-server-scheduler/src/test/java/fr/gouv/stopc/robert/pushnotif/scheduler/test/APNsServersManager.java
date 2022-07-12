@@ -14,16 +14,14 @@ import org.springframework.test.context.TestExecutionListener;
 
 import javax.net.ssl.SSLSession;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 
-import static org.awaitility.Awaitility.await;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * A {@link TestExecutionListener} to start APNs server mocks to be used as a
@@ -32,13 +30,6 @@ import static org.awaitility.Awaitility.await;
  * It starts a Apns servers export required system properties to override Spring
  * application context configuration.
  * <p>
- * Static methods
- * {@link APNsServersManager#awaitMainAcceptedQueueContainsAtLeast(int)},
- * {@link APNsServersManager#awaitMainRejectedQueueContainsAtLeast(int)},
- * {@link APNsServersManager#awaitSecondaryAcceptedQueueContainsAtLeast(int)},
- * and
- * {@link APNsServersManager#awaitSecondaryRejectedQueueContainsAtLeast(int)}
- * can be used to fetch notifications received by Apns Server.
  */
 public class APNsServersManager implements TestExecutionListener {
 
@@ -101,50 +92,56 @@ public class APNsServersManager implements TestExecutionListener {
         SECONDARY_APNS_SERVER_EXEC_CONTEXT.clear();
     }
 
-    public static List<ApnsPushNotification> awaitMainAcceptedQueueContainsAtLeast(int count, Duration atMostDuration) {
-        await().atMost(atMostDuration)
-                .pollInterval(Duration.ofSeconds(1))
-                .until(() -> MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() >= count);
+    public static void verifyMainServerAcceptedOne() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
+    }
 
+    public static void verifyMainServerAccepted(final int nbNotifications) {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == nbNotifications).isTrue();
+    }
+
+    public static void verifyMainServerAcceptedNothing() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void verifyMainServerRejectedOne() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void verifyMainServerRejectedNothing() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void verifySecondServerAcceptedOne() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void verifySecondServerAcceptedNothing() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void verifySecondServerRejectedOne() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void verifySecondServerRejectedNothing() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static List<ApnsPushNotification> getNotifsAcceptedBySecondServer() {
+        return new ArrayList<>(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications());
+    }
+
+    public static List<ApnsPushNotification> getNotifsAcceptedByMainServer() {
         return new ArrayList<>(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications());
     }
 
-    public static List<ApnsPushNotification> awaitMainAcceptedQueueContainsAtLeast(int count) {
-        return awaitAcceptedQueueContainsAtLeast(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications(), count);
+    public static List<ApnsPushNotification> getNotifsRejectedBySecondServer() {
+        return new ArrayList<>(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications());
     }
 
-    public static List<ApnsPushNotification> awaitSecondaryAcceptedQueueContainsAtLeast(int count) {
-        return awaitAcceptedQueueContainsAtLeast(
-                SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications(), count
-        );
-    }
-
-    private static List<ApnsPushNotification> awaitAcceptedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
-            int count) {
-        await()
-                .atMost(180, TimeUnit.SECONDS)
-                .pollInterval(Duration.ofSeconds(1))
-                .until(() -> queue.size() >= count);
-        return new ArrayList<>(queue);
-    }
-
-    public static List<ApnsPushNotification> awaitMainRejectedQueueContainsAtLeast(int count) {
-        return awaitRejectedQueueContainsAtLeast(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications(), count);
-    }
-
-    public static List<ApnsPushNotification> awaitSecondaryRejectedQueueContainsAtLeast(int count) {
-        return awaitRejectedQueueContainsAtLeast(
-                SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications(), count
-        );
-    }
-
-    private static List<ApnsPushNotification> awaitRejectedQueueContainsAtLeast(Queue<ApnsPushNotification> queue,
-            int count) {
-        await().atMost(Duration.ofSeconds(45))
-                .pollInterval(Duration.ofSeconds(1))
-                .until(() -> queue.size() >= count);
-
-        return new ArrayList<>(queue);
+    public static List<ApnsPushNotification> getNotifsRejectedByMainServer() {
+        return new ArrayList<>(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications());
     }
 
     @RequiredArgsConstructor
