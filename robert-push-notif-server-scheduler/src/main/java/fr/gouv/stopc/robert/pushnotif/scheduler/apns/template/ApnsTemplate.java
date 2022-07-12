@@ -40,7 +40,9 @@ public class ApnsTemplate implements ApnsOperations {
                 if (response.isAccepted()) {
                     notificationHandler.onSuccess();
                 } else {
-                    notificationHandler.onRejection(response.getRejectionReason().orElse(""));
+                    notificationHandler.onRejection(
+                            response.getRejectionReason().orElse("Notification request rejected for unknown reason")
+                    );
                 }
             } else {
                 // Something went wrong when trying to send the notification to the
