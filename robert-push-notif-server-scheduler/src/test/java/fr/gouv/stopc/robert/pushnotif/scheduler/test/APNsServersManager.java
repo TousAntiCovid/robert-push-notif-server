@@ -8,7 +8,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 
@@ -21,15 +20,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.eatthepath.pushy.apns.server.RejectionReason.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * A {@link TestExecutionListener} to start APNs server mocks to be used as a
  * dependency for SpringBootTests.
- * <p>
- * It starts a Apns servers export required system properties to override Spring
- * application context configuration.
- * <p>
  */
 public class APNsServersManager implements TestExecutionListener {
 
@@ -37,95 +33,34 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static final APNsServerExecutionContext SECONDARY_APNS_SERVER_EXEC_CONTEXT = new APNsServerExecutionContext();
 
-    protected static final Resource CA_CERTIFICATE_FILENAME = new ClassPathResource("/apns/ca.pem");
-
-    protected static final Resource SERVER_CERTIFICATES_FILENAME = new ClassPathResource("/apns/server-certs.pem");
-
-    protected static final Resource SERVER_KEY_FILENAME = new ClassPathResource("/apns/server-key.pem");
-
-    public static final int MAIN_SERVER_PORT = 2198;
-
-    public static final int SECONDARY_SERVER_PORT = 2197;
-
     static {
         MockApnsServer mainApnsServer = buildMockApnsServer(
                 MAIN_APNS_SERVER_EXEC_CONTEXT,
                 Map.of(
-                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                        "123456789", RejectionReason.BAD_DEVICE_TOKEN,
-                        "8888888888", RejectionReason.BAD_DEVICE_TOKEN,
-                        "999999999", RejectionReason.BAD_TOPIC,
-                        "112233445566", RejectionReason.BAD_MESSAGE_ID
+                        "987654321", BAD_DEVICE_TOKEN,
+                        "123456789", BAD_DEVICE_TOKEN,
+                        "8888888888", BAD_DEVICE_TOKEN,
+                        "999999999", BAD_TOPIC,
+                        "112233445566", BAD_MESSAGE_ID
                 )
         );
-        mainApnsServer.start(MAIN_SERVER_PORT);
+        mainApnsServer.start(2198);
 
         MockApnsServer secondaryApnsServer = buildMockApnsServer(
                 SECONDARY_APNS_SERVER_EXEC_CONTEXT,
                 Map.of(
-                        "987654321", RejectionReason.BAD_DEVICE_TOKEN,
-                        "8888888888", RejectionReason.PAYLOAD_EMPTY
+                        "987654321", BAD_DEVICE_TOKEN,
+                        "8888888888", PAYLOAD_EMPTY
                 )
         );
-        secondaryApnsServer.start(SECONDARY_SERVER_PORT);
-    }
-
-    @SneakyThrows
-    private static MockApnsServer buildMockApnsServer(APNsServerExecutionContext apnsServerExecutionContext,
-            Map<String, RejectionReason> rejectionReasonPerTokenMap) {
-        return new MockApnsServerBuilder()
-                .setServerCredentials(
-                        SERVER_CERTIFICATES_FILENAME.getInputStream(),
-                        SERVER_KEY_FILENAME.getInputStream(), null
-                )
-                .setTrustedClientCertificateChain(CA_CERTIFICATE_FILENAME.getInputStream())
-                .setEventLoopGroup(new NioEventLoopGroup(2))
-                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory(rejectionReasonPerTokenMap))
-                .setListener(new TestMockApnsServerListener(apnsServerExecutionContext))
-                .build();
+        secondaryApnsServer.start(2197);
     }
 
     @Override
-    public void beforeTestExecution(TestContext testContext) throws Exception {
+    public void beforeTestExecution(final TestContext testContext) throws Exception {
         TestExecutionListener.super.beforeTestExecution(testContext);
         MAIN_APNS_SERVER_EXEC_CONTEXT.clear();
         SECONDARY_APNS_SERVER_EXEC_CONTEXT.clear();
-    }
-
-    public static void verifyMainServerAcceptedOne() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
-    }
-
-    public static void verifyMainServerAccepted(final int nbNotifications) {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == nbNotifications).isTrue();
-    }
-
-    public static void verifyMainServerAcceptedNothing() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
-    }
-
-    public static void verifyMainServerRejectedOne() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
-    }
-
-    public static void verifyMainServerRejectedNothing() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
-    }
-
-    public static void verifySecondServerAcceptedOne() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
-    }
-
-    public static void verifySecondServerAcceptedNothing() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
-    }
-
-    public static void verifySecondServerRejectedOne() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
-    }
-
-    public static void verifySecondServerRejectedNothing() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
     }
 
     public static List<ApnsPushNotification> getNotifsAcceptedBySecondServer() {
@@ -136,12 +71,55 @@ public class APNsServersManager implements TestExecutionListener {
         return new ArrayList<>(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications());
     }
 
-    public static List<ApnsPushNotification> getNotifsRejectedBySecondServer() {
-        return new ArrayList<>(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications());
+    public static void assertThatMainServerAcceptedOne() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
     }
 
-    public static List<ApnsPushNotification> getNotifsRejectedByMainServer() {
-        return new ArrayList<>(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications());
+    public static void assertThatMainServerAccepted(final int nbNotifications) {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == nbNotifications).isTrue();
+    }
+
+    public static void assertThatMainServerAcceptedNothing() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void assertThatMainServerRejectedOne() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void assertThatMainServerRejectedNothing() {
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void assertThatSecondServerAcceptedOne() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void assertThatSecondServerAcceptedNothing() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+    }
+
+    public static void assertThatSecondServerRejectedOne() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+    }
+
+    public static void assertThatSecondServerRejectedNothing() {
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+    }
+
+    @SneakyThrows
+    private static MockApnsServer buildMockApnsServer(final APNsServerExecutionContext apnsServerExecutionContext,
+            final Map<String, RejectionReason> rejectionReasonPerTokenMap) {
+        return new MockApnsServerBuilder()
+                .setServerCredentials(
+                        new ClassPathResource("/apns/server-certs.pem").getInputStream(),
+                        new ClassPathResource("/apns/server-key.pem").getInputStream(), null
+                )
+                .setTrustedClientCertificateChain(new ClassPathResource("/apns/ca.pem").getInputStream())
+                .setEventLoopGroup(new NioEventLoopGroup(2))
+                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory(rejectionReasonPerTokenMap))
+                .setListener(new TestMockApnsServerListener(apnsServerExecutionContext))
+                .build();
     }
 
     @RequiredArgsConstructor
@@ -179,7 +157,8 @@ public class APNsServersManager implements TestExecutionListener {
         private final Map<String, RejectionReason> rejectionReasonPerTokenMap;
 
         @Override
-        public void handlePushNotification(Http2Headers headers, ByteBuf payload) throws RejectedNotificationException {
+        public void handlePushNotification(final Http2Headers headers, final ByteBuf payload)
+                throws RejectedNotificationException {
             final CharSequence pathSequence = headers.get(Http2Headers.PseudoHeaderName.PATH.value());
 
             if (pathSequence != null) {
@@ -201,7 +180,7 @@ public class APNsServersManager implements TestExecutionListener {
 
         private final APNsServerExecutionContext executionContext;
 
-        public TestMockApnsServerListener(APNsServerExecutionContext executionContext) {
+        public TestMockApnsServerListener(final APNsServerExecutionContext executionContext) {
             this.executionContext = executionContext;
         }
 

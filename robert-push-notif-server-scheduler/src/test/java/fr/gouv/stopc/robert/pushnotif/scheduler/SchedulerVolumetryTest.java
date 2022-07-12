@@ -35,9 +35,9 @@ class SchedulerVolumetryTest {
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAccepted(PUSH_NOTIF_COUNT);
-        verifySecondServerAcceptedNothing();
-        verifySecondServerRejectedNothing();
+        assertThatMainServerAccepted(PUSH_NOTIF_COUNT);
+        assertThatSecondServerAcceptedNothing();
+        assertThatSecondServerRejectedNothing();
 
         assertThat(PsqlManager.findAll()).hasSize(PUSH_NOTIF_COUNT)
                 .extracting(

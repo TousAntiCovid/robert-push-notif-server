@@ -35,14 +35,14 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
 
-        // When -- triggering of the scheduled job
+        // When
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAcceptedOne();
-        verifyMainServerRejectedNothing();
-        verifySecondServerRejectedNothing();
-        verifySecondServerAcceptedNothing();
+        assertThatMainServerAcceptedOne();
+        assertThatMainServerRejectedNothing();
+        assertThatSecondServerRejectedNothing();
+        assertThatSecondServerAcceptedNothing();
 
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to main APNs server")
@@ -93,10 +93,10 @@ class SchedulerWithTwoApnsServerTest {
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAcceptedNothing();
-        verifyMainServerRejectedOne();
-        verifySecondServerAcceptedNothing();
-        verifySecondServerRejectedNothing();
+        assertThatMainServerAcceptedNothing();
+        assertThatMainServerRejectedOne();
+        assertThatSecondServerAcceptedNothing();
+        assertThatSecondServerRejectedNothing();
 
         assertThat(PsqlManager.findByToken("999999999"))
                 .as(
@@ -131,10 +131,10 @@ class SchedulerWithTwoApnsServerTest {
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAcceptedNothing();
-        verifyMainServerRejectedOne();
-        verifySecondServerAcceptedOne();
-        verifySecondServerRejectedNothing();
+        assertThatMainServerAcceptedNothing();
+        assertThatMainServerRejectedOne();
+        assertThatSecondServerAcceptedOne();
+        assertThatSecondServerRejectedNothing();
 
         assertThat(PsqlManager.findByToken("123456789"))
                 .as("Check the status of the notification that has been correctly sent to secondary APNs server")
@@ -186,10 +186,10 @@ class SchedulerWithTwoApnsServerTest {
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAcceptedNothing();
-        verifyMainServerRejectedOne();
-        verifySecondServerAcceptedNothing();
-        verifySecondServerRejectedOne();
+        assertThatMainServerAcceptedNothing();
+        assertThatMainServerRejectedOne();
+        assertThatSecondServerAcceptedNothing();
+        assertThatSecondServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by all APNs server")
@@ -224,10 +224,10 @@ class SchedulerWithTwoApnsServerTest {
         scheduler.sendNotifications();
 
         // Then
-        verifyMainServerAcceptedNothing();
-        verifyMainServerRejectedOne();
-        verifySecondServerAcceptedNothing();
-        verifySecondServerRejectedOne();
+        assertThatMainServerAcceptedNothing();
+        assertThatMainServerRejectedOne();
+        assertThatSecondServerAcceptedNothing();
+        assertThatSecondServerRejectedOne();
 
         assertThat(PsqlManager.findByToken("8888888888"))
                 .as(

@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.Duration;
 
@@ -19,7 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 @IntegrationTest
-@ActiveProfiles({ "dev", "rate-limiting-1s" })
+@ActiveProfiles("dev")
+@TestPropertySource(properties = "robert.push.server.max-notifications-per-second=1")
 public class SchedulerRateLimiting1sTest {
 
     @Autowired
@@ -52,7 +54,6 @@ public class SchedulerRateLimiting1sTest {
                 .containsOnly(tuple(true, false, 0, null, null, 1, 0));
 
         assertThat(Duration.between(before, after))
-                .isGreaterThanOrEqualTo(Duration.ofSeconds(notificationsNumber))
-                .isLessThan(Duration.ofSeconds(notificationsNumber + 10));
+                .isGreaterThanOrEqualTo(Duration.ofSeconds(notificationsNumber));
     }
 }

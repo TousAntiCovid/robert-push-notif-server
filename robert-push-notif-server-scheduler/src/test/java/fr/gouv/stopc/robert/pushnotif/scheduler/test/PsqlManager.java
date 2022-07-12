@@ -18,10 +18,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.ItTools.getRandomNumberInRange;
 import static java.time.ZoneOffset.UTC;
 
 public class PsqlManager implements TestExecutionListener {
@@ -74,10 +74,6 @@ public class PsqlManager implements TestExecutionListener {
         jdbcTemplate = testContext.getApplicationContext().getBean(NamedParameterJdbcTemplate.class);
     }
 
-    public static void givenOnePushInfoSuchAs(final PushInfo pushInfo) {
-        insert(pushInfo);
-    }
-
     static PushInfoBuilder pushinfoBuilder = PushInfo.builder()
             .id(10000000L)
             .active(true)
@@ -99,8 +95,8 @@ public class PsqlManager implements TestExecutionListener {
                                  */
                                 .nextPlannedPush(
                                         LocalDateTime.from(
-                                                LocalDate.now().atStartOfDay().plusHours(getRandomNumberInRange(0, 23))
-                                                        .plusMinutes(getRandomNumberInRange(0, 59)).minusDays(1)
+                                                LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
+                                                        .plusMinutes(new Random().nextInt(60)).minusDays(1)
                                         )
                                                 .toInstant(UTC)
                                 )
@@ -108,7 +104,7 @@ public class PsqlManager implements TestExecutionListener {
         );
     }
 
-    public static PushInfo findByToken(String token) {
+    public static PushInfo findByToken(final String token) {
         final var parameters = Map.of("token", token);
         return jdbcTemplate.queryForObject("select * from push where token = :token", parameters, pushInfoRowMapper);
     }
@@ -116,4 +112,5 @@ public class PsqlManager implements TestExecutionListener {
     public static List<PushInfo> findAll() {
         return jdbcTemplate.query("select * from push ", pushInfoRowMapper);
     }
+
 }
