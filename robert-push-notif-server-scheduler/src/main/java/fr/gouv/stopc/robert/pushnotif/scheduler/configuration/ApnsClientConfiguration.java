@@ -62,7 +62,8 @@ public class ApnsClientConfiguration {
             apnsClients.add(
                     new ApnsTemplate(
                             apnsClientBuilder.build(), apnsClientDefinition.getHost(),
-                            apnsClientDefinition.getPort()
+                            apnsClientDefinition.getPort(),
+                            meterRegistry
                     )
             );
         }

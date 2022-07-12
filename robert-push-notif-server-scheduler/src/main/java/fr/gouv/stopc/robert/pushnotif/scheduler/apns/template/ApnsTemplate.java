@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,6 +10,8 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener.NOTIFICATION_TIMER_NAME;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.truncate;
 
@@ -25,9 +28,12 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final int port;
 
+    private final MeterRegistry meterRegistry;
+
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
     public <T> void sendNotification(final NotificationHandler notificationHandler) {
+        final var sendNotifBegining = System.nanoTime();
         pendingNotifications.incrementAndGet();
 
         final var sendNotificationFuture = apnsClient.sendNotification(
@@ -35,7 +41,12 @@ public class ApnsTemplate implements ApnsOperations {
         );
 
         sendNotificationFuture.whenComplete((response, cause) -> {
+
             pendingNotifications.decrementAndGet();
+
+            final var sendNotifEnd = System.nanoTime();
+            meterRegistry.get(NOTIFICATION_TIMER_NAME).timer().record(sendNotifEnd - sendNotifBegining, NANOSECONDS);
+
             if (Objects.nonNull(response)) {
                 if (response.isAccepted()) {
                     notificationHandler.onSuccess();
