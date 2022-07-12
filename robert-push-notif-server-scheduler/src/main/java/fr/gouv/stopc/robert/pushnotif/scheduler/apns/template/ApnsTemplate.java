@@ -101,4 +101,9 @@ public class ApnsTemplate implements ApnsOperations {
         apnsClient.close()
                 .get(1, MINUTES);
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%d", host, port);
+    }
 }
