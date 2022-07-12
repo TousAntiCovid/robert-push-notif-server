@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo.PushInfoBuilder;
 import org.flywaydb.core.Flyway;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -12,10 +13,16 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.function.Function;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
+import static java.time.ZoneOffset.UTC;
 
 public class PsqlManager implements TestExecutionListener {
 
@@ -67,11 +74,37 @@ public class PsqlManager implements TestExecutionListener {
         jdbcTemplate = testContext.getApplicationContext().getBean(NamedParameterJdbcTemplate.class);
     }
 
-    public static void givenOnePushInfoSuchAs(final PushInfo pushInfo) {
-        insert(pushInfo);
+    static PushInfoBuilder pushinfoBuilder = PushInfo.builder()
+            .id(10000000L)
+            .active(true)
+            .deleted(false)
+            .token("00000000")
+            .locale("fr-FR")
+            .timezone("Europe/Paris")
+            .creationDate(Instant.now());
+
+    public static void givenPushInfoWith(
+            final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilderCompletion) {
+        insert(
+                testSpecificBuilderCompletion.apply(
+                        pushinfoBuilder
+                                /*
+                                 * Set next planned push date outside of static builder to have varying
+                                 * getRandomNumberInRange results but let test specific builder override it if
+                                 * needed
+                                 */
+                                .nextPlannedPush(
+                                        LocalDateTime.from(
+                                                LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
+                                                        .plusMinutes(new Random().nextInt(60)).minusDays(1)
+                                        )
+                                                .toInstant(UTC)
+                                )
+                ).build()
+        );
     }
 
-    public static PushInfo findByToken(String token) {
+    public static PushInfo findByToken(final String token) {
         final var parameters = Map.of("token", token);
         return jdbcTemplate.queryForObject("select * from push where token = :token", parameters, pushInfoRowMapper);
     }
@@ -79,4 +112,5 @@ public class PsqlManager implements TestExecutionListener {
     public static List<PushInfo> findAll() {
         return jdbcTemplate.query("select * from push ", pushInfoRowMapper);
     }
+
 }
