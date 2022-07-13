@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MetricsService;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsTemplate;
@@ -28,10 +29,14 @@ public class ApnsClientConfiguration {
 
     private final MeterRegistry meterRegistry;
 
+    private final MetricsService metricsService;
+
     private ApnsOperations buildApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
 
         final var listener = new MicrometerApnsClientMetricsListener(
-                meterRegistry, apnsClientProperties.getHost(), apnsClientProperties.getPort()
+                meterRegistry,
+                apnsClientProperties.getHost(),
+                apnsClientProperties.getPort()
         );
 
         try (final var authTokenFile = this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream()) {
@@ -54,6 +59,7 @@ public class ApnsClientConfiguration {
 
             return new ApnsTemplate(
                     apnsClientBuilder.build(),
+                    metricsService,
                     apnsClientProperties.getHost(),
                     apnsClientProperties.getPort(),
                     meterRegistry

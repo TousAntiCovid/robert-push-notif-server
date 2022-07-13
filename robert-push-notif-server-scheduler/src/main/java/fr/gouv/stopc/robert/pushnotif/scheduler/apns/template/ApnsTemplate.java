@@ -1,6 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MetricsService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,9 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionCode.NONE;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionCode.getRejectionCodeOrUnknown;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.*;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.truncate;
@@ -27,24 +31,23 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final ApnsClient apnsClient;
 
+    private final MetricsService metricsService;
+
     @ToString.Include
     private final String host;
 
     @ToString.Include
     private final int port;
 
-    private final Timer notifDurationTimer;
-
     public ApnsTemplate(final ApnsClient apnsClient,
+            final MetricsService metricsService,
             final String host,
             final int port,
             final MeterRegistry meterRegistry) {
         this.apnsClient = apnsClient;
+        this.metricsService = metricsService;
         this.host = host;
         this.port = port;
-        this.notifDurationTimer = Timer.builder("pushy.notifications.sent.timer")
-                .tags("host", host, "port", "" + port)
-                .register(meterRegistry);
     }
 
     public void sendNotification(final NotificationHandler notificationHandler) {
@@ -56,18 +59,23 @@ public class ApnsTemplate implements ApnsOperations {
 
         sendNotificationFuture
                 .whenComplete((response, cause) -> {
-                    pushRequestChrono.stop(notifDurationTimer);
 
                     pendingNotifications.decrementAndGet();
 
                     if (Objects.nonNull(response)) {
                         if (response.isAccepted()) {
+                            pushRequestChrono.stop(metricsService.getTimer(host, String.valueOf(port), ACCEPTED, NONE));
                             notificationHandler.onSuccess();
                         } else {
-                            notificationHandler.onRejection(
-                                    response.getRejectionReason()
-                                            .orElse("Notification request rejected for unknown reason")
+                            String rejectionReason = response.getRejectionReason()
+                                    .orElse("Notification request rejected for unknown reason");
+                            pushRequestChrono.stop(
+                                    metricsService.getTimer(
+                                            host, String.valueOf(port), REJECTED,
+                                            getRejectionCodeOrUnknown(rejectionReason)
+                                    )
                             );
+                            notificationHandler.onRejection(rejectionReason);
                         }
                     } else {
                         // Something went wrong when trying to send the notification to the
@@ -75,6 +83,7 @@ public class ApnsTemplate implements ApnsOperations {
                         // the server, and indicates that something went wrong when actually
                         // sending the notification or waiting for a reply.
                         log.warn("Push Notification sent by {}:{} failed", host, port, cause);
+                        pushRequestChrono.stop(metricsService.getTimer(host, String.valueOf(port), ERROR, NONE));
                         notificationHandler.onRejection(truncate(cause.getMessage(), 255));
                     }
                 }).exceptionally(e -> {
@@ -100,10 +109,5 @@ public class ApnsTemplate implements ApnsOperations {
         log.info("Shutting down {}, gracefully waiting 1 minute", this);
         apnsClient.close()
                 .get(1, MINUTES);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s:%d", host, port);
     }
 }
