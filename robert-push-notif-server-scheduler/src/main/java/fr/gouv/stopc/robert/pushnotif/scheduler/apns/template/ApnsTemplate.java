@@ -2,7 +2,8 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
-import lombok.RequiredArgsConstructor;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -16,8 +17,9 @@ import static org.apache.commons.lang3.StringUtils.truncate;
  * Used to identify the APN server host & port when an error occurs
  */
 @Slf4j
-@RequiredArgsConstructor
 public class ApnsTemplate implements ApnsOperations {
+
+    private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
     private final ApnsClient apnsClient;
 
@@ -25,37 +27,54 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final int port;
 
-    private final AtomicInteger pendingNotifications = new AtomicInteger(0);
+    private final Timer notifDurationTimer;
+
+    public ApnsTemplate(final ApnsClient apnsClient,
+            final String host,
+            final int port,
+            final MeterRegistry meterRegistry) {
+        this.apnsClient = apnsClient;
+        this.host = host;
+        this.port = port;
+        this.notifDurationTimer = Timer.builder("pushy.notifications.sent.timer")
+                .tags("host", host, "port", "" + port)
+                .register(meterRegistry);
+    }
 
     public <T> void sendNotification(final NotificationHandler notificationHandler) {
+        final var pushRequestChrono = Timer.start();
+
         pendingNotifications.incrementAndGet();
 
-        final var sendNotificationFuture = apnsClient.sendNotification(
-                notificationHandler.buildNotification()
-        );
+        final var sendNotificationFuture = apnsClient.sendNotification(notificationHandler.buildNotification());
 
-        sendNotificationFuture.whenComplete((response, cause) -> {
-            pendingNotifications.decrementAndGet();
-            if (Objects.nonNull(response)) {
-                if (response.isAccepted()) {
-                    notificationHandler.onSuccess();
-                } else {
-                    notificationHandler.onRejection(
-                            response.getRejectionReason().orElse("Notification request rejected for unknown reason")
-                    );
-                }
-            } else {
-                // Something went wrong when trying to send the notification to the
-                // APNs server. Note that this is distinct from a rejection from
-                // the server, and indicates that something went wrong when actually
-                // sending the notification or waiting for a reply.
-                log.warn("Push Notification sent by {}:{} failed", host, port, cause);
-                notificationHandler.onRejection(truncate(cause.getMessage(), 255));
-            }
-        }).exceptionally(e -> {
-            log.error("Unexpected error occurred", e);
-            return null;
-        });
+        sendNotificationFuture
+                .whenComplete((response, cause) -> {
+                    pushRequestChrono.stop(notifDurationTimer);
+
+                    pendingNotifications.decrementAndGet();
+
+                    if (Objects.nonNull(response)) {
+                        if (response.isAccepted()) {
+                            notificationHandler.onSuccess();
+                        } else {
+                            notificationHandler.onRejection(
+                                    response.getRejectionReason()
+                                            .orElse("Notification request rejected for unknown reason")
+                            );
+                        }
+                    } else {
+                        // Something went wrong when trying to send the notification to the
+                        // APNs server. Note that this is distinct from a rejection from
+                        // the server, and indicates that something went wrong when actually
+                        // sending the notification or waiting for a reply.
+                        log.warn("Push Notification sent by {}:{} failed", host, port, cause);
+                        notificationHandler.onRejection(truncate(cause.getMessage(), 255));
+                    }
+                }).exceptionally(e -> {
+                    log.error("Unexpected error occurred", e);
+                    return null;
+                });
     }
 
     @Override

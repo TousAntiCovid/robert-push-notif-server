@@ -2,11 +2,11 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsClientMetricsListener;
-import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -15,10 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * order to customize the metrics name.
  */
 public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsListener {
-
-    private final Timer notificationTimer;
-
-    private final ConcurrentMap<Long, Long> notificationStartTimes;
 
     private final Counter writeFailures;
 
@@ -31,12 +27,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
     private final AtomicInteger openConnections = new AtomicInteger(0);
 
     private final Counter connectionFailures;
-
-    /**
-     * The name of a {@link io.micrometer.core.instrument.Timer} that measures
-     * round-trip time when sending notifications.
-     */
-    public static final String NOTIFICATION_TIMER_NAME = "pushy.notifications.sent.timer";
 
     /**
      * The name of a {@link io.micrometer.core.instrument.Counter} that measures the
@@ -87,9 +77,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
 
         Iterable<Tag> tags = Tags.of("host", host, "port", "" + port);
 
-        this.notificationStartTimes = new ConcurrentHashMap<>();
-        this.notificationTimer = meterRegistry.timer(NOTIFICATION_TIMER_NAME, tags);
-
         this.writeFailures = meterRegistry.counter(WRITE_FAILURES_COUNTER_NAME, tags);
         this.sentNotifications = meterRegistry.counter(SENT_NOTIFICATIONS_COUNTER_NAME, tags);
         this.acceptedNotifications = meterRegistry.counter(ACCEPTED_NOTIFICATIONS_COUNTER_NAME, tags);
@@ -113,7 +100,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      */
     @Override
     public void handleWriteFailure(final ApnsClient apnsClient, final long notificationId) {
-        this.notificationStartTimes.remove(notificationId);
         this.writeFailures.increment();
     }
 
@@ -130,7 +116,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      */
     @Override
     public void handleNotificationSent(final ApnsClient apnsClient, final long notificationId) {
-        this.notificationStartTimes.put(notificationId, System.nanoTime());
         this.sentNotifications.increment();
     }
 
@@ -147,7 +132,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      */
     @Override
     public void handleNotificationAccepted(final ApnsClient apnsClient, final long notificationId) {
-        this.recordEndTimeForNotification(notificationId);
         this.acceptedNotifications.increment();
     }
 
@@ -164,17 +148,7 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      */
     @Override
     public void handleNotificationRejected(final ApnsClient apnsClient, final long notificationId) {
-        this.recordEndTimeForNotification(notificationId);
         this.rejectedNotifications.increment();
-    }
-
-    private void recordEndTimeForNotification(final long notificationId) {
-        final long endTime = System.nanoTime();
-        final Long startTime = this.notificationStartTimes.remove(notificationId);
-
-        if (startTime != null) {
-            this.notificationTimer.record(endTime - startTime, TimeUnit.NANOSECONDS);
-        }
     }
 
     /**

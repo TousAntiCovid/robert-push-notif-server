@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.tuple;
 @ActiveProfiles({ "dev" })
 class SchedulerVolumetryTest {
 
-    private static final int PUSH_NOTIF_COUNT = 100;
+    private static final int PUSH_NOTIF_COUNT = 5000;
 
     @Autowired
     Scheduler scheduler;
