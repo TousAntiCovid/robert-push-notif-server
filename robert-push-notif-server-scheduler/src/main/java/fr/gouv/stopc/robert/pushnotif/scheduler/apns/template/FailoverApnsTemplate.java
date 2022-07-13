@@ -34,9 +34,6 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
         final var client = queue.poll();
 
-        if (client == null) {
-            return;
-        }
         final NotificationHandler multiApnsTemplateHandler = new NotificationHandler() {
 
             @Override
