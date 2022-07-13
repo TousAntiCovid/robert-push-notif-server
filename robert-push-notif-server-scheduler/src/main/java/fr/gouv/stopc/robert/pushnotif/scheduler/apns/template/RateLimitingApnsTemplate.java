@@ -2,11 +2,9 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.NotificationHandler;
 import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.BlockingBucket;
-import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
-import io.github.bucket4j.TimeMeter;
-import io.github.bucket4j.local.LockFreeBucket;
+import io.github.bucket4j.local.LocalBucket;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -14,7 +12,7 @@ import java.time.Duration;
 @Slf4j
 public class RateLimitingApnsTemplate implements ApnsOperations {
 
-    private final BlockingBucket rateLimitingBucket;
+    private final LocalBucket rateLimitingBucket;
 
     private final ApnsOperations apnDelegate;
 
@@ -31,15 +29,18 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
                         Duration.ofSeconds(1)
                 )
         );
-        final var configuration = Bucket4j.configurationBuilder().addLimit(limit).build();
-        this.rateLimitingBucket = new LockFreeBucket(configuration, TimeMeter.SYSTEM_MILLISECONDS);
+        this.rateLimitingBucket = Bucket.builder()
+                .addLimit(limit)
+                .withMillisecondPrecision()
+                .build();
+        ;
     }
 
     @Override
     public <T> void sendNotification(final NotificationHandler handler) {
 
         try {
-            rateLimitingBucket.consume(1);
+            rateLimitingBucket.asBlocking().consume(1);
         } catch (InterruptedException e) {
             log.error("error during rate limiting process", e);
             return;
