@@ -4,6 +4,7 @@ import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.NotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import lombok.RequiredArgsConstructor;

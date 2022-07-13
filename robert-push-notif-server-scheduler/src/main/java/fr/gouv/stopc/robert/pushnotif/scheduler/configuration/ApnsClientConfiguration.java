@@ -16,9 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 @Slf4j
 @Configuration
@@ -29,24 +28,18 @@ public class ApnsClientConfiguration {
 
     private final MeterRegistry meterRegistry;
 
-    @Bean
-    public List<ApnsOperations> apnsClients()
-            throws InvalidKeyException, NoSuchAlgorithmException, IOException {
+    private ApnsOperations buildApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
 
-        var apnsClients = new ArrayList<ApnsOperations>();
+        final var listener = new MicrometerApnsClientMetricsListener(
+                meterRegistry, apnsClientProperties.getHost(), apnsClientProperties.getPort()
+        );
 
-        for (RobertPushServerProperties.ApnsClient apnsClientDefinition : robertPushServerProperties.getApns()
-                .getClients()) {
-
-            final MicrometerApnsClientMetricsListener listener = new MicrometerApnsClientMetricsListener(
-                    meterRegistry, apnsClientDefinition.getHost(), apnsClientDefinition.getPort()
-            );
-
-            ApnsClientBuilder apnsClientBuilder = new ApnsClientBuilder()
-                    .setApnsServer(apnsClientDefinition.getHost(), apnsClientDefinition.getPort())
+        try (final var authTokenFile = this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream()) {
+            final var apnsClientBuilder = new ApnsClientBuilder()
+                    .setApnsServer(apnsClientProperties.getHost(), apnsClientProperties.getPort())
                     .setSigningKey(
                             ApnsSigningKey.loadFromInputStream(
-                                    this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream(),
+                                    authTokenFile,
                                     this.robertPushServerProperties.getApns().getTeamId(),
                                     this.robertPushServerProperties.getApns().getAuthKeyId()
                             )
@@ -59,19 +52,25 @@ public class ApnsClientConfiguration {
                 );
             }
 
-            apnsClients.add(
-                    new ApnsTemplate(
-                            apnsClientBuilder.build(), apnsClientDefinition.getHost(),
-                            apnsClientDefinition.getPort(),
-                            meterRegistry
-                    )
+            return new ApnsTemplate(
+                    apnsClientBuilder.build(),
+                    apnsClientProperties.getHost(),
+                    apnsClientProperties.getPort(),
+                    meterRegistry
+            );
+        } catch (final IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new RuntimeException(
+                    "Unable to open authTokenFile: " + robertPushServerProperties.getApns().getAuthTokenFile(), e
             );
         }
-        return Collections.unmodifiableList(apnsClients);
     }
 
     @Bean
-    public ApnsOperations apnsTemplate(final List<ApnsOperations> apnsClients) {
+    public ApnsOperations apnsTemplate() {
+        final var apnsClients = robertPushServerProperties.getApns().getClients().stream()
+                .map(this::buildApnsTemplate)
+                .collect(toUnmodifiableList());
+
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
                 new FailoverApnsTemplate(apnsClients, robertPushServerProperties.getApns().getInactiveRejectionReason())
