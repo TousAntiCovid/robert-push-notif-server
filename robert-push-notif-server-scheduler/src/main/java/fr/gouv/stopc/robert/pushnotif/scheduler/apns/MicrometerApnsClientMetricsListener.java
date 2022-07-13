@@ -29,12 +29,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
     private final Counter connectionFailures;
 
     /**
-     * The name of a {@link io.micrometer.core.instrument.Timer} that measures
-     * round-trip time when sending notifications.
-     */
-    public static final String NOTIFICATION_TIMER_NAME = "pushy.notifications.sent.timer";
-
-    /**
      * The name of a {@link io.micrometer.core.instrument.Counter} that measures the
      * number of write failures when sending notifications.
      */
@@ -82,8 +76,6 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
     public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, String host, int port) {
 
         Iterable<Tag> tags = Tags.of("host", host, "port", "" + port);
-
-        meterRegistry.timer(NOTIFICATION_TIMER_NAME, tags);
 
         this.writeFailures = meterRegistry.counter(WRITE_FAILURES_COUNTER_NAME, tags);
         this.sentNotifications = meterRegistry.counter(SENT_NOTIFICATIONS_COUNTER_NAME, tags);
