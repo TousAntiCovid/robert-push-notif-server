@@ -13,7 +13,6 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.Random;
 import java.util.function.Function;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
+import static java.time.Instant.now;
 import static java.time.ZoneOffset.UTC;
 
 public class PsqlManager implements TestExecutionListener {
@@ -80,28 +80,29 @@ public class PsqlManager implements TestExecutionListener {
             .deleted(false)
             .token("00000000")
             .locale("fr-FR")
-            .timezone("Europe/Paris")
-            .creationDate(Instant.now());
+            .creationDate(now())
+            .successfulPushSent(0)
+            .failedPushSent(0)
+            .timezone("Europe/Paris");
 
-    public static void givenPushInfoWith(
-            final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilderCompletion) {
-        insert(
-                testSpecificBuilderCompletion.apply(
-                        pushinfoBuilder
-                                /*
-                                 * Set next planned push date outside of static builder to have varying
-                                 * getRandomNumberInRange results but let test specific builder override it if
-                                 * needed
-                                 */
-                                .nextPlannedPush(
-                                        LocalDateTime.from(
-                                                LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
-                                                        .plusMinutes(new Random().nextInt(60)).minusDays(1)
-                                        )
-                                                .toInstant(UTC)
+    public static PushInfo givenPushInfoWith(final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilder) {
+        final var builtPushInfo = testSpecificBuilder.apply(
+                pushinfoBuilder
+                        /*
+                         * Set next planned push date outside of static builder to have varying
+                         * getRandomNumberInRange results but let test specific builder override it if
+                         * needed
+                         */
+                        .nextPlannedPush(
+                                LocalDateTime.from(
+                                        LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
+                                                .plusMinutes(new Random().nextInt(60)).minusDays(1)
                                 )
-                ).build()
-        );
+                                        .toInstant(UTC)
+                        )
+        ).build();
+        insert(builtPushInfo);
+        return builtPushInfo;
     }
 
     public static PushInfo findByToken(final String token) {

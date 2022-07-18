@@ -13,13 +13,13 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.assertThatMainServerAcceptedOne;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.assertThatMainServerRejectedNothing;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
+import static java.time.Instant.now;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +37,7 @@ class SchedulerNominalTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        final var pushInfoToNotify = givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
         givenPushInfoWith(
                 b -> b.id(2L)
                         .token("FUTURE-1111111111111112")
@@ -54,7 +54,9 @@ class SchedulerNominalTest {
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
                 .satisfies(pushInfo -> {
-                    assertThat(pushInfo.getLastSuccessfulPush()).isCloseTo(Instant.now(), within(10, SECONDS));
+                    assertThat(pushInfo.getLastSuccessfulPush())
+                            .as("Last successful push should have been updated")
+                            .isNotNull();
                     assertThat(pushInfo.getNextPlannedPush()).isAfter(
                             LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                     );
@@ -74,7 +76,7 @@ class SchedulerNominalTest {
                 .satisfies(
                         notif -> {
                             assertThat(notif.getExpiration())
-                                    .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(30, SECONDS));
+                                    .isCloseTo(now().plus(Duration.ofDays(1)), within(30, SECONDS));
                             assertThat(notif.getPayload())
                                     .isEqualTo("{\"aps\":{\"badge\":0,\"content-available\":1}}");
                         }
@@ -106,7 +108,7 @@ class SchedulerNominalTest {
     void should_deactivate_notification_when_apns_server_replies_with_is_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(3L).token("987654321"));
+        final var registeredPushInfo = givenPushInfoWith(b -> b.id(3L).token("987654321"));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -118,9 +120,11 @@ class SchedulerNominalTest {
         assertThat(PsqlManager.findByToken("987654321"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
                 .satisfies(
-                        pushInfo -> {
-                            assertThat(pushInfo.getLastFailurePush()).isCloseTo(Instant.now(), within(10, SECONDS));
-                            assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                        pushInfoFromBase -> {
+                            assertThat(pushInfoFromBase.getLastFailurePush())
+                                    .as("Last successful push should have been updated")
+                                    .isNotNull();
+                            assertThat(pushInfoFromBase.getNextPlannedPush()).isAfter(
                                     LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
                                             .toInstant(UTC)
                             );
@@ -140,7 +144,7 @@ class SchedulerNominalTest {
     void should_not_deactivate_notification_when_apns_server_replies_with_no_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(4L).token("112233445566"));
+        final var registeredPushInfo = givenPushInfoWith(b -> b.id(4L).token("112233445566"));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -155,7 +159,9 @@ class SchedulerNominalTest {
                 )
                 .satisfies(
                         pushInfo -> {
-                            assertThat(pushInfo.getLastFailurePush()).isCloseTo(Instant.now(), within(10, SECONDS));
+                            assertThat(pushInfo.getLastFailurePush())
+                                    .as("Last failure push should have been updated")
+                                    .isNotNull();
                             assertThat(pushInfo.getNextPlannedPush()).isAfter(
                                     LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                             );
