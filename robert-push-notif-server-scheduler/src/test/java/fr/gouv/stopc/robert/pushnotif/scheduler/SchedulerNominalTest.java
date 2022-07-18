@@ -84,13 +84,13 @@ class SchedulerNominalTest {
         assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
                 .satisfies(pushInfo -> {
-                            assertThat(pushInfo.getLastSuccessfulPush())
-                                    .as("Last successful push should have been updated")
-                                    .isNotNull();
-                            assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                    LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                            );
-                        }
+                    assertThat(pushInfo.getLastSuccessfulPush())
+                            .as("Last successful push should have been updated")
+                            .isNotNull();
+                    assertThat(pushInfo.getNextPlannedPush()).isAfter(
+                            LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
+                    );
+                }
                 ).extracting(
                         PushInfo::isActive,
                         PushInfo::isDeleted,
