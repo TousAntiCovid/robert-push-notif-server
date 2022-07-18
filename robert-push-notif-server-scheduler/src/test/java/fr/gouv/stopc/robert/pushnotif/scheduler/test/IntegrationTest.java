@@ -17,6 +17,7 @@ import static org.springframework.test.context.TestExecutionListeners.MergeMode.
 @Retention(RUNTIME)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-@TestExecutionListeners(listeners = { APNsServersManager.class, PsqlManager.class }, mergeMode = MERGE_WITH_DEFAULTS)
+@TestExecutionListeners(listeners = { APNsServersManager.class, PsqlManager.class,
+        MetricsManager.class }, mergeMode = MERGE_WITH_DEFAULTS)
 public @interface IntegrationTest {
 }

@@ -52,6 +52,14 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     }
 
     @Override
+    public void onError(String reason) {
+        notificationData.setLastErrorCode(reason);
+        notificationData.setLastFailurePush(Instant.now());
+        notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
+        pushInfoDao.updateFailurePushedNotif(notificationData);
+    }
+
+    @Override
     public void disableToken() {
         notificationData.setActive(false);
     }

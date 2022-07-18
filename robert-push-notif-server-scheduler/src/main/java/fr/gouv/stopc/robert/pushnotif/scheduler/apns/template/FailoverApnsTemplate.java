@@ -68,6 +68,11 @@ public class FailoverApnsTemplate implements ApnsOperations {
             }
 
             @Override
+            public void onError(String reason) {
+                notificationHandler.onError(reason);
+            }
+
+            @Override
             public void disableToken() {
                 notificationHandler.disableToken();
             }

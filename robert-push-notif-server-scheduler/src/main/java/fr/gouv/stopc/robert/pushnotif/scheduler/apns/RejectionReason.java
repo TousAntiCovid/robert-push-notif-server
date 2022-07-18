@@ -5,8 +5,16 @@ import lombok.RequiredArgsConstructor;
 
 import static java.util.Arrays.stream;
 
+/**
+ * This class is a reflection of the pushy lib class
+ * 
+ * @see com.eatthepath.pushy.apns.server.RejectionReason Due to the fact that
+ *      pushy returns a String instead of the actual Enum value, and the
+ *      properties of the lib Enum class have private/package visibility, we
+ *      have to implement our own.
+ */
 @RequiredArgsConstructor
-public enum ApnsRejectionCode {
+public enum RejectionReason {
 
     BAD_COLLAPSE_ID("BadCollapseId"),
     BAD_DEVICE_TOKEN("BadDeviceToken"),
@@ -43,7 +51,7 @@ public enum ApnsRejectionCode {
     @Getter
     private final String value;
 
-    public static ApnsRejectionCode getRejectionCodeOrUnknown(final String value) {
-        return stream(ApnsRejectionCode.values()).filter(code -> code.value.equals(value)).findFirst().orElse(UNKNOWN);
+    public static RejectionReason getRejectionReasonOrUnknown(final String value) {
+        return stream(RejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(UNKNOWN);
     }
 }

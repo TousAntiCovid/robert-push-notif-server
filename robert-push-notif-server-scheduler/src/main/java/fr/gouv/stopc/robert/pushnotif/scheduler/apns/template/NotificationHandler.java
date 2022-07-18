@@ -24,6 +24,13 @@ public interface NotificationHandler {
     void onRejection(final String rejectionMessage);
 
     /**
+     * Called when the notification request fails before reaching Apple server.
+     *
+     * @param reason error message
+     */
+    void onError(final String reason);
+
+    /**
      * Called when the notification request is rejected on every configured APN
      * server. In this app context, we have configured multiple APN servers. When a
      * push notif request fails because of specific configured errors:
