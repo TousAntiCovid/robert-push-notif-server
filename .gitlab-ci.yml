@@ -13,3 +13,25 @@ deploy-int:
     strategy: depend
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
+
+build-goapnsmock:
+  image: golang:1.18.4
+  stage: build
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - git clone https://github.com/baobabus/go-apnsmock
+    - cd go-apnsmock
+    - |
+      cat - <<EOF > go.mod
+      module github.com/baobabus/go-apnsmock
+      go 1.18
+      EOF
+  script:
+    - go get -d -v ./...
+    - go install -v ./...
+    - mv $GOPATH/bin/ $CI_PROJECT_DIR/output
+    - mv certs $CI_PROJECT_DIR/output
+  artifacts:
+    paths:
+      - output/**
