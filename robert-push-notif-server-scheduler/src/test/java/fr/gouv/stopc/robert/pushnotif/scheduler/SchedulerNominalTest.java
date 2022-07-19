@@ -16,11 +16,13 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.ACCEPTED;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.REJECTED;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.FIRST;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.MetricsManager.assertCounterIncremented;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.Instant.now;
@@ -122,6 +124,7 @@ class SchedulerNominalTest {
 
         // Given
         givenPushInfoWith(b -> b.id(3L).token("987654321"));
+        setApnsServerResponse(FIRST, Map.of("987654321", BAD_DEVICE_TOKEN));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -168,6 +171,7 @@ class SchedulerNominalTest {
 
         // Given
         givenPushInfoWith(b -> b.id(4L).token("112233445566"));
+        setApnsServerResponse(FIRST, Map.of("112233445566", BAD_MESSAGE_ID));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();

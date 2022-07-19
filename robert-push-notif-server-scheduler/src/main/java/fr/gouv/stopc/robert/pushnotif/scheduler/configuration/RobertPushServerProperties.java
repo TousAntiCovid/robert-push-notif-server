@@ -1,6 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -48,7 +48,7 @@ public class RobertPushServerProperties {
         @NotNull
         String teamId;
 
-        List<RejectionReason> inactiveRejectionReason;
+        List<ApnsRejectionReason> inactiveRejectionReason;
 
         @NotNull
         String topic;

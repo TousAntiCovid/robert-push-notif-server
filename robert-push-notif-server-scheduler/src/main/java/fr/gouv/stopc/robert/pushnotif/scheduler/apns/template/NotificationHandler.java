@@ -2,7 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 
 public interface NotificationHandler {
@@ -22,7 +22,7 @@ public interface NotificationHandler {
      * 
      * @param rejectionMessage rejected push notification request response message
      */
-    void onRejection(final RejectionReason rejectionMessage);
+    void onRejection(final ApnsRejectionReason rejectionMessage);
 
     /**
      * Called when the notification request fails before reaching Apple server.

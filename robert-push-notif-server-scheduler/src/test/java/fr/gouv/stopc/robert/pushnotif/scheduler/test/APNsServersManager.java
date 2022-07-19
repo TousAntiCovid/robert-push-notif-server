@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.server.*;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -14,13 +15,12 @@ import org.springframework.test.context.TestExecutionListener;
 import javax.net.ssl.SSLSession;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 
-import static com.eatthepath.pushy.apns.server.RejectionReason.*;
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -33,27 +33,15 @@ public class APNsServersManager implements TestExecutionListener {
 
     private static final APNsServerExecutionContext SECONDARY_APNS_SERVER_EXEC_CONTEXT = new APNsServerExecutionContext();
 
-    static {
-        MockApnsServer mainApnsServer = buildMockApnsServer(
-                MAIN_APNS_SERVER_EXEC_CONTEXT,
-                Map.of(
-                        "987654321", BAD_DEVICE_TOKEN,
-                        "123456789", BAD_DEVICE_TOKEN,
-                        "8888888888", BAD_DEVICE_TOKEN,
-                        "999999999", BAD_TOPIC,
-                        "112233445566", BAD_MESSAGE_ID
-                )
-        );
-        mainApnsServer.start(2198);
+    private static final Map<ServerId, Server> servers = Map.of(
+            ServerId.FIRST, new Server(MAIN_APNS_SERVER_EXEC_CONTEXT, 2198),
+            ServerId.SECOND, new Server(SECONDARY_APNS_SERVER_EXEC_CONTEXT, 2197)
+    );
 
-        MockApnsServer secondaryApnsServer = buildMockApnsServer(
-                SECONDARY_APNS_SERVER_EXEC_CONTEXT,
-                Map.of(
-                        "987654321", BAD_DEVICE_TOKEN,
-                        "8888888888", PAYLOAD_EMPTY
-                )
-        );
-        secondaryApnsServer.start(2197);
+    public static void setApnsServerResponse(final ServerId serverId,
+            final Map<String, ApnsRejectionReason> responseMap) {
+        final var server = servers.get(serverId);
+        server.resetMockWithErrorResponseMap(responseMap);
     }
 
     @Override
@@ -109,7 +97,16 @@ public class APNsServersManager implements TestExecutionListener {
 
     @SneakyThrows
     private static MockApnsServer buildMockApnsServer(final APNsServerExecutionContext apnsServerExecutionContext,
-            final Map<String, RejectionReason> rejectionReasonPerTokenMap) {
+            final Map<String, ApnsRejectionReason> rejectionReasonPerTokenMap) {
+
+        final var pushyRejectionReasonMap = rejectionReasonPerTokenMap.entrySet()
+                .stream()
+                .collect(
+                        toMap(
+                                Map.Entry::getKey,
+                                it -> RejectionReason.valueOf(it.getValue().name())
+                        )
+                );
         return new MockApnsServerBuilder()
                 .setServerCredentials(
                         new ClassPathResource("/apns/server-certs.pem").getInputStream(),
@@ -117,8 +114,8 @@ public class APNsServersManager implements TestExecutionListener {
                 )
                 .setTrustedClientCertificateChain(new ClassPathResource("/apns/ca.pem").getInputStream())
                 .setEventLoopGroup(new NioEventLoopGroup(2))
-                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory(rejectionReasonPerTokenMap))
                 .setListener(new TestMockApnsServerListener(apnsServerExecutionContext))
+                .setHandlerFactory(new CustomValidationPushNotificationHandlerFactory(pushyRejectionReasonMap))
                 .build();
     }
 
@@ -217,4 +214,41 @@ public class APNsServersManager implements TestExecutionListener {
         }
     }
 
+    static class Server {
+
+        private final APNsServerExecutionContext context;
+
+        private final int port;
+
+        private MockApnsServer mock;
+
+        Server(final APNsServerExecutionContext context, final int port) {
+            this.context = context;
+            this.port = port;
+            mock = buildMockApnsServer(context, emptyMap());
+            try {
+                mock.start(port).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void resetMockWithErrorResponseMap(final Map<String, ApnsRejectionReason> responseMap) {
+
+            try {
+                mock.shutdown()
+                        .thenAccept(ignored -> mock = buildMockApnsServer(context, responseMap))
+                        .thenAccept(ignored -> mock.start(port))
+                        .get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public enum ServerId {
+        FIRST,
+        SECOND;
+
+    }
 }

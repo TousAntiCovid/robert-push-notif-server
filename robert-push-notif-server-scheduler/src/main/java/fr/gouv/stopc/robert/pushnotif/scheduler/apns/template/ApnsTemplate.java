@@ -1,14 +1,14 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.UNKNOWN;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason.UNKNOWN;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -34,7 +34,7 @@ public class ApnsTemplate implements ApnsOperations {
                 } else {
                     notificationHandler.onRejection(
                             response.getRejectionReason()
-                                    .map(RejectionReason::fromValue)
+                                    .map(ApnsRejectionReason::fromValue)
                                     .orElse(UNKNOWN)
                     );
                 }

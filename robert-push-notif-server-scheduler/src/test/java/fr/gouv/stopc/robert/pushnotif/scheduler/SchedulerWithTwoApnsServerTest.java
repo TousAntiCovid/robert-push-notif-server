@@ -14,8 +14,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.FIRST;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.SECOND;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -88,6 +92,7 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(1L).token("999999999"));
+        setApnsServerResponse(FIRST, Map.of("999999999", BAD_TOPIC));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -127,6 +132,7 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(4L).token("123456789"));
+        setApnsServerResponse(FIRST, Map.of("123456789", BAD_DEVICE_TOKEN));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -183,6 +189,8 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(3L).token("987654321"));
+        setApnsServerResponse(FIRST, Map.of("987654321", BAD_DEVICE_TOKEN));
+        setApnsServerResponse(SECOND, Map.of("987654321", BAD_DEVICE_TOKEN));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -222,6 +230,8 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(1L).token("8888888888"));
+        setApnsServerResponse(FIRST, Map.of("8888888888", BAD_DEVICE_TOKEN));
+        setApnsServerResponse(SECOND, Map.of("8888888888", PAYLOAD_EMPTY));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
