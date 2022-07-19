@@ -4,7 +4,7 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager;
+import fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import io.micrometer.core.instrument.Tags;
@@ -16,13 +16,12 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.ACCEPTED;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.REJECTED;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.FIRST;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.MetricsManager.assertCounterIncremented;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.Instant.now;
@@ -65,7 +64,7 @@ class SchedulerNominalTest {
         // Verify servers
         assertThatMainServerAcceptedOne();
         assertThatMainServerRejectedNothing();
-        assertThat(APNsServersManager.getNotifsAcceptedByMainServer().get(0))
+        assertThat(APNsMockServersManager.getNotifsAcceptedByMainServer().get(0))
                 .as("Check the content of the notification received on the APNs server side")
                 .satisfies(
                         notif -> {
@@ -124,7 +123,7 @@ class SchedulerNominalTest {
 
         // Given
         givenPushInfoWith(b -> b.id(3L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_DEVICE_TOKEN));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -171,7 +170,7 @@ class SchedulerNominalTest {
 
         // Given
         givenPushInfoWith(b -> b.id(4L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_MESSAGE_ID));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_MESSAGE_ID);
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();

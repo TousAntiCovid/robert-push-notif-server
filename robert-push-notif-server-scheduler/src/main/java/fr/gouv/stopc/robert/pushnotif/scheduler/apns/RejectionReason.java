@@ -7,11 +7,13 @@ import static java.util.Arrays.stream;
 
 /**
  * This class is a reflection of the pushy lib class
- * 
+ *
  * @see com.eatthepath.pushy.apns.server.RejectionReason Due to the fact that
  *      pushy returns a String instead of the actual Enum value, and the
  *      properties of the lib Enum class have private/package visibility, we
- *      have to implement our own.
+ *      have to implement our own. We use the value NONE of this class for
+ *      micrometer metrics, when representing a successful request (which does
+ *      not have any rejection reason)
  */
 @RequiredArgsConstructor
 public enum RejectionReason {

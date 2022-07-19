@@ -14,12 +14,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.FIRST;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.SECOND;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECOND;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -92,7 +91,7 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(1L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_TOPIC));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_TOPIC);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -132,7 +131,7 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(4L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_DEVICE_TOKEN));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -189,8 +188,8 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(3L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_DEVICE_TOKEN));
-        setApnsServerResponse(SECOND, Map.of("token", BAD_DEVICE_TOKEN));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
+        givenApnsServerRejectsTokenIdWith(SECOND, "token", BAD_DEVICE_TOKEN);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -230,8 +229,8 @@ class SchedulerWithTwoApnsServerTest {
 
         // Given
         givenPushInfoWith(b -> b.id(1L).token("token"));
-        setApnsServerResponse(FIRST, Map.of("token", BAD_DEVICE_TOKEN));
-        setApnsServerResponse(SECOND, Map.of("token", PAYLOAD_EMPTY));
+        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
+        givenApnsServerRejectsTokenIdWith(SECOND, "token", PAYLOAD_EMPTY);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
