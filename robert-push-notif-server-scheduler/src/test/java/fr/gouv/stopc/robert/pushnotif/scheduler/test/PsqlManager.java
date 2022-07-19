@@ -85,24 +85,24 @@ public class PsqlManager implements TestExecutionListener {
             .failedPushSent(0)
             .timezone("Europe/Paris");
 
-    public static PushInfo givenPushInfoWith(final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilder) {
-        final var builtPushInfo = testSpecificBuilder.apply(
-                pushinfoBuilder
-                        /*
-                         * Set next planned push date outside of static builder to have varying
-                         * getRandomNumberInRange results but let test specific builder override it if
-                         * needed
-                         */
-                        .nextPlannedPush(
-                                LocalDateTime.from(
-                                        LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
-                                                .plusMinutes(new Random().nextInt(60)).minusDays(1)
+    public static void givenPushInfoWith(final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilder) {
+        insert(
+                testSpecificBuilder.apply(
+                        pushinfoBuilder
+                                /*
+                                 * Set next planned push date outside of static builder to have varying
+                                 * getRandomNumberInRange results but let test specific builder override it if
+                                 * needed
+                                 */
+                                .nextPlannedPush(
+                                        LocalDateTime.from(
+                                                LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
+                                                        .plusMinutes(new Random().nextInt(60)).minusDays(1)
+                                        )
+                                                .toInstant(UTC)
                                 )
-                                        .toInstant(UTC)
-                        )
-        ).build();
-        insert(builtPushInfo);
-        return builtPushInfo;
+                ).build()
+        );
     }
 
     public static PushInfo findByToken(final String token) {

@@ -33,7 +33,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
         // Given
-        final var pushInfo = givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
 
         // When
         scheduler.sendNotifications();
@@ -87,7 +87,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_rejected_reason_other_than_invalid_token() {
 
         // Given
-        final var registeredPushInfo = givenPushInfoWith(b -> b.id(1L).token("999999999"));
+        givenPushInfoWith(b -> b.id(1L).token("999999999"));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -126,7 +126,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_send_notification_to_second_apns_server_when_first_replies_invalid_token_response() {
 
         // Given
-        final var registeredPushInfo = givenPushInfoWith(b -> b.id(4L).token("123456789"));
+        givenPushInfoWith(b -> b.id(4L).token("123456789"));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -182,7 +182,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_deactivate_notification_when_both_server_replies_invalid_token_response() {
 
         // Given
-        final var registeredPushInfo = givenPushInfoWith(b -> b.id(3L).token("987654321"));
+        givenPushInfoWith(b -> b.id(3L).token("987654321"));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -221,7 +221,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_second_apn_server_with_rejected_reason_other_than_invalid_token() {
 
         // Given
-        final var registeredPushInfo = givenPushInfoWith(b -> b.id(1L).token("8888888888"));
+        givenPushInfoWith(b -> b.id(1L).token("8888888888"));
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();

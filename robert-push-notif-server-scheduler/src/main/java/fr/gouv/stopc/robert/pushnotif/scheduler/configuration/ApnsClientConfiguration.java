@@ -3,10 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.configuration;
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsTemplate;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.FailoverApnsTemplate;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.RateLimitingApnsTemplate;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +25,12 @@ public class ApnsClientConfiguration {
 
     private final MeterRegistry meterRegistry;
 
-    private ApnsOperations buildApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
+    private ApnsOperations buildMeasureApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
 
         final var listener = new MicrometerApnsClientMetricsListener(
-                meterRegistry, apnsClientProperties.getHost(), apnsClientProperties.getPort()
+                meterRegistry,
+                apnsClientProperties.getHost(),
+                apnsClientProperties.getPort()
         );
 
         try (final var authTokenFile = this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream()) {
@@ -52,12 +51,13 @@ public class ApnsClientConfiguration {
                 );
             }
 
-            return new ApnsTemplate(
-                    apnsClientBuilder.build(),
+            return new MonitoringApnsTemplate(
+                    new ApnsTemplate(apnsClientBuilder.build()),
                     apnsClientProperties.getHost(),
                     apnsClientProperties.getPort(),
                     meterRegistry
             );
+
         } catch (final IOException | NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException(
                     "Unable to open authTokenFile: " + robertPushServerProperties.getApns().getAuthTokenFile(), e
@@ -67,13 +67,15 @@ public class ApnsClientConfiguration {
 
     @Bean
     public ApnsOperations apnsTemplate() {
-        final var apnsClients = robertPushServerProperties.getApns().getClients().stream()
-                .map(this::buildApnsTemplate)
+        final var mesuredApnsTemplates = robertPushServerProperties.getApns().getClients().stream()
+                .map(this::buildMeasureApnsTemplate)
                 .collect(toUnmodifiableList());
 
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
-                new FailoverApnsTemplate(apnsClients, robertPushServerProperties.getApns().getInactiveRejectionReason())
+                new FailoverApnsTemplate(
+                        mesuredApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
+                )
         );
     }
 }
