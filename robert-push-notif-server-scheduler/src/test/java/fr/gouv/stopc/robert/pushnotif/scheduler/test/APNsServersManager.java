@@ -2,7 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.server.*;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -39,9 +39,8 @@ public class APNsServersManager implements TestExecutionListener {
     );
 
     public static void setApnsServerResponse(final ServerId serverId,
-            final Map<String, ApnsRejectionReason> responseMap) {
-        final var server = servers.get(serverId);
-        server.resetMockWithErrorResponseMap(responseMap);
+            final Map<String, RejectionReason> responseMap) {
+        servers.get(serverId).resetMockWithErrorResponseMap(responseMap);
     }
 
     @Override
@@ -97,14 +96,14 @@ public class APNsServersManager implements TestExecutionListener {
 
     @SneakyThrows
     private static MockApnsServer buildMockApnsServer(final APNsServerExecutionContext apnsServerExecutionContext,
-            final Map<String, ApnsRejectionReason> rejectionReasonPerTokenMap) {
+            final Map<String, RejectionReason> rejectionReasonPerTokenMap) {
 
         final var pushyRejectionReasonMap = rejectionReasonPerTokenMap.entrySet()
                 .stream()
                 .collect(
                         toMap(
                                 Map.Entry::getKey,
-                                it -> RejectionReason.valueOf(it.getValue().name())
+                                it -> com.eatthepath.pushy.apns.server.RejectionReason.valueOf(it.getValue().name())
                         )
                 );
         return new MockApnsServerBuilder()
@@ -122,7 +121,7 @@ public class APNsServersManager implements TestExecutionListener {
     @RequiredArgsConstructor
     private static class CustomValidationPushNotificationHandlerFactory implements PushNotificationHandlerFactory {
 
-        private final Map<String, RejectionReason> rejectionReasonPerTokenMap;
+        private final Map<String, com.eatthepath.pushy.apns.server.RejectionReason> rejectionReasonPerTokenMap;
 
         /**
          * Constructs a new push notification handler that unconditionally accepts all
@@ -151,7 +150,7 @@ public class APNsServersManager implements TestExecutionListener {
 
         private static final String APNS_PATH_PREFIX = "/3/device/";
 
-        private final Map<String, RejectionReason> rejectionReasonPerTokenMap;
+        private final Map<String, com.eatthepath.pushy.apns.server.RejectionReason> rejectionReasonPerTokenMap;
 
         @Override
         public void handlePushNotification(final Http2Headers headers, final ByteBuf payload)
@@ -188,7 +187,8 @@ public class APNsServersManager implements TestExecutionListener {
 
         @Override
         public void handlePushNotificationRejected(final ApnsPushNotification pushNotification,
-                final RejectionReason rejectionReason, final Instant deviceTokenExpirationTimestamp) {
+                final com.eatthepath.pushy.apns.server.RejectionReason rejectionReason,
+                final Instant deviceTokenExpirationTimestamp) {
             executionContext.getRejectedPushNotifications().add(pushNotification);
         }
 
@@ -233,8 +233,7 @@ public class APNsServersManager implements TestExecutionListener {
             }
         }
 
-        public void resetMockWithErrorResponseMap(final Map<String, ApnsRejectionReason> responseMap) {
-
+        public void resetMockWithErrorResponseMap(final Map<String, RejectionReason> responseMap) {
             try {
                 mock.shutdown()
                         .thenAccept(ignored -> mock = buildMockApnsServer(context, responseMap))

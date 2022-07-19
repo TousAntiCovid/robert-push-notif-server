@@ -14,7 +14,7 @@ import static java.util.Arrays.stream;
  *      have to implement our own.
  */
 @RequiredArgsConstructor
-public enum ApnsRejectionReason {
+public enum RejectionReason {
 
     BAD_COLLAPSE_ID("BadCollapseId"),
     BAD_DEVICE_TOKEN("BadDeviceToken"),
@@ -51,7 +51,7 @@ public enum ApnsRejectionReason {
     @Getter
     private final String value;
 
-    public static ApnsRejectionReason fromValue(final String value) {
-        return stream(ApnsRejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(null);
+    public static RejectionReason fromValue(final String value) {
+        return stream(RejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(null);
     }
 }

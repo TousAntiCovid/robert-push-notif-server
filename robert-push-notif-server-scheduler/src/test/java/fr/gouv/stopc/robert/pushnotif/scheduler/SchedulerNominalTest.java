@@ -18,9 +18,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.ACCEPTED;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.REJECTED;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsServersManager.ServerId.FIRST;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.MetricsManager.assertCounterIncremented;
@@ -43,10 +43,10 @@ class SchedulerNominalTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        givenPushInfoWith(b -> b.id(1L).token("token"));
         givenPushInfoWith(
                 b -> b.id(2L)
-                        .token("FUTURE-1111111111111112")
+                        .token("futureToken")
                         .nextPlannedPush(LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC))
         );
 
@@ -80,10 +80,10 @@ class SchedulerNominalTest {
                         ApnsPushNotification::getToken,
                         ApnsPushNotification::getTopic
                 )
-                .containsExactly(PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "a1111111111111111", "test");
+                .containsExactly(PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "token", "test");
 
         // Verify Database
-        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
+        assertThat(PsqlManager.findByToken("token"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
                 .satisfies(pushInfo -> {
                     assertThat(pushInfo.getLastSuccessfulPush())
@@ -103,7 +103,7 @@ class SchedulerNominalTest {
                 )
                 .containsExactly(true, false, 0, null, null, 1);
 
-        assertThat(PsqlManager.findByToken("FUTURE-1111111111111112"))
+        assertThat(PsqlManager.findByToken("futureToken"))
                 .as("This notification is not pushed because its planned date is in future")
                 .extracting(
                         PushInfo::isActive, PushInfo::isDeleted, PushInfo::getFailedPushSent,
@@ -123,8 +123,8 @@ class SchedulerNominalTest {
     void should_deactivate_notification_when_apns_server_replies_with_is_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(3L).token("987654321"));
-        setApnsServerResponse(FIRST, Map.of("987654321", BAD_DEVICE_TOKEN));
+        givenPushInfoWith(b -> b.id(3L).token("token"));
+        setApnsServerResponse(FIRST, Map.of("token", BAD_DEVICE_TOKEN));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -143,7 +143,7 @@ class SchedulerNominalTest {
         );
 
         // Verify database
-        assertThat(PsqlManager.findByToken("987654321"))
+        assertThat(PsqlManager.findByToken("token"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
                 .satisfies(
                         pushInfoFromBase -> {
@@ -170,8 +170,8 @@ class SchedulerNominalTest {
     void should_not_deactivate_notification_when_apns_server_replies_with_no_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(4L).token("112233445566"));
-        setApnsServerResponse(FIRST, Map.of("112233445566", BAD_MESSAGE_ID));
+        givenPushInfoWith(b -> b.id(4L).token("token"));
+        setApnsServerResponse(FIRST, Map.of("token", BAD_MESSAGE_ID));
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -190,7 +190,7 @@ class SchedulerNominalTest {
         );
 
         // Verify database
-        assertThat(PsqlManager.findByToken("112233445566"))
+        assertThat(PsqlManager.findByToken("token"))
                 .as(
                         "Check the status of the notification that has been rejected by APNs server - notif is not deactivated"
                 )

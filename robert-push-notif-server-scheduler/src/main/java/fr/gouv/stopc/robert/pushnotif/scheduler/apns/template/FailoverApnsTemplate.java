@@ -1,7 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,7 +15,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     private final List<ApnsOperations> apnsDelegates;
 
-    private final List<ApnsRejectionReason> inactiveRejectionReasons;
+    private final List<RejectionReason> inactiveRejectionReasons;
 
     @Override
     public void sendNotification(final NotificationHandler notificationHandler) {
@@ -51,7 +51,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onRejection(final ApnsRejectionReason rejectionMessage) {
+            public void onRejection(final RejectionReason rejectionMessage) {
 
                 if (inactiveRejectionReasons.contains(rejectionMessage)) {
                     // errors which means to try on another apn server

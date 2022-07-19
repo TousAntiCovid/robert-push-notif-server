@@ -1,8 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRejectionReason.NONE;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.NONE;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
@@ -58,7 +58,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
                 )
         );
 
-        final var rejectedTags = Arrays.stream(ApnsRejectionReason.values())
+        final var rejectedTags = Arrays.stream(RejectionReason.values())
                 .map(
                         rejectionReason -> Tags.of(
                                 OUTCOME_TAG_KEY, REJECTED.name(),
@@ -109,7 +109,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onRejection(final ApnsRejectionReason rejectionMessage) {
+            public void onRejection(final RejectionReason rejectionMessage) {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(REJECTED, rejectionMessage));
                 handler.onRejection(rejectionMessage);
@@ -156,10 +156,10 @@ public class MonitoringApnsTemplate implements ApnsOperations {
      *                        use the value NONE
      * @return
      * @see ApnsRequestOutcome
-     * @see ApnsRejectionReason
+     * @see RejectionReason
      */
     public Timer getTimer(final ApnsRequestOutcome outcome,
-            final ApnsRejectionReason rejectionReason) {
+            final RejectionReason rejectionReason) {
         return tagsToTimerMap.get(
                 Tags.of(
                         "host", host,

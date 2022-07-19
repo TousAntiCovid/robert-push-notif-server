@@ -45,7 +45,7 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     }
 
     @Override
-    public void onRejection(final ApnsRejectionReason rejectionReason) {
+    public void onRejection(final RejectionReason rejectionReason) {
         notificationData.setLastErrorCode(rejectionReason.getValue());
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
