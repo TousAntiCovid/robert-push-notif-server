@@ -39,13 +39,14 @@ class SchedulerNominalTest {
     Scheduler scheduler;
 
     @Test
-    void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
+    void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response()
+            throws InterruptedException {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("token"));
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
         givenPushInfoWith(
                 b -> b.id(2L)
-                        .token("futureToken")
+                        .token("FUTURE-1111111111111112")
                         .nextPlannedPush(LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC))
         );
 
@@ -53,13 +54,6 @@ class SchedulerNominalTest {
         scheduler.sendNotifications();
 
         // Then
-
-        // Verify counters
-        assertCounterIncremented(
-                "pushy.notifications.sent.timer",
-                1,
-                Tags.of("outcome", ACCEPTED.name(), "rejectionReason", NONE.name())
-        );
 
         // Verify servers
         assertThatMainServerAcceptedOne();
@@ -79,10 +73,10 @@ class SchedulerNominalTest {
                         ApnsPushNotification::getToken,
                         ApnsPushNotification::getTopic
                 )
-                .containsExactly(PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "token", "test");
+                .containsExactly(PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "a1111111111111111", "test");
 
         // Verify Database
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to APNs server")
                 .satisfies(pushInfo -> {
                     assertThat(pushInfo.getLastSuccessfulPush())
@@ -102,7 +96,7 @@ class SchedulerNominalTest {
                 )
                 .containsExactly(true, false, 0, null, null, 1);
 
-        assertThat(PsqlManager.findByToken("futureToken"))
+        assertThat(PsqlManager.findByToken("FUTURE-1111111111111112"))
                 .as("This notification is not pushed because its planned date is in future")
                 .extracting(
                         PushInfo::isActive, PushInfo::isDeleted, PushInfo::getFailedPushSent,
@@ -116,14 +110,20 @@ class SchedulerNominalTest {
                         true, false, 0, null, null, 0, null, LocalDateTime
                                 .from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
                 );
+        // Verify counters
+        assertCounterIncremented(
+                "pushy.notifications.sent.timer",
+                1,
+                Tags.of("outcome", ACCEPTED.name(), "rejectionReason", NONE.name())
+        );
     }
 
     @Test
     void should_deactivate_notification_when_apns_server_replies_with_is_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(3L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
+        givenPushInfoWith(b -> b.id(3L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_DEVICE_TOKEN);
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -134,15 +134,8 @@ class SchedulerNominalTest {
         assertThatMainServerAcceptedNothing();
         assertThatMainServerRejectedOne();
 
-        // Verify counters
-        assertCounterIncremented(
-                "pushy.notifications.sent.timer",
-                1,
-                Tags.of("outcome", REJECTED.name(), "rejectionReason", BAD_DEVICE_TOKEN.name())
-        );
-
         // Verify database
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been rejected by APNs server - notif is deactivated")
                 .satisfies(
                         pushInfoFromBase -> {
@@ -163,14 +156,21 @@ class SchedulerNominalTest {
                         PushInfo::getLastSuccessfulPush
                 )
                 .contains(false, false, 1, "BadDeviceToken", 0, null);
+
+        // Verify counters
+        assertCounterIncremented(
+                "pushy.notifications.sent.timer",
+                1,
+                Tags.of("outcome", REJECTED.name(), "rejectionReason", BAD_DEVICE_TOKEN.name())
+        );
     }
 
     @Test
     void should_not_deactivate_notification_when_apns_server_replies_with_no_invalid_token_reason() {
 
         // Given
-        givenPushInfoWith(b -> b.id(4L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_MESSAGE_ID);
+        givenPushInfoWith(b -> b.id(4L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_MESSAGE_ID);
 
         // When - triggering of the scheduled task
         scheduler.sendNotifications();
@@ -181,15 +181,8 @@ class SchedulerNominalTest {
         assertThatMainServerAcceptedNothing();
         assertThatMainServerRejectedOne();
 
-        // Verify counters
-        assertCounterIncremented(
-                "pushy.notifications.sent.timer",
-                1,
-                Tags.of("outcome", REJECTED.name(), "rejectionReason", BAD_MESSAGE_ID.name())
-        );
-
         // Verify database
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as(
                         "Check the status of the notification that has been rejected by APNs server - notif is not deactivated"
                 )
@@ -211,5 +204,12 @@ class SchedulerNominalTest {
                         PushInfo::getLastSuccessfulPush
                 )
                 .contains(true, false, 1, "BadMessageId", 0, null);
+
+        // Verify counters
+        assertCounterIncremented(
+                "pushy.notifications.sent.timer",
+                1,
+                Tags.of("outcome", REJECTED.name(), "rejectionReason", BAD_MESSAGE_ID.name())
+        );
     }
 }

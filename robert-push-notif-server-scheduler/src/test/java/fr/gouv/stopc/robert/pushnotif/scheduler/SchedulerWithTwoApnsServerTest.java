@@ -36,7 +36,7 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_successful_response() {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("token"));
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
 
         // When
         scheduler.sendNotifications();
@@ -47,7 +47,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThatSecondServerRejectedNothing();
         assertThatSecondServerAcceptedNothing();
 
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to main APNs server")
                 .satisfies(
                         p -> {
@@ -90,8 +90,8 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_first_apn_server_with_rejected_reason_other_than_invalid_token() {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_TOPIC);
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_TOPIC);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -102,7 +102,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThatSecondServerAcceptedNothing();
         assertThatSecondServerRejectedNothing();
 
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )
@@ -130,8 +130,8 @@ class SchedulerWithTwoApnsServerTest {
     void should_send_notification_to_second_apns_server_when_first_replies_invalid_token_response() {
 
         // Given
-        givenPushInfoWith(b -> b.id(4L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
+        givenPushInfoWith(b -> b.id(4L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_DEVICE_TOKEN);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -142,7 +142,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThatSecondServerAcceptedOne();
         assertThatSecondServerRejectedNothing();
 
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been correctly sent to secondary APNs server")
                 .satisfies(
                         pushInfo -> {
@@ -178,7 +178,7 @@ class SchedulerWithTwoApnsServerTest {
                         ApnsPushNotification::getPayload
                 )
                 .containsExactly(
-                        PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "token", "test",
+                        PushType.BACKGROUND, DeliveryPriority.IMMEDIATE, "a1111111111111111", "test",
                         "{\"aps\":{\"badge\":0,\"content-available\":1}}"
                 );
     }
@@ -187,9 +187,9 @@ class SchedulerWithTwoApnsServerTest {
     void should_deactivate_notification_when_both_server_replies_invalid_token_response() {
 
         // Given
-        givenPushInfoWith(b -> b.id(3L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
-        givenApnsServerRejectsTokenIdWith(SECOND, "token", BAD_DEVICE_TOKEN);
+        givenPushInfoWith(b -> b.id(3L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_DEVICE_TOKEN);
+        givenApnsServerRejectsTokenIdWith(SECOND, "a1111111111111111", BAD_DEVICE_TOKEN);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -200,7 +200,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThatSecondServerAcceptedNothing();
         assertThatSecondServerRejectedOne();
 
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as("Check the status of the notification that has been rejected by all APNs server")
                 .satisfies(
                         pushInfo -> {
@@ -228,9 +228,9 @@ class SchedulerWithTwoApnsServerTest {
     void should_correctly_update_push_status_when_send_notification_to_second_apn_server_with_rejected_reason_other_than_invalid_token() {
 
         // Given
-        givenPushInfoWith(b -> b.id(1L).token("token"));
-        givenApnsServerRejectsTokenIdWith(FIRST, "token", BAD_DEVICE_TOKEN);
-        givenApnsServerRejectsTokenIdWith(SECOND, "token", PAYLOAD_EMPTY);
+        givenPushInfoWith(b -> b.id(1L).token("A-TOK1111111111111111"));
+        givenApnsServerRejectsTokenIdWith(FIRST, "a1111111111111111", BAD_DEVICE_TOKEN);
+        givenApnsServerRejectsTokenIdWith(SECOND, "a1111111111111111", PAYLOAD_EMPTY);
 
         // When -- triggering of the scheduled job
         scheduler.sendNotifications();
@@ -241,7 +241,7 @@ class SchedulerWithTwoApnsServerTest {
         assertThatSecondServerAcceptedNothing();
         assertThatSecondServerRejectedOne();
 
-        assertThat(PsqlManager.findByToken("token"))
+        assertThat(PsqlManager.findByToken("A-TOK1111111111111111"))
                 .as(
                         "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
                 )

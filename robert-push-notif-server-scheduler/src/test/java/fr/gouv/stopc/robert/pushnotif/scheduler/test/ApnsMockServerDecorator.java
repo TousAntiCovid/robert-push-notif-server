@@ -9,6 +9,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.net.ssl.SSLSession;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
+@ToString
 class ApnsMockServerDecorator extends ParsingMockApnsServerListenerAdapter {
 
     private final int port;
@@ -66,6 +68,17 @@ class ApnsMockServerDecorator extends ParsingMockApnsServerListenerAdapter {
         try {
             mock.shutdown()
                     .thenAccept(ignored -> mock = initMock(Map.of(token, rejectionReason)))
+                    .thenAccept(ignored -> mock.start(port))
+                    .get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    void resetMock() {
+        try {
+            mock.shutdown()
+                    .thenAccept(ignored -> mock = initMock(emptyMap()))
                     .thenAccept(ignored -> mock.start(port))
                     .get();
         } catch (InterruptedException | ExecutionException e) {

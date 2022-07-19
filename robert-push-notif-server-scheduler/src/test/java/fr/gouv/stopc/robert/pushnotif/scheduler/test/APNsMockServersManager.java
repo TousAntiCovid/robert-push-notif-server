@@ -33,6 +33,7 @@ public class APNsMockServersManager implements TestExecutionListener {
     @Override
     public void beforeTestExecution(final TestContext testContext) throws Exception {
         TestExecutionListener.super.beforeTestExecution(testContext);
+        servers.values().forEach(ApnsMockServerDecorator::resetMock);
         servers.get(FIRST).clear();
         servers.get(SECOND).clear();
     }
