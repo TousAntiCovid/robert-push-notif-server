@@ -72,39 +72,39 @@ public class APNsServersManager implements TestExecutionListener {
     }
 
     public static void assertThatMainServerAcceptedOne() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatMainServerAccepted(final int nbNotifications) {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == nbNotifications).isTrue();
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications()).hasSize(nbNotifications);
     }
 
     public static void assertThatMainServerAcceptedNothing() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications()).isEmpty();
     }
 
     public static void assertThatMainServerRejectedOne() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatMainServerRejectedNothing() {
-        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+        assertThat(MAIN_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications()).isEmpty();
     }
 
     public static void assertThatSecondServerAcceptedOne() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 1).isTrue();
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatSecondServerAcceptedNothing() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications().size() == 0).isTrue();
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getAcceptedPushNotifications()).isEmpty();
     }
 
     public static void assertThatSecondServerRejectedOne() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 1).isTrue();
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatSecondServerRejectedNothing() {
-        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications().size() == 0).isTrue();
+        assertThat(SECONDARY_APNS_SERVER_EXEC_CONTEXT.getRejectedPushNotifications()).isEmpty();
     }
 
     @SneakyThrows

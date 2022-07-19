@@ -19,10 +19,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+            final MethodArgumentNotValidException ex,
+            final HttpHeaders headers,
+            final HttpStatus status,
+            final WebRequest request) {
         Map<String, String> errors = new HashMap<>();
 
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
+        ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);

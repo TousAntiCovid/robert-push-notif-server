@@ -13,12 +13,12 @@ import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-public class DateInstantConverterTest {
+class DateInstantConverterTest {
 
     private final TimeStampInstantAttributeConverter dateInstantConverter = new TimeStampInstantAttributeConverter();
 
     @Test
-    public void instant_to_timestamp() {
+    void instant_to_timestamp() {
         final var hoursBetweenUTCAndLocalTimeZone = ZonedDateTime.now().getOffset().getTotalSeconds() / 3600;
         assertThat(dateInstantConverter.convertToDatabaseColumn(Instant.ofEpochSecond(1666618560L)))
                 .hasTime(1666618560000L)
@@ -30,7 +30,7 @@ public class DateInstantConverterTest {
     }
 
     @Test
-    public void timestamp_to_instant() {
+    void timestamp_to_instant() {
         final var timestamp = Timestamp.from(LocalDateTime.of(2022, 10, 24, 13, 36).toInstant(UTC));
         assertThat(dateInstantConverter.convertToEntityAttribute(timestamp).getEpochSecond()).isEqualTo(1666618560L);
     }
