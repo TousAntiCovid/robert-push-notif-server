@@ -51,7 +51,7 @@ public enum RejectionReason {
     @Getter
     private final String value;
 
-    public static RejectionReason getRejectionReasonOrUnknown(final String value) {
-        return stream(RejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(UNKNOWN);
+    public static RejectionReason fromValue(final String value) {
+        return stream(RejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(null);
     }
 }

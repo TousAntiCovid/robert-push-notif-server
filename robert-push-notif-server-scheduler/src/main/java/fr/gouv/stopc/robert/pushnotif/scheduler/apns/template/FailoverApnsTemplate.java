@@ -1,6 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,10 +15,10 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     private final List<ApnsOperations> apnsDelegates;
 
-    private final List<String> inactiveRejectionReasons;
+    private final List<RejectionReason> inactiveRejectionReasons;
 
     @Override
-    public void sendNotification(NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
@@ -25,7 +26,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void waitUntilNoActivity(Duration toleranceDuration) {
+    public void waitUntilNoActivity(final Duration toleranceDuration) {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
@@ -50,7 +51,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onRejection(String rejectionMessage) {
+            public void onRejection(final RejectionReason rejectionMessage) {
 
                 if (inactiveRejectionReasons.contains(rejectionMessage)) {
                     // errors which means to try on another apn server
@@ -68,8 +69,8 @@ public class FailoverApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onError(String reason) {
-                notificationHandler.onError(reason);
+            public void onError(final Throwable cause) {
+                notificationHandler.onError(cause);
             }
 
             @Override
@@ -88,11 +89,11 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     @Override
     public void close() {
-        apnsDelegates.parallelStream().forEach(apnsTemplate -> {
+        apnsDelegates.parallelStream().forEach(delegate -> {
             try {
-                apnsTemplate.close();
+                delegate.close();
             } catch (Exception e) {
-                log.error("Unable to close {} gracefully", apnsTemplate, e);
+                log.error("Unable to close {} gracefully", delegate, e);
             }
         });
     }

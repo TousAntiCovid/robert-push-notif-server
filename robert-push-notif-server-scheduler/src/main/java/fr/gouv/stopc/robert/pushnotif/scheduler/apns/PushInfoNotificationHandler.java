@@ -17,6 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static org.apache.commons.lang3.StringUtils.truncate;
 
 @RequiredArgsConstructor
 public class PushInfoNotificationHandler implements NotificationHandler {
@@ -44,16 +45,16 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     }
 
     @Override
-    public void onRejection(final String rejectionReason) {
-        notificationData.setLastErrorCode(rejectionReason);
+    public void onRejection(final RejectionReason rejectionReason) {
+        notificationData.setLastErrorCode(rejectionReason.getValue());
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
         pushInfoDao.updateFailurePushedNotif(notificationData);
     }
 
     @Override
-    public void onError(String reason) {
-        notificationData.setLastErrorCode(reason);
+    public void onError(final Throwable cause) {
+        notificationData.setLastErrorCode(truncate(cause.getMessage(), 255));
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
         pushInfoDao.updateFailurePushedNotif(notificationData);

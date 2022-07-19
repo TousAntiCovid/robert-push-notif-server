@@ -51,12 +51,8 @@ public class ApnsClientConfiguration {
                 );
             }
 
-            return new MeasureApnsTemplate(
-                    new ApnsTemplate(
-                            apnsClientBuilder.build(),
-                            apnsClientProperties.getHost(),
-                            apnsClientProperties.getPort()
-                    ),
+            return new MonitoringApnsTemplate(
+                    new ApnsTemplate(apnsClientBuilder.build()),
                     apnsClientProperties.getHost(),
                     apnsClientProperties.getPort(),
                     meterRegistry
