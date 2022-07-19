@@ -14,10 +14,10 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.http.HttpStatus.*;
 
 @IntegrationTest
-public class RegisterTest {
+class RegisterTest {
 
     @RepeatedTest(1000)
-    public void created_when_new_pushToken_is_sent() {
+    void created_when_new_pushToken_is_sent() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -50,7 +50,7 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
-    public void created_with_zone_offset_11_has_nextPushDate_setup_between_7pm_and_6am_next_day_utc() {
+    void created_with_zone_offset_11_has_nextPushDate_setup_between_7pm_and_6am_next_day_utc() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -84,7 +84,7 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
-    public void created_and_activated_when_already_existing_inactive_token_is_sent() {
+    void created_and_activated_when_already_existing_inactive_token_is_sent() {
 
         givenOnePushInfoSuchAs(
                 PushInfo.builder()
@@ -122,7 +122,7 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
-    public void created_and_activated_when_already_existing_deleted_token_is_sent() {
+    void created_and_activated_when_already_existing_deleted_token_is_sent() {
 
         givenOnePushInfoSuchAs(
                 PushInfo.builder()
@@ -161,7 +161,7 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
-    public void created_and_activated_when_updating_timezone() {
+    void created_and_activated_when_updating_timezone() {
 
         givenOnePushInfoSuchAs(
                 PushInfo.builder()
@@ -200,7 +200,7 @@ public class RegisterTest {
     }
 
     @RepeatedTest(1000)
-    public void created_when_already_registered_but_with_different_values() {
+    void created_when_already_registered_but_with_different_values() {
 
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
@@ -230,7 +230,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void method_not_allowed_when_using_get_method() {
+    void method_not_allowed_when_using_get_method() {
         givenOneFrPushInfoWith("PushToken");
 
         givenBaseHeaders()
@@ -251,7 +251,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_body_is_empty() {
+    void bad_request_when_body_is_empty() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .when()
@@ -271,7 +271,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_token_is_null() {
+    void bad_request_when_token_is_null() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -296,7 +296,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_token_is_an_empty_string() {
+    void bad_request_when_token_is_an_empty_string() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -322,7 +322,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_locale_is_null() {
+    void bad_request_when_locale_is_null() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -347,7 +347,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_locale_is_an_empty_string() {
+    void bad_request_when_locale_is_an_empty_string() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -373,7 +373,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_timezone_is_null() {
+    void bad_request_when_timezone_is_null() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -398,7 +398,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_timezone_is_an_empty_string() {
+    void bad_request_when_timezone_is_an_empty_string() {
         givenOneFrPushInfoWith("PushToken");
         givenBaseHeaders()
                 .body(
@@ -424,7 +424,7 @@ public class RegisterTest {
     }
 
     @Test
-    public void bad_request_when_timezone_is_invalid() {
+    void bad_request_when_timezone_is_invalid() {
         givenOneFrPushInfoWith("PushToken");
 
         givenBaseHeaders()

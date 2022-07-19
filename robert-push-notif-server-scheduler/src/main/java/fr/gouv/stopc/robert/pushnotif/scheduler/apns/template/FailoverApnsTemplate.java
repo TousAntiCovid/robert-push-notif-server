@@ -30,7 +30,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
-    private <T> void sendNotification(final NotificationHandler notificationHandler,
+    private void sendNotification(final NotificationHandler notificationHandler,
             final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
 
         final var client = queue.poll();
@@ -55,7 +55,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
                 if (inactiveRejectionReasons.contains(rejectionMessage)) {
                     // errors which means to try on another apn server
-                    if (queue.size() > 0) {
+                    if (!queue.isEmpty()) {
                         // try next apn client in the queue
                         sendNotification(notificationHandler, queue);
                     } else {

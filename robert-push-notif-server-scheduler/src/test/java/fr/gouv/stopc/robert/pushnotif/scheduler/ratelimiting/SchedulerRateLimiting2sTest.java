@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.tuple;
 @IntegrationTest
 @ActiveProfiles("dev")
 @TestPropertySource(properties = "robert.push.server.max-notifications-per-second=2")
-public class SchedulerRateLimiting2sTest {
+class SchedulerRateLimiting2sTest {
 
     @Autowired
     Scheduler scheduler;

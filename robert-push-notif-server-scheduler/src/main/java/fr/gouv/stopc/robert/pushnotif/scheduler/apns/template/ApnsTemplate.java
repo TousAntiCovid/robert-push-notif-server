@@ -6,9 +6,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.UNKNOWN;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Used to identify the APN server host & port when an error occurs
@@ -16,6 +18,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @Slf4j
 @RequiredArgsConstructor
 public class ApnsTemplate implements ApnsOperations {
+
+    private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
     private final ApnsClient apnsClient;
 
@@ -49,6 +53,13 @@ public class ApnsTemplate implements ApnsOperations {
 
     @Override
     public void waitUntilNoActivity(Duration toleranceDuration) {
+        do {
+            try {
+                SECONDS.sleep(toleranceDuration.getSeconds());
+            } catch (InterruptedException e) {
+                log.warn("Unable to wait until all notifications are sent", e);
+            }
+        } while (pendingNotifications.get() != 0);
     }
 
     @Override

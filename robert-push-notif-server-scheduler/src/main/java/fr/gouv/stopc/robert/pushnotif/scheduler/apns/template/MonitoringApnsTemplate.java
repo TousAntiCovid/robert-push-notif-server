@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.NONE;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
@@ -27,16 +26,13 @@ import static java.util.stream.Stream.concat;
 @ToString(onlyExplicitlyIncluded = true)
 public class MonitoringApnsTemplate implements ApnsOperations {
 
-    /**
-     * This map contains timers with their varying tags as keys. Using tags as keys
-     * allows us to have a variable tags structure: for example, Success outcome
-     * timers do not possess any rejectionReason. the current varying tags are:
-     * outcome host port rejectionReason
-     */
-
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
     private final Map<Tags, Timer> tagsToTimerMap;
+
+    private static final String OUTCOME_TAG_KEY = "outcome";
+
+    private static final String REJECTION_REASON_TAG_KEY = "rejectionReason";
 
     private final ApnsOperations delegate;
 
@@ -57,23 +53,23 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
         final var successTags = Stream.of(
                 Tags.of(
-                        "outcome", ACCEPTED.name(),
-                        "rejectionReason", NONE.name()
+                        OUTCOME_TAG_KEY, ACCEPTED.name(),
+                        REJECTION_REASON_TAG_KEY, NONE.name()
                 )
         );
 
         final var rejectedTags = Arrays.stream(RejectionReason.values())
                 .map(
                         rejectionReason -> Tags.of(
-                                "outcome", REJECTED.name(),
-                                "rejectionReason", rejectionReason.name()
+                                OUTCOME_TAG_KEY, REJECTED.name(),
+                                REJECTION_REASON_TAG_KEY, rejectionReason.name()
                         )
                 );
 
         final var errorTags = Stream.of(
                 Tags.of(
-                        "outcome", ERROR.name(),
-                        "rejectionReason", NONE.name()
+                        OUTCOME_TAG_KEY, ERROR.name(),
+                        REJECTION_REASON_TAG_KEY, NONE.name()
                 )
         );
 
@@ -92,7 +88,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public <T> void sendNotification(final NotificationHandler handler) {
+    public void sendNotification(final NotificationHandler handler) {
 
         pendingNotifications.incrementAndGet();
 
@@ -143,14 +139,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     @Override
     public void waitUntilNoActivity(final Duration toleranceDuration) {
-        do {
-            delegate.waitUntilNoActivity(toleranceDuration);
-            try {
-                SECONDS.sleep(toleranceDuration.getSeconds());
-            } catch (InterruptedException e) {
-                log.warn("Unable to wait until all notifications are sent", e);
-            }
-        } while (pendingNotifications.get() != 0);
+        delegate.waitUntilNoActivity(toleranceDuration);
     }
 
     @Override
@@ -175,8 +164,8 @@ public class MonitoringApnsTemplate implements ApnsOperations {
                 Tags.of(
                         "host", host,
                         "port", port.toString(),
-                        "outcome", outcome.name(),
-                        "rejectionReason", rejectionReason.name()
+                        OUTCOME_TAG_KEY, outcome.name(),
+                        REJECTION_REASON_TAG_KEY, rejectionReason.name()
                 )
         );
     }
