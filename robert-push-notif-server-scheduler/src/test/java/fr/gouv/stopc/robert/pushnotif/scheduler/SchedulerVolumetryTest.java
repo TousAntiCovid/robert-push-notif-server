@@ -3,9 +3,11 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.concurrent.TimeUnit;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
@@ -18,10 +20,7 @@ import static org.assertj.core.api.Assertions.tuple;
 @ActiveProfiles({ "dev" })
 class SchedulerVolumetryTest {
 
-    private static final int PUSH_NOTIF_COUNT = 5000;
-
-    @Autowired
-    Scheduler scheduler;
+    private static final int PUSH_NOTIF_COUNT = 100;
 
     // This test class is useful to do test with volumetry
     // @Disabled
@@ -31,23 +30,24 @@ class SchedulerVolumetryTest {
         // Given
         rangeClosed(1, PUSH_NOTIF_COUNT).forEach(i -> givenPushInfoWith(b -> b.id(i).token(randomUUID().toString())));
 
-        // When
-        scheduler.sendNotifications();
+        // When -- triggering of the scheduled job
 
         // Then
-        assertThatMainServerAccepted(PUSH_NOTIF_COUNT);
-        assertThatSecondServerAcceptedNothing();
-        assertThatSecondServerRejectedNothing();
+        Awaitility.await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThatMainServerAccepted(PUSH_NOTIF_COUNT);
+            assertThatSecondServerAcceptedNothing();
+            assertThatSecondServerRejectedNothing();
 
-        assertThat(PsqlManager.findAll()).hasSize(PUSH_NOTIF_COUNT)
-                .extracting(
-                        PushInfo::isActive,
-                        PushInfo::isDeleted,
-                        PushInfo::getSuccessfulPushSent,
-                        PushInfo::getFailedPushSent,
-                        PushInfo::getLastFailurePush,
-                        PushInfo::getLastErrorCode
-                )
-                .containsOnly(tuple(true, false, 1, 0, null, null));
+            assertThat(PsqlManager.findAll()).hasSize(PUSH_NOTIF_COUNT)
+                    .extracting(
+                            PushInfo::isActive,
+                            PushInfo::isDeleted,
+                            PushInfo::getSuccessfulPushSent,
+                            PushInfo::getFailedPushSent,
+                            PushInfo::getLastFailurePush,
+                            PushInfo::getLastErrorCode
+                    )
+                    .containsOnly(tuple(true, false, 1, 0, null, null));
+        });
     }
 }
