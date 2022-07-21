@@ -5,6 +5,7 @@ import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.MicrometerApnsClientMetricsListener;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.*;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.netty.handler.proxy.HttpProxyHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +45,12 @@ public class ApnsClientConfiguration {
                             )
                     )
                     .setMetricsListener(listener);
+
+            if (robertPushServerProperties.getApns().getHttpProxySocketAddress() != null) {
+                apnsClientBuilder.setProxyHandlerFactory(
+                        () -> new HttpProxyHandler(robertPushServerProperties.getApns().getHttpProxySocketAddress())
+                );
+            }
 
             if (robertPushServerProperties.getApns().getTrustedClientCertificateChain() != null) {
                 apnsClientBuilder.setTrustedServerCertificateChain(
