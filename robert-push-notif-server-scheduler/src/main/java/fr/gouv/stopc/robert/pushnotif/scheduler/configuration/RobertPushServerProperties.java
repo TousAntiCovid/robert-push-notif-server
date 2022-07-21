@@ -8,11 +8,10 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.core.io.Resource;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
+import javax.validation.constraints.*;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 @Value
@@ -61,6 +60,14 @@ public class RobertPushServerProperties {
 
         Resource trustedClientCertificateChain;
 
+        @Pattern(regexp = "|[^:]+:\\d+")
+        String httpProxy;
+
+        public SocketAddress getHttpProxy() {
+            final var host = httpProxy.replaceAll(":.*", "");
+            final var port = httpProxy.replaceAll(".*:", "");
+            return new InetSocketAddress(host, Integer.parseInt(port));
+        }
     }
 
     @Value
