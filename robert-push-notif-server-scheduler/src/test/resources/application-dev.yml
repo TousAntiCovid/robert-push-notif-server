@@ -23,4 +23,4 @@ robert.push.server:
     #path to the trusted certificate chain
     trusted-client-certificate-chain: classpath:/apns/ca.pem
 
-  scheduler.delay-in-ms: 100000000
+  scheduler.delay-in-ms: 1000

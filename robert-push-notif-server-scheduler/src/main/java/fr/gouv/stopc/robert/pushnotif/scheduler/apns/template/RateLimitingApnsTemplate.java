@@ -13,13 +13,13 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
 
     private final LocalBucket rateLimitingBucket;
 
-    private final ApnsOperations apnDelegate;
+    private final ApnsOperations delegate;
 
     public RateLimitingApnsTemplate(
             final int maxNotificationsPerSecond,
-            final ApnsOperations apnDelegate) {
+            final ApnsOperations delegate) {
 
-        this.apnDelegate = apnDelegate;
+        this.delegate = delegate;
 
         final var limit = Bandwidth.classic(
                 maxNotificationsPerSecond,
@@ -43,16 +43,16 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
             log.error("error during rate limiting process", e);
             return;
         }
-        apnDelegate.sendNotification(handler);
+        delegate.sendNotification(handler);
     }
 
     @Override
     public void waitUntilNoActivity(final Duration toleranceDuration) {
-        apnDelegate.waitUntilNoActivity(toleranceDuration);
+        delegate.waitUntilNoActivity(toleranceDuration);
     }
 
     @Override
     public void close() throws Exception {
-        apnDelegate.close();
+        delegate.close();
     }
 }

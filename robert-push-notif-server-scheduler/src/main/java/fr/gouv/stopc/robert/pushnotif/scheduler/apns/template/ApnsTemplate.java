@@ -25,9 +25,11 @@ public class ApnsTemplate implements ApnsOperations {
 
     public void sendNotification(final NotificationHandler notificationHandler) {
 
+        pendingNotifications.incrementAndGet();
         final var sendNotificationFuture = apnsClient.sendNotification(notificationHandler.buildNotification());
 
         sendNotificationFuture.whenComplete((response, cause) -> {
+            pendingNotifications.decrementAndGet();
             if (response != null) {
                 if (response.isAccepted()) {
                     notificationHandler.onSuccess();
@@ -52,7 +54,7 @@ public class ApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void waitUntilNoActivity(Duration toleranceDuration) {
+    public void waitUntilNoActivity(final Duration toleranceDuration) {
         do {
             try {
                 SECONDS.sleep(toleranceDuration.getSeconds());

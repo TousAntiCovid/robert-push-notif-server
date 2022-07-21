@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.tuple;
 
 @IntegrationTest
 @ActiveProfiles("dev")
-@TestPropertySource(properties = "robert.push.server.max-notifications-per-second=2")
+@TestPropertySource(properties = { "robert.push.server.max-notifications-per-second=2",
+        "robert.push.server.scheduler.delay-in-ms=10000000000" })
 class SchedulerRateLimiting2sTest {
 
     @Autowired
