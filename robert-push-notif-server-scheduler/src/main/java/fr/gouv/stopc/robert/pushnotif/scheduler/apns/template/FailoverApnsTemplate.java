@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,49 +37,24 @@ public class FailoverApnsTemplate implements ApnsOperations {
         if (client == null) {
             return;
         }
-        final NotificationHandler multiApnsTemplateHandler = new NotificationHandler() {
+        final var multiApnsTemplateHandler = new DelegateNotificationHandler(notificationHandler) {
 
             @Override
-            public String getAppleToken() {
-                return notificationHandler.getAppleToken();
-            }
+            public void onRejection(final RejectionReason reason) {
 
-            @Override
-            public void onSuccess() {
-                notificationHandler.onSuccess();
-            }
-
-            @Override
-            public void onRejection(final RejectionReason rejectionMessage) {
-
-                if (inactiveRejectionReasons.contains(rejectionMessage)) {
+                if (inactiveRejectionReasons.contains(reason)) {
                     // errors which means to try on another apn server
                     if (!queue.isEmpty()) {
                         // try next apn client in the queue
                         sendNotification(notificationHandler, queue);
                     } else {
                         // token was unsuccessful on every client, disable it
-                        notificationHandler.disableToken();
-                        notificationHandler.onRejection(rejectionMessage);
+                        super.disableToken();
+                        super.onRejection(reason);
                     }
                 } else {
-                    notificationHandler.onRejection(rejectionMessage);
+                    super.onRejection(reason);
                 }
-            }
-
-            @Override
-            public void onError(final Throwable cause) {
-                notificationHandler.onError(cause);
-            }
-
-            @Override
-            public void disableToken() {
-                notificationHandler.disableToken();
-            }
-
-            @Override
-            public ApnsPushNotification buildNotification() {
-                return notificationHandler.buildNotification();
             }
         };
 

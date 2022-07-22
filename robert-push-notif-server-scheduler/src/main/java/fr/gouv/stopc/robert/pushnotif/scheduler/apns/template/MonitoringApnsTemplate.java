@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.micrometer.core.instrument.Gauge;
@@ -88,31 +87,26 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler handler) {
+    public void sendNotification(final NotificationHandler notificationHandler) {
 
         pendingNotifications.incrementAndGet();
 
         final var sample = Timer.start();
 
-        final var measuringHandler = new NotificationHandler() {
-
-            @Override
-            public String getAppleToken() {
-                return handler.getAppleToken();
-            }
+        final var measuringHandler = new DelegateNotificationHandler(notificationHandler) {
 
             @Override
             public void onSuccess() {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ACCEPTED, NONE));
-                handler.onSuccess();
+                super.onSuccess();
             }
 
             @Override
-            public void onRejection(final RejectionReason rejectionMessage) {
+            public void onRejection(final RejectionReason reason) {
                 pendingNotifications.decrementAndGet();
-                sample.stop(getTimer(REJECTED, rejectionMessage));
-                handler.onRejection(rejectionMessage);
+                sample.stop(getTimer(REJECTED, reason));
+                super.onRejection(reason);
             }
 
             @Override
@@ -120,17 +114,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ERROR, NONE));
                 log.warn("Push Notification sent by {} failed", this, cause);
-                handler.onError(cause);
-            }
-
-            @Override
-            public void disableToken() {
-                handler.disableToken();
-            }
-
-            @Override
-            public ApnsPushNotification buildNotification() {
-                return handler.buildNotification();
+                super.onError(cause);
             }
         };
 
