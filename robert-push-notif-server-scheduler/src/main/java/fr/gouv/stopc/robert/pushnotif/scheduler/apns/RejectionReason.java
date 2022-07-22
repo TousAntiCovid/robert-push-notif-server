@@ -54,6 +54,9 @@ public enum RejectionReason {
     private final String value;
 
     public static RejectionReason fromValue(final String value) {
-        return stream(RejectionReason.values()).filter(code -> code.value.equals(value)).findFirst().orElse(null);
+        return stream(RejectionReason.values())
+                .filter(code -> code.value.equals(value))
+                .findFirst()
+                .orElse(null);
     }
 }
