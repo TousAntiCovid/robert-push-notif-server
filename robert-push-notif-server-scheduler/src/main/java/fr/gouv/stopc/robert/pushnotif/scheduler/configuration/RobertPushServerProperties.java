@@ -30,6 +30,9 @@ public class RobertPushServerProperties {
     int maxPushHour;
 
     @Positive
+    int maxNumberOfPendingNotifications;
+
+    @Positive
     int maxNotificationsPerSecond;
 
     @Valid
