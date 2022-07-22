@@ -21,6 +21,10 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 
+/**
+ * An APNS template decorator to exports micrometer metrics about time spent
+ * sending each notification and amount of pending notifications beeing sent.
+ */
 @Slf4j
 @ToString(onlyExplicitlyIncluded = true)
 public class MonitoringApnsTemplate implements ApnsOperations {

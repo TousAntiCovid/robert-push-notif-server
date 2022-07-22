@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.util.concurrent.Semaphore;
 
+/**
+ * An APNS template decorator to limit notification rate.
+ */
 @Slf4j
 public class RateLimitingApnsTemplate implements ApnsOperations {
 

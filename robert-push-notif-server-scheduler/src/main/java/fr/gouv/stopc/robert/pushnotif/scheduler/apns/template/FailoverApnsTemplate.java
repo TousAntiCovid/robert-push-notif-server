@@ -8,6 +8,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * An APNS template able to defer notification sending to fallback servers
+ * depending on the reason returned from the previous server.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class FailoverApnsTemplate implements ApnsOperations {
