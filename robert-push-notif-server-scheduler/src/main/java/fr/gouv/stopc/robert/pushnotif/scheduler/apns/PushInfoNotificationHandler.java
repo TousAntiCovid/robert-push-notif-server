@@ -45,8 +45,8 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     }
 
     @Override
-    public void onRejection(final RejectionReason rejectionReason) {
-        notificationData.setLastErrorCode(rejectionReason.getValue());
+    public void onRejection(final RejectionReason reason) {
+        notificationData.setLastErrorCode(reason.getValue());
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
         pushInfoDao.updateFailurePushedNotif(notificationData);

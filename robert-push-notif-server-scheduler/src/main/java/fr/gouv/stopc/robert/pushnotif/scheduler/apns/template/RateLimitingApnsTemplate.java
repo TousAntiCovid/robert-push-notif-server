@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -11,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.util.concurrent.Semaphore;
 
+/**
+ * An APNS template decorator to limit notification rate.
+ */
 @Slf4j
 public class RateLimitingApnsTemplate implements ApnsOperations {
 
@@ -42,7 +44,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler handler) {
+    public void sendNotification(final NotificationHandler notificationHandler) {
 
         try {
             semaphore.acquire();
@@ -51,39 +53,24 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
             log.error("error during rate limiting process", e);
             return;
         }
-        final NotificationHandler limitedHandler = new NotificationHandler() {
-
-            @Override
-            public String getAppleToken() {
-                return handler.getAppleToken();
-            }
+        final var limitedHandler = new DelegateNotificationHandler(notificationHandler) {
 
             @Override
             public void onSuccess() {
                 semaphore.release();
-                handler.onSuccess();
+                super.onSuccess();
             }
 
             @Override
-            public void onRejection(final RejectionReason rejectionMessage) {
+            public void onRejection(final RejectionReason reason) {
                 semaphore.release();
-                handler.onRejection(rejectionMessage);
+                super.onRejection(reason);
             }
 
             @Override
             public void onError(final Throwable reason) {
                 semaphore.release();
-                handler.onError(reason);
-            }
-
-            @Override
-            public void disableToken() {
-                handler.disableToken();
-            }
-
-            @Override
-            public ApnsPushNotification buildNotification() {
-                return handler.buildNotification();
+                super.onError(reason);
             }
         };
         delegate.sendNotification(limitedHandler);
