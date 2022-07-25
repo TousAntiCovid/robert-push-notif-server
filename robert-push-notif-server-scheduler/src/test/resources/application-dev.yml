@@ -2,25 +2,25 @@ logging:
   file:
     name: ./target/logs/test.log
   level:
-    fr.gouv.stopc : DEBUG
+    fr.gouv.stopc: DEBUG
 
 robert.push.server:
-    # Min/Max Push Notification Hours
-    min-push-hour: 8
-    max-push-hour: 10
-    apns:
-      clients:
-        - host: localhost
-          port: 2198
-        - host: localhost
-          port: 2197
-      inactive-rejection-reason: BadDeviceToken
-      auth-token-file: classpath:/apns/token-auth-private-key.p8
-      auth-key-id: key-id
-      team-id: team-id
-      topic: test
+  # Min/Max Push Notification Hours
+  min-push-hour: 8
+  max-push-hour: 10
+  apns:
+    clients:
+      - host: localhost
+        port: 2198
+      - host: localhost
+        port: 2197
+    inactive-rejection-reason: BadDeviceToken
+    auth-token-file: classpath:/apns/token-auth-private-key.p8
+    auth-key-id: key-id
+    team-id: team-id
+    topic: test
 
-      #path to the trusted certificate chain
-      trusted-client-certificate-chain: classpath:/apns/ca.pem
+    #path to the trusted certificate chain
+    trusted-client-certificate-chain: classpath:/apns/ca.pem
 
-    scheduler.delay-in-ms: 2000
+  scheduler.delay-in-ms: 1000

@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+logging:
+  level:
+    org.flywaydb.core.internal: OFF
+

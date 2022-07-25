@@ -2,14 +2,10 @@ package fr.gouv.stopc.robert.pushnotif.server.ws;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-@ComponentScan(basePackages = "fr.gouv.stopc")
-@EnableJpaRepositories("fr.gouv.stopc")
-@EntityScan("fr.gouv.stopc")
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class RobertPushNotifWsRestApplication {
 
     public static void main(String[] args) {

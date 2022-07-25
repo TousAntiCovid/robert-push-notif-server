@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  description: "#TOUS-ANTI-COVID, Robert Push Notif Client API"
+  version: 1.0.0
+  title: "#TOUS-ANTI-COVID, Robert Push Notif"
+  termsOfService: https://github.com/ROBERT-proximity-tracing/
+  contact:
+    email: stopcovid@inria.fr
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+tags: []
+paths:
+  /push-token:
+    post:
+      tags: [ "push-token" ]
+      summary: Create a Push
+      description: |-
+        Request the creation of a push. Nothing is returned.
+      operationId: registerPushToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushRequest"
+      responses:
+        "201":
+          description: successful operation
+        "400":
+          description: bad request
+      security: []
+  /push-token/{token}:
+    delete:
+      tags: [ "push-token" ]
+      summary: Delete a Push Token
+      description: |-
+        Request the deletion of a push. Nothing is returned.
+
+
+
+
+      operationId: UnRegisterPushToken
+      parameters:
+        - name: token
+          in: path
+          description: The push notification token
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: successful operation
+        "400":
+          description: bad request
+components:
+  requestBodies:
+    PushRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PushRequest"
+  schemas:
+    PushRequest:
+      type: object
+      properties:
+        token:
+          description: >-
+            The value of the token of the device to be notified.
+
+          type: string
+          minLength: 1
+        locale:
+          description: The language of the device to be notified.
+          type: string
+          minLength: 1
+        timezone:
+          description: |-
+            The timezone of the device to be notified.
+          type: string
+          minLength: 1
+      required:
+        - token
+        - locale
+        - timezone
