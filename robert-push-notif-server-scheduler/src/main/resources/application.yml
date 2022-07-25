@@ -26,6 +26,7 @@ robert.push.server:
   scheduler:
     delay-in-ms: 30000
 
+  max-number-of-pending-notifications: 10000
   max-notifications-per-second: 200
 
   apns:

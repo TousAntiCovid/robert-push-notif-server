@@ -73,6 +73,7 @@ public class ApnsClientConfiguration {
 
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
+                robertPushServerProperties.getMaxNumberOfPendingNotifications(),
                 new FailoverApnsTemplate(
                         mesuredApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
                 )

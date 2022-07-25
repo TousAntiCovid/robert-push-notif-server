@@ -1,5 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -7,6 +9,7 @@ import io.github.bucket4j.local.LocalBucket;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.concurrent.Semaphore;
 
 @Slf4j
 public class RateLimitingApnsTemplate implements ApnsOperations {
@@ -15,11 +18,15 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
 
     private final ApnsOperations delegate;
 
+    private final Semaphore semaphore;
+
     public RateLimitingApnsTemplate(
             final int maxNotificationsPerSecond,
+            final int maxNumberOfPendingNotifications,
             final ApnsOperations delegate) {
 
         this.delegate = delegate;
+        this.semaphore = new Semaphore(maxNumberOfPendingNotifications);
 
         final var limit = Bandwidth.classic(
                 maxNotificationsPerSecond,
@@ -38,12 +45,48 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     public void sendNotification(final NotificationHandler handler) {
 
         try {
+            semaphore.acquire();
             rateLimitingBucket.asBlocking().consume(1);
         } catch (InterruptedException e) {
             log.error("error during rate limiting process", e);
             return;
         }
-        delegate.sendNotification(handler);
+        final NotificationHandler limitedHandler = new NotificationHandler() {
+
+            @Override
+            public String getAppleToken() {
+                return handler.getAppleToken();
+            }
+
+            @Override
+            public void onSuccess() {
+                semaphore.release();
+                handler.onSuccess();
+            }
+
+            @Override
+            public void onRejection(final RejectionReason rejectionMessage) {
+                semaphore.release();
+                handler.onRejection(rejectionMessage);
+            }
+
+            @Override
+            public void onError(final Throwable reason) {
+                semaphore.release();
+                handler.onError(reason);
+            }
+
+            @Override
+            public void disableToken() {
+                handler.disableToken();
+            }
+
+            @Override
+            public ApnsPushNotification buildNotification() {
+                return handler.buildNotification();
+            }
+        };
+        delegate.sendNotification(limitedHandler);
     }
 
     @Override
