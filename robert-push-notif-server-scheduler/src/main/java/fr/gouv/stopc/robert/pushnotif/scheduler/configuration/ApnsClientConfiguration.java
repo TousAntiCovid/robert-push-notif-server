@@ -65,18 +65,23 @@ public class ApnsClientConfiguration {
         }
     }
 
-    @Bean
-    public ApnsOperations apnsTemplate() {
-        final var mesuredApnsTemplates = robertPushServerProperties.getApns().getClients().stream()
-                .map(this::buildMeasureApnsTemplate)
-                .collect(toUnmodifiableList());
-
+    private ApnsOperations buildRateLimitingTemplate(final ApnsOperations apnsOperations) {
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
                 robertPushServerProperties.getMaxNumberOfPendingNotifications(),
-                new FailoverApnsTemplate(
-                        mesuredApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
-                )
+                apnsOperations
+        );
+    }
+
+    @Bean
+    public ApnsOperations apnsTemplate() {
+        final var measuredRateLimitedApnsTemplates = robertPushServerProperties.getApns().getClients().stream()
+                .map(this::buildMeasureApnsTemplate)
+                .map(this::buildRateLimitingTemplate)
+                .collect(toUnmodifiableList());
+
+        return new FailoverApnsTemplate(
+                measuredRateLimitedApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
         );
     }
 }
