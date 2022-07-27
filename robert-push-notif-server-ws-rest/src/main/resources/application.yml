@@ -1,11 +1,11 @@
 server:
-  port: ${ROBERT_PUSH_SERVER_PORT:9096}
+  port: :9096
 
 spring:
   datasource:
-    url: ${ROBERT_PUSH_SERVER_DB_URL:jdbc:postgresql://localhost:5432/push}
-    username: ${ROBERT_PUSH_SERVER_DB_USR:robert-push}
-    password: ${ROBERT_PUSH_SERVER_DB_PWD:robert}
+    url: jdbc:postgresql://localhost:5432/push
+    username: robert-push
+    password: robert
 
 # Min/Max Push Notification Hours
 robert.push.server:
