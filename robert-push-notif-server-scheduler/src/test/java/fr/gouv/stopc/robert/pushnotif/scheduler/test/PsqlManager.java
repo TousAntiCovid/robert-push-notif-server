@@ -51,7 +51,7 @@ public class PsqlManager implements TestExecutionListener {
     }
 
     private static final JdbcDatabaseContainer POSTGRES = new PostgreSQLContainer(
-            DockerImageName.parse("postgres:9.6")
+            DockerImageName.parse("postgres:13.7")
     );
 
     static {
