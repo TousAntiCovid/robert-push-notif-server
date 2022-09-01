@@ -45,14 +45,17 @@ public class FailoverApnsTemplate implements ApnsOperations {
                     if (inactiveRejectionReasons.contains(reason)) {
                         // rejection reason means we must try on next APN server
                         if (!queue.isEmpty()) {
+                            log.info("Rejection from Apns : " + reason.getValue());
                             // try next apn client in the queue
                             sendNotification(notificationHandler, queue);
                         } else {
+                            log.info("Rejection from last Apns : " + reason.getValue());
                             // notification was rejected on every client, then disable token
                             super.disableToken();
                             super.onRejection(reason);
                         }
                     } else {
+                        log.info("Rejection other than inactive reasons : " + reason.getValue());
                         // rejection reason means the notification must not be attempted on next APN
                         // server
                         super.onRejection(reason);
