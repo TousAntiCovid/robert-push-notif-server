@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -25,7 +26,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
-        sendNotification(notificationHandler, apnsClientsQueue);
+        sendNotification(notificationHandler, apnsClientsQueue, new ArrayList<>());
     }
 
     @Override
@@ -33,8 +34,14 @@ public class FailoverApnsTemplate implements ApnsOperations {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
     private void sendNotification(final NotificationHandler notificationHandler,
-            final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
+            final ConcurrentLinkedQueue<? extends ApnsOperations> queue,
+            List<String> rejections) {
 
         final var client = queue.poll();
         if (client != null) {
@@ -42,19 +49,22 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
                 @Override
                 public void onRejection(final RejectionReason reason) {
+                    rejections.add(client.getName() + ":" + reason.getValue());
                     if (inactiveRejectionReasons.contains(reason)) {
                         // rejection reason means we must try on next APN server
                         if (!queue.isEmpty()) {
                             // try next apn client in the queue
-                            sendNotification(notificationHandler, queue);
+                            sendNotification(notificationHandler, queue, rejections);
                         } else {
                             // notification was rejected on every client, then disable token
                             super.disableToken();
+                            super.registerRejections(rejections);
                             super.onRejection(reason);
                         }
                     } else {
                         // rejection reason means the notification must not be attempted on next APN
                         // server
+                        super.registerRejections(rejections);
                         super.onRejection(reason);
                     }
                 }

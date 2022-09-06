@@ -4,6 +4,8 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 /**
  * Base class for {@link NotificationHandler} decorators.
  */
@@ -35,6 +37,11 @@ public class DelegateNotificationHandler implements NotificationHandler {
     @Override
     public void disableToken() {
         delegate.disableToken();
+    }
+
+    @Override
+    public void registerRejections(final List<String> rejections) {
+        delegate.registerRejections(rejections);
     }
 
     @Override

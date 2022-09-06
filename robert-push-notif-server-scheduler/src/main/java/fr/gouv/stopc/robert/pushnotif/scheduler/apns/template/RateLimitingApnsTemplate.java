@@ -22,6 +22,11 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
 
     private final Semaphore semaphore;
 
+    @Override
+    public String getName() {
+        return delegate.getName();
+    }
+
     public RateLimitingApnsTemplate(
             final int maxNotificationsPerSecond,
             final int maxNumberOfPendingNotifications,

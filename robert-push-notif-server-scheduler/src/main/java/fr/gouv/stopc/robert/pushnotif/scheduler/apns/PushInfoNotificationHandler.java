@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
@@ -46,7 +47,6 @@ public class PushInfoNotificationHandler implements NotificationHandler {
 
     @Override
     public void onRejection(final RejectionReason reason) {
-        notificationData.setLastErrorCode(reason.getValue());
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
         pushInfoDao.updateFailurePushedNotif(notificationData);
@@ -63,6 +63,11 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     @Override
     public void disableToken() {
         notificationData.setActive(false);
+    }
+
+    @Override
+    public void registerRejections(final List<String> rejections) {
+        notificationData.setLastErrorCode(String.join(";", rejections));
     }
 
     @Override

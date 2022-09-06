@@ -159,7 +159,7 @@ class SchedulerNominalTest {
                             PushInfo::getSuccessfulPushSent,
                             PushInfo::getLastSuccessfulPush
                     )
-                    .contains(false, false, 1, "BadDeviceToken", 0, null);
+                    .contains(false, false, 1, "localhost:BadDeviceToken", 0, null);
 
             // Verify counters
             assertCounterIncremented(
@@ -210,7 +210,7 @@ class SchedulerNominalTest {
                             PushInfo::getSuccessfulPushSent,
                             PushInfo::getLastSuccessfulPush
                     )
-                    .contains(true, false, 1, "BadMessageId", 0, null);
+                    .contains(true, false, 1, "localhost:BadMessageId", 0, null);
 
             // Verify counters
             assertCounterIncremented(

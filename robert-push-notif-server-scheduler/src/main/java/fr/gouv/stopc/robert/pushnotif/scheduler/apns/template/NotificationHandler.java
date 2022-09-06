@@ -5,6 +5,8 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 
+import java.util.List;
+
 public interface NotificationHandler {
 
     /**
@@ -30,6 +32,11 @@ public interface NotificationHandler {
      * @param reason error message
      */
     void onError(final Throwable reason);
+
+    /**
+     * @param rejections list of rejections
+     */
+    void registerRejections(final List<String> rejections);
 
     /**
      * Called when the notification request is rejected on every configured APN

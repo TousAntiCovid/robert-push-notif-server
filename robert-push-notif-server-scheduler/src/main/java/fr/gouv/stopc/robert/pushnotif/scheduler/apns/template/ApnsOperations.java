@@ -7,4 +7,6 @@ public interface ApnsOperations extends AutoCloseable {
     void sendNotification(NotificationHandler handler);
 
     void waitUntilNoActivity(Duration toleranceDuration);
+
+    String getName();
 }

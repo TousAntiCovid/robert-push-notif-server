@@ -45,6 +45,11 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     @ToString.Include
     private final Integer port;
 
+    @Override
+    public String getName() {
+        return host;
+    }
+
     public MonitoringApnsTemplate(final ApnsTemplate delegate,
             final String host,
             final Integer port,

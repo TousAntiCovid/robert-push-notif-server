@@ -125,7 +125,7 @@ class SchedulerWithTwoApnsServerTest {
                             PushInfo::getSuccessfulPushSent,
                             PushInfo::getLastSuccessfulPush
                     )
-                    .containsExactly(true, false, 1, "BadTopic", 0, null);
+                    .containsExactly(true, false, 1, "localhost:BadTopic", 0, null);
         });
     }
 
@@ -233,7 +233,7 @@ class SchedulerWithTwoApnsServerTest {
                             PushInfo::getSuccessfulPushSent,
                             PushInfo::getLastSuccessfulPush
                     )
-                    .containsExactly(false, false, 1, "BadDeviceToken", 0, null);
+                    .containsExactly(false, false, 1, "localhost:BadDeviceToken;localhost:BadDeviceToken", 0, null);
         });
     }
 
@@ -280,7 +280,7 @@ class SchedulerWithTwoApnsServerTest {
                             PushInfo::getSuccessfulPushSent,
                             PushInfo::getLastSuccessfulPush
                     )
-                    .containsExactly(true, false, 1, "PayloadEmpty", 0, null);
+                    .containsExactly(true, false, 1, "localhost:BadDeviceToken;localhost:PayloadEmpty", 0, null);
         });
     }
 }

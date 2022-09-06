@@ -23,6 +23,11 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final ApnsClient apnsClient;
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
     public void sendNotification(final NotificationHandler notificationHandler) {
 
         pendingNotifications.incrementAndGet();
