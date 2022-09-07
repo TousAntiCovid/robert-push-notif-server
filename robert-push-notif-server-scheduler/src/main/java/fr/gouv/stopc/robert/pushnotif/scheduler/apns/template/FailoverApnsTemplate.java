@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
 /**
  * An APNS template able to defer notification sending to fallback servers
@@ -22,11 +22,11 @@ public class FailoverApnsTemplate implements ApnsOperations {
     private final List<RejectionReason> inactiveRejectionReasons;
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler, List<String> rejections) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
-        sendNotification(notificationHandler, apnsClientsQueue, new ArrayList<>());
+        sendNotification(notificationHandler, apnsClientsQueue, rejections);
     }
 
     @Override
@@ -36,7 +36,9 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     @Override
     public String getName() {
-        return null;
+        return String.format(
+                "Failover(%s)", apnsDelegates.stream().map(ApnsOperations::getName).collect(Collectors.joining(";"))
+        );
     }
 
     private void sendNotification(final NotificationHandler notificationHandler,
@@ -48,8 +50,8 @@ public class FailoverApnsTemplate implements ApnsOperations {
             client.sendNotification(new DelegateNotificationHandler(notificationHandler) {
 
                 @Override
-                public void onRejection(final RejectionReason reason) {
-                    rejections.add(client.getName() + ":" + reason.getValue());
+                public void onRejection(final RejectionReason reason, final List<String> pastRejections) {
+                    pastRejections.add(client.getName() + ":" + reason.getValue());
                     if (inactiveRejectionReasons.contains(reason)) {
                         // rejection reason means we must try on next APN server
                         if (!queue.isEmpty()) {
@@ -58,17 +60,17 @@ public class FailoverApnsTemplate implements ApnsOperations {
                         } else {
                             // notification was rejected on every client, then disable token
                             super.disableToken();
-                            super.registerRejections(rejections);
-                            super.onRejection(reason);
+                            super.onRejection(reason, pastRejections);
                         }
                     } else {
                         // rejection reason means the notification must not be attempted on next APN
                         // server
-                        super.registerRejections(rejections);
-                        super.onRejection(reason);
+                        super.onRejection(reason, pastRejections);
                     }
                 }
-            });
+            },
+                    rejections
+            );
         }
     }
 

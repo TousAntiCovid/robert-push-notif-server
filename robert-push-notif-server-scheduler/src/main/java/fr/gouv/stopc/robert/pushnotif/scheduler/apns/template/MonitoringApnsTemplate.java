@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -47,7 +48,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     @Override
     public String getName() {
-        return host;
+        return delegate.getName();
     }
 
     public MonitoringApnsTemplate(final ApnsTemplate delegate,
@@ -96,7 +97,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler, final List<String> rejections) {
 
         pendingNotifications.incrementAndGet();
 
@@ -112,10 +113,10 @@ public class MonitoringApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onRejection(final RejectionReason reason) {
+            public void onRejection(final RejectionReason reason, final List<String> rejections) {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(REJECTED, reason));
-                super.onRejection(reason);
+                super.onRejection(reason, rejections);
             }
 
             @Override
@@ -127,7 +128,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
             }
         };
 
-        delegate.sendNotification(measuringHandler);
+        delegate.sendNotification(measuringHandler, rejections);
     }
 
     @Override

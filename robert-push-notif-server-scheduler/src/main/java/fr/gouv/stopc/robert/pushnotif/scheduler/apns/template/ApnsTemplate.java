@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.UNKNOWN;
@@ -23,12 +24,14 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final ApnsClient apnsClient;
 
+    private final String host;
+
     @Override
     public String getName() {
-        return null;
+        return host;
     }
 
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler, final List<String> rejections) {
 
         pendingNotifications.incrementAndGet();
         final var sendNotificationFuture = apnsClient.sendNotification(notificationHandler.buildNotification());
@@ -42,7 +45,8 @@ public class ApnsTemplate implements ApnsOperations {
                     notificationHandler.onRejection(
                             response.getRejectionReason()
                                     .map(RejectionReason::fromValue)
-                                    .orElse(UNKNOWN)
+                                    .orElse(UNKNOWN),
+                            rejections
                     );
                 }
             } else {

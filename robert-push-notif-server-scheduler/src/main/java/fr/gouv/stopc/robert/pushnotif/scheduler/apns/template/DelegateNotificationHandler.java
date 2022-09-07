@@ -25,8 +25,8 @@ public class DelegateNotificationHandler implements NotificationHandler {
     }
 
     @Override
-    public void onRejection(final RejectionReason reason) {
-        delegate.onRejection(reason);
+    public void onRejection(final RejectionReason reason, final List<String> rejections) {
+        delegate.onRejection(reason, rejections);
     }
 
     @Override
@@ -37,11 +37,6 @@ public class DelegateNotificationHandler implements NotificationHandler {
     @Override
     public void disableToken() {
         delegate.disableToken();
-    }
-
-    @Override
-    public void registerRejections(final List<String> rejections) {
-        delegate.registerRejections(rejections);
     }
 
     @Override

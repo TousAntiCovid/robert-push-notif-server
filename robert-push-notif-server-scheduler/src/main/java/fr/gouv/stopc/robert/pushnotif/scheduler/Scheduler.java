@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -68,7 +69,7 @@ public class Scheduler {
 
             handler.updateNextPlannedPushToRandomTomorrow();
 
-            apnsTemplate.sendNotification(handler);
+            apnsTemplate.sendNotification(handler, new ArrayList<>());
         }
     }
 }

@@ -46,7 +46,8 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     }
 
     @Override
-    public void onRejection(final RejectionReason reason) {
+    public void onRejection(final RejectionReason reason, final List<String> rejections) {
+        notificationData.setLastErrorCode(String.join(";", rejections));
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
         pushInfoDao.updateFailurePushedNotif(notificationData);
@@ -63,11 +64,6 @@ public class PushInfoNotificationHandler implements NotificationHandler {
     @Override
     public void disableToken() {
         notificationData.setActive(false);
-    }
-
-    @Override
-    public void registerRejections(final List<String> rejections) {
-        notificationData.setLastErrorCode(String.join(";", rejections));
     }
 
     @Override

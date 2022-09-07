@@ -51,8 +51,13 @@ public class ApnsClientConfiguration {
                 );
             }
 
+            final var apnsTemplate = new ApnsTemplate(
+                    apnsClientBuilder.build(),
+                    apnsClientProperties.getHost()
+            );
+
             return new MonitoringApnsTemplate(
-                    new ApnsTemplate(apnsClientBuilder.build()),
+                    apnsTemplate,
                     apnsClientProperties.getHost(),
                     apnsClientProperties.getPort(),
                     meterRegistry

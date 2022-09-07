@@ -21,10 +21,10 @@ public interface NotificationHandler {
 
     /**
      * Called when the notification request is rejected
-     * 
+     *
      * @param reason rejected push notification request response message
      */
-    void onRejection(final RejectionReason reason);
+    void onRejection(final RejectionReason reason, final List<String> rejections);
 
     /**
      * Called when the notification request fails before reaching Apple server.
@@ -32,11 +32,6 @@ public interface NotificationHandler {
      * @param reason error message
      */
     void onError(final Throwable reason);
-
-    /**
-     * @param rejections list of rejections
-     */
-    void registerRejections(final List<String> rejections);
 
     /**
      * Called when the notification request is rejected on every configured APN

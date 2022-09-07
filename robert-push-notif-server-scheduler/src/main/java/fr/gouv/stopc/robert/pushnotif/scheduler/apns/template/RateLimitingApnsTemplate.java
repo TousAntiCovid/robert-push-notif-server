@@ -8,6 +8,7 @@ import io.github.bucket4j.local.LocalBucket;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -49,7 +50,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final NotificationHandler notificationHandler, final List<String> rejections) {
 
         try {
             semaphore.acquire();
@@ -67,9 +68,9 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
             }
 
             @Override
-            public void onRejection(final RejectionReason reason) {
+            public void onRejection(final RejectionReason reason, final List<String> pastRejections) {
                 semaphore.release();
-                super.onRejection(reason);
+                super.onRejection(reason, pastRejections);
             }
 
             @Override
@@ -78,7 +79,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
                 super.onError(reason);
             }
         };
-        delegate.sendNotification(limitedHandler);
+        delegate.sendNotification(limitedHandler, rejections);
     }
 
     @Override
