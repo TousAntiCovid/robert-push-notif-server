@@ -4,18 +4,32 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
+import java.util.function.Consumer;
 
-@Component
+import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+
+@Repository
 @RequiredArgsConstructor
 public class PushInfoRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Transactional
+    public void forEachNotificationToBeSent(final Consumer<PushInfo> pushInfoHandler) {
+        jdbcTemplate.query(
+                "select * from push where active = true and deleted = false and next_planned_push <= now()",
+                rs -> {
+                    final var pushInfo = PushInfoRowMapper.INSTANCE.mapRow(rs, rs.getRow());
+                    pushInfoHandler.accept(pushInfo);
+                }
+        );
+    }
+
+    @Transactional(propagation = REQUIRES_NEW)
     public void updateNextPlannedPushDate(final PushInfo pushInfo) {
         final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
@@ -25,7 +39,7 @@ public class PushInfoRepository {
         jdbcTemplate.update("update push set next_planned_push = :nextPlannedPushDate where id = :id", params);
     }
 
-    @Transactional
+    @Transactional(propagation = REQUIRES_NEW)
     public void updateSuccessFulPushedNotif(final PushInfo pushInfo) {
         final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
@@ -43,7 +57,7 @@ public class PushInfoRepository {
 
     }
 
-    @Transactional
+    @Transactional(propagation = REQUIRES_NEW)
     public void updateFailurePushedNotif(final PushInfo pushInfo) {
         final var params = new MapSqlParameterSource();
         params.addValue("id", pushInfo.getId());
