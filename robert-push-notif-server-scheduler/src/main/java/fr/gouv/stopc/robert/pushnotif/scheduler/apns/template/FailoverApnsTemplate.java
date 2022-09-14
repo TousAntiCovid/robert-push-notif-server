@@ -1,5 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +22,12 @@ public class FailoverApnsTemplate implements ApnsOperations {
     private final List<RejectionReason> inactiveRejectionReasons;
 
     @Override
-    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsNotificationHandler notificationHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
-        sendNotification(notificationHandler, apnsClientsQueue);
+        sendNotification(notification, notificationHandler, apnsClientsQueue);
     }
 
     @Override
@@ -33,12 +35,13 @@ public class FailoverApnsTemplate implements ApnsOperations {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
-    private void sendNotification(final ApnsNotificationHandler notificationHandler,
+    private void sendNotification(final ApnsPushNotification notification,
+            final ApnsNotificationHandler notificationHandler,
             final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
 
         final var client = queue.poll();
         if (client != null) {
-            client.sendNotification(new DelegateNotificationHandler(notificationHandler) {
+            client.sendNotification(notification, new DelegateNotificationHandler(notificationHandler) {
 
                 @Override
                 public void onRejection(final RejectionReason reason) {
@@ -46,7 +49,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
                         // rejection reason means we must try on next APN server
                         if (!queue.isEmpty()) {
                             // try next apn client in the queue
-                            sendNotification(notificationHandler, queue);
+                            sendNotification(notification, notificationHandler, queue);
                         } else {
                             // notification was rejected on every client, then disable token
                             super.disableToken();

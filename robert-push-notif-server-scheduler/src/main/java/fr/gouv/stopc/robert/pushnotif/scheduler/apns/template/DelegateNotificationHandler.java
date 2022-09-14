@@ -1,6 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 
@@ -11,11 +10,6 @@ import lombok.RequiredArgsConstructor;
 public class DelegateNotificationHandler implements ApnsNotificationHandler {
 
     private final ApnsNotificationHandler delegate;
-
-    @Override
-    public String getAppleToken() {
-        return delegate.getAppleToken();
-    }
 
     @Override
     public void onSuccess() {
@@ -35,10 +29,5 @@ public class DelegateNotificationHandler implements ApnsNotificationHandler {
     @Override
     public void disableToken() {
         delegate.disableToken();
-    }
-
-    @Override
-    public ApnsPushNotification buildNotification() {
-        return delegate.buildNotification();
     }
 }

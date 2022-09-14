@@ -1,5 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
+import com.eatthepath.pushy.apns.DeliveryPriority;
+import com.eatthepath.pushy.apns.PushType;
+import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
@@ -18,6 +22,10 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
+
+import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
+import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 
 @Slf4j
 @Service
@@ -68,7 +76,23 @@ public class Scheduler {
 
             handler.updateNextPlannedPushToRandomTomorrow();
 
-            apnsTemplate.sendNotification(handler);
+            apnsTemplate.sendNotification(buildNotification(pushInfo.getToken()), handler);
         }
+    }
+
+    public SimpleApnsPushNotification buildNotification(final String apnsToken) {
+        final var payload = new SimpleApnsPayloadBuilder()
+                .setContentAvailable(true)
+                .setBadgeNumber(0)
+                .build();
+
+        return new SimpleApnsPushNotification(
+                sanitizeTokenString(apnsToken).toLowerCase(),
+                robertPushServerProperties.getApns().getTopic(),
+                payload,
+                Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
+                DeliveryPriority.IMMEDIATE,
+                PushType.BACKGROUND
+        );
     }
 }

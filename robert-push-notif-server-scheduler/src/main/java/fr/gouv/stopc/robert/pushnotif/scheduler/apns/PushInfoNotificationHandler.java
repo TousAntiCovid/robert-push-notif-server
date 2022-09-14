@@ -1,9 +1,5 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
-import com.eatthepath.pushy.apns.DeliveryPriority;
-import com.eatthepath.pushy.apns.PushType;
-import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
-import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
@@ -14,8 +10,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
-import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.apache.commons.lang3.StringUtils.truncate;
 
@@ -31,11 +25,6 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
     private final int minPushHour;
 
     private final int maxPushHour;
-
-    @Override
-    public String getAppleToken() {
-        return notificationData.getToken();
-    }
 
     @Override
     public void onSuccess() {
@@ -63,24 +52,6 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
     @Override
     public void disableToken() {
         notificationData.setActive(false);
-    }
-
-    @Override
-    public SimpleApnsPushNotification buildNotification() {
-
-        final String payload = new SimpleApnsPayloadBuilder()
-                .setContentAvailable(true)
-                .setBadgeNumber(0)
-                .build();
-
-        return new SimpleApnsPushNotification(
-                sanitizeTokenString(getAppleToken()).toLowerCase(),
-                apnsTopic,
-                payload,
-                Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
-                DeliveryPriority.IMMEDIATE,
-                PushType.BACKGROUND
-        );
     }
 
     public void updateNextPlannedPushToRandomTomorrow() {

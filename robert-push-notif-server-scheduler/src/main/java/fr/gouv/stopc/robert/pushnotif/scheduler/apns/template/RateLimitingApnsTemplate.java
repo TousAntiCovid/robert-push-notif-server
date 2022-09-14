@@ -1,5 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -44,7 +45,8 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsNotificationHandler notificationHandler) {
 
         try {
             semaphore.acquire();
@@ -73,7 +75,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
                 super.onError(reason);
             }
         };
-        delegate.sendNotification(limitedHandler);
+        delegate.sendNotification(notification, limitedHandler);
     }
 
     @Override

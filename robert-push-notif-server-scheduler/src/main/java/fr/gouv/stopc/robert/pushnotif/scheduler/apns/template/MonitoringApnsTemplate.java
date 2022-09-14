@@ -1,5 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.micrometer.core.instrument.Gauge;
@@ -91,7 +92,8 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsNotificationHandler notificationHandler) {
 
         pendingNotifications.incrementAndGet();
 
@@ -122,7 +124,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
             }
         };
 
-        delegate.sendNotification(measuringHandler);
+        delegate.sendNotification(notification, measuringHandler);
     }
 
     @Override
