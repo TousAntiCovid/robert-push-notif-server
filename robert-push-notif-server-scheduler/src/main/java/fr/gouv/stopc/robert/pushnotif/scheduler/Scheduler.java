@@ -47,13 +47,16 @@ public class Scheduler {
         final var handler = new PushInfoNotificationHandler(
                 pushInfo,
                 pushInfoRepository,
-                robertPushServerProperties.getApns().getTopic(),
-                robertPushServerProperties.getMinPushHour(),
-                robertPushServerProperties.getMaxPushHour()
+                robertPushServerProperties.getApns().getTopic()
         );
         // set the next planned push to be sure the notification could not be sent 2
         // times the same day
-        handler.updateNextPlannedPushToRandomTomorrow();
+        pushInfoRepository.updateNextPlannedPushDate(
+                pushInfo.withPushDateTomorrowBetween(
+                        robertPushServerProperties.getMinPushHour(),
+                        robertPushServerProperties.getMaxPushHour()
+                )
+        );
 
         apnsTemplate.sendNotification(buildNotification(pushInfo.getToken()), handler);
     }
