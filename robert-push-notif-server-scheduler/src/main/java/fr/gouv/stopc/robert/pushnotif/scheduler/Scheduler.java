@@ -9,7 +9,6 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
 import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +33,6 @@ public class Scheduler {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final PushInfoRowMapper rowMapper = new PushInfoRowMapper();
-
     private final PushInfoDao pushInfoDao;
 
     private final RobertPushServerProperties robertPushServerProperties;
@@ -51,22 +48,21 @@ public class Scheduler {
         // basis.
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new PushNotificationRowCallbackHandler()
+                new SendNotificationRowCallbackHandler()
         );
 
         apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
-    @RequiredArgsConstructor
-    private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
+    private class SendNotificationRowCallbackHandler implements RowCallbackHandler {
 
         @Override
         public void processRow(final ResultSet resultSet) throws SQLException {
-            PushInfo pushInfo = rowMapper.mapRow(resultSet, resultSet.getRow());
+            final var pushInfo = PushInfoRowMapper.INSTANCE.mapRow(resultSet, resultSet.getRow());
 
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            PushInfoNotificationHandler handler = new PushInfoNotificationHandler(
+            final var handler = new PushInfoNotificationHandler(
                     pushInfo,
                     pushInfoDao,
                     robertPushServerProperties.getApns().getTopic(),

@@ -10,6 +10,8 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConv
 
 public class PushInfoRowMapper implements RowMapper<PushInfo> {
 
+    public static final RowMapper<PushInfo> INSTANCE = new PushInfoRowMapper();
+
     @Override
     public PushInfo mapRow(ResultSet resultSet, int i) throws SQLException {
         return PushInfo.builder()
