@@ -5,7 +5,7 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 
-public interface NotificationHandler {
+public interface ApnsNotificationHandler {
 
     /**
      * @return Apple push notification device token

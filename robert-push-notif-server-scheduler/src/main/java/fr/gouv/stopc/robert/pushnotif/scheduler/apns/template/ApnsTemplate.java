@@ -23,7 +23,7 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final ApnsClient apnsClient;
 
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
 
         pendingNotifications.incrementAndGet();
         final var sendNotificationFuture = apnsClient.sendNotification(notificationHandler.buildNotification());

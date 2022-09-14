@@ -5,12 +5,12 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Base class for {@link NotificationHandler} decorators.
+ * Base class for {@link ApnsNotificationHandler} decorators.
  */
 @RequiredArgsConstructor
-public class DelegateNotificationHandler implements NotificationHandler {
+public class DelegateNotificationHandler implements ApnsNotificationHandler {
 
-    private final NotificationHandler delegate;
+    private final ApnsNotificationHandler delegate;
 
     @Override
     public String getAppleToken() {

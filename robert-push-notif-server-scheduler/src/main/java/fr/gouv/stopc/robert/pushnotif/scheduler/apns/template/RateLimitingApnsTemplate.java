@@ -44,7 +44,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
 
         try {
             semaphore.acquire();

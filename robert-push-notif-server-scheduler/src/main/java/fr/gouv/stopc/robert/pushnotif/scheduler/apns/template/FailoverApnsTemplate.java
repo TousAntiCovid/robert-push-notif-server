@@ -21,7 +21,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
     private final List<RejectionReason> inactiveRejectionReasons;
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsNotificationHandler notificationHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
@@ -33,7 +33,7 @@ public class FailoverApnsTemplate implements ApnsOperations {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
-    private void sendNotification(final NotificationHandler notificationHandler,
+    private void sendNotification(final ApnsNotificationHandler notificationHandler,
             final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
 
         final var client = queue.poll();
