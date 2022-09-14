@@ -3,7 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;

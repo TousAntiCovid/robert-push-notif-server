@@ -1,17 +1,17 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.data;
+package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
 
 @Component
 @RequiredArgsConstructor
-public class PushInfoDao {
+public class PushInfoRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 

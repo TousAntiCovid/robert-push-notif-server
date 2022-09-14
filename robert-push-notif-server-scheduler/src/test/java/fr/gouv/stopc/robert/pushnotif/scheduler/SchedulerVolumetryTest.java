@@ -1,6 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.awaitility.Awaitility;

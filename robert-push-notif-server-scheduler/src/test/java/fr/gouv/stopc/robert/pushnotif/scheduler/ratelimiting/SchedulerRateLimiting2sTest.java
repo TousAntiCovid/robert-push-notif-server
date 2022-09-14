@@ -1,7 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.ratelimiting;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.Scheduler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.params.ParameterizedTest;

@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.data;
+package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
 
 import lombok.experimental.UtilityClass;
 

@@ -7,8 +7,8 @@ import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRowMapper;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class Scheduler {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final PushInfoDao pushInfoDao;
+    private final PushInfoRepository pushInfoRepository;
 
     private final RobertPushServerProperties robertPushServerProperties;
 
@@ -64,7 +64,7 @@ public class Scheduler {
             // times the same day
             final var handler = new PushInfoNotificationHandler(
                     pushInfo,
-                    pushInfoDao,
+                    pushInfoRepository,
                     robertPushServerProperties.getApns().getTopic(),
                     robertPushServerProperties.getMinPushHour(),
                     robertPushServerProperties.getMaxPushHour()

@@ -1,8 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
@@ -18,7 +18,7 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
 
     private final PushInfo notificationData;
 
-    private final PushInfoDao pushInfoDao;
+    private final PushInfoRepository pushInfoRepository;
 
     private final String apnsTopic;
 
@@ -30,7 +30,7 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
     public void onSuccess() {
         notificationData.setLastSuccessfulPush(Instant.now());
         notificationData.setSuccessfulPushSent(notificationData.getSuccessfulPushSent() + 1);
-        pushInfoDao.updateSuccessFulPushedNotif(notificationData);
+        pushInfoRepository.updateSuccessFulPushedNotif(notificationData);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
         notificationData.setLastErrorCode(reason.getValue());
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
-        pushInfoDao.updateFailurePushedNotif(notificationData);
+        pushInfoRepository.updateFailurePushedNotif(notificationData);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
         notificationData.setLastErrorCode(truncate(cause.getMessage(), 255));
         notificationData.setLastFailurePush(Instant.now());
         notificationData.setFailedPushSent(notificationData.getFailedPushSent() + 1);
-        pushInfoDao.updateFailurePushedNotif(notificationData);
+        pushInfoRepository.updateFailurePushedNotif(notificationData);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PushInfoNotificationHandler implements ApnsNotificationHandler {
 
     public void updateNextPlannedPushToRandomTomorrow() {
         notificationData.setNextPlannedPush(generateDateTomorrowBetweenBounds(notificationData.getTimezone()));
-        pushInfoDao.updateNextPlannedPushDate(notificationData);
+        pushInfoRepository.updateNextPlannedPushDate(notificationData);
     }
 
     private Instant generateDateTomorrowBetweenBounds(final String timezone) {

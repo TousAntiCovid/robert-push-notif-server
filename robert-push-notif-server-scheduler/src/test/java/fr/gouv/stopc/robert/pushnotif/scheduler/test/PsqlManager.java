@@ -1,8 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo.PushInfoBuilder;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRowMapper;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo.PushInfoBuilder;
 import org.flywaydb.core.Flyway;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.data.InstantTimestampConverter.convertInstantToTimestamp;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
 import static java.time.Instant.now;
 import static java.time.ZoneOffset.UTC;
 

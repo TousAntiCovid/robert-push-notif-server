@@ -1,4 +1,4 @@
-package fr.gouv.stopc.robert.pushnotif.scheduler.data.model;
+package fr.gouv.stopc.robert.pushnotif.scheduler.repository.model;
 
 import lombok.Builder;
 import lombok.Data;
