@@ -46,8 +46,7 @@ public class Scheduler {
     private void sendNotification(final PushInfo pushInfo) {
         final var handler = new PushInfoNotificationHandler(
                 pushInfo,
-                pushInfoRepository,
-                robertPushServerProperties.getApns().getTopic()
+                pushInfoRepository
         );
         // set the next planned push to be sure the notification could not be sent 2
         // times the same day

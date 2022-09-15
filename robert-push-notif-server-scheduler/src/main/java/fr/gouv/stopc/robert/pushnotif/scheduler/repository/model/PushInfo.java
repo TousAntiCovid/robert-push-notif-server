@@ -1,7 +1,8 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.repository.model;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
+import lombok.With;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -10,35 +11,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 
-@Data
+@Value
 @Builder
 public class PushInfo {
 
-    private Long id;
+    Long id;
 
-    private String token;
+    String token;
 
-    private String timezone;
+    String timezone;
 
-    private String locale;
-
-    private Instant nextPlannedPush;
-
-    private Instant lastSuccessfulPush;
-
-    private Instant lastFailurePush;
-
-    private String lastErrorCode;
-
-    private int successfulPushSent;
-
-    private int failedPushSent;
-
-    private Instant creationDate;
-
-    private boolean active;
-
-    private boolean deleted;
+    @With
+    Instant nextPlannedPush;
 
     public PushInfo withPushDateTomorrowBetween(final int minPushHour, final int maxPushHour) {
         final var random = ThreadLocalRandom.current();
@@ -56,7 +40,6 @@ public class PushInfo {
                 .toInstant()
                 .truncatedTo(MINUTES);
 
-        setNextPlannedPush(nextPushInstant);
-        return this;
+        return this.withNextPlannedPush(nextPushInstant);
     }
 }

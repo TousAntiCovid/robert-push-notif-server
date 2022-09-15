@@ -2,16 +2,22 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Map;
 import java.util.function.Consumer;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class PushInfoRepository {
@@ -31,49 +37,65 @@ public class PushInfoRepository {
 
     @Transactional(propagation = REQUIRES_NEW)
     public void updateNextPlannedPushDate(final PushInfo pushInfo) {
-        final var params = new MapSqlParameterSource();
-        params.addValue("id", pushInfo.getId());
-        params.addValue(
-                "nextPlannedPushDate", convertInstantToTimestamp(pushInfo.getNextPlannedPush())
+        jdbcTemplate.update(
+                "update push set next_planned_push = :nextPlannedPushDate where id = :id", Map.of(
+                        "id", pushInfo.getId(),
+                        "nextPlannedPushDate", Timestamp.from(pushInfo.getNextPlannedPush())
+                )
         );
-        jdbcTemplate.update("update push set next_planned_push = :nextPlannedPushDate where id = :id", params);
     }
 
     @Transactional(propagation = REQUIRES_NEW)
-    public void updateSuccessFulPushedNotif(final PushInfo pushInfo) {
-        final var params = new MapSqlParameterSource();
-        params.addValue("id", pushInfo.getId());
-        params.addValue(
-                "lastSuccessfulPush", convertInstantToTimestamp(pushInfo.getLastSuccessfulPush())
-        );
-        params.addValue("successfulPushSent", pushInfo.getSuccessfulPushSent());
-
+    public void updateSuccessfulPushSent(final long id) {
         jdbcTemplate.update(
                 "update push set last_successful_push = :lastSuccessfulPush, " +
-                        "successful_push_sent = :successfulPushSent " +
+                        "successful_push_sent = successful_push_sent + 1 " +
                         "where id = :id",
-                params
+                Map.of(
+                        "id", id,
+                        "lastSuccessfulPush", Timestamp.from(Instant.now())
+                )
         );
 
     }
 
     @Transactional(propagation = REQUIRES_NEW)
-    public void updateFailurePushedNotif(final PushInfo pushInfo) {
-        final var params = new MapSqlParameterSource();
-        params.addValue("id", pushInfo.getId());
-        params.addValue("active", pushInfo.isActive());
-        params.addValue("lastFailurePush", convertInstantToTimestamp(pushInfo.getLastFailurePush()));
-        params.addValue("failedPushSent", pushInfo.getFailedPushSent());
-        params.addValue("lastErrorCode", pushInfo.getLastErrorCode());
-
+    public void updateFailure(final long id, final String failureDescription) {
         jdbcTemplate.update(
-                "update push set active = :active, " +
+                "update push set " +
                         "last_failure_push = :lastFailurePush, " +
-                        "failed_push_sent = :failedPushSent, " +
-                        "last_error_code = :lastErrorCode " +
+                        "failed_push_sent = failed_push_sent + 1, " +
+                        "last_error_code = :lastErrorCode::char(255) " +
                         "where id = :id",
-                params
+                Map.of(
+                        "id", id,
+                        "lastFailurePush", Timestamp.from(Instant.now()),
+                        "lastErrorCode", failureDescription
+                )
         );
     }
 
+    @Transactional(propagation = REQUIRES_NEW)
+    public void disable(final Long id) {
+        jdbcTemplate.update("update push set active = false where id = :id", Map.of("id", id));
+    }
+
+    private static class PushInfoRowMapper implements RowMapper<PushInfo> {
+
+        private static final PushInfoRowMapper INSTANCE = new PushInfoRowMapper();
+
+        @Override
+        public PushInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return PushInfo.builder()
+                    .id(rs.getLong("id"))
+                    .timezone(rs.getString("timezone"))
+                    .token(rs.getString("token"))
+                    .nextPlannedPush(toInstantNullSafe(rs.getTimestamp("next_planned_push")))
+                    .build();
+        }
+
+        private Instant toInstantNullSafe(Timestamp timestamp) {
+            return null == timestamp ? null : timestamp.toInstant();
+        }
+    }
 }
