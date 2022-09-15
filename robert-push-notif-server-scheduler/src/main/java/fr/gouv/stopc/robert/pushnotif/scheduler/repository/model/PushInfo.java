@@ -51,7 +51,7 @@ public class PushInfo {
             durationBetweenHours = maxPushHour - minPushHour;
         }
         final var nextPushInstant = ZonedDateTime.now(ZoneId.of(timezone)).plusDays(1)
-                .withHour(random.nextInt(durationBetweenHours) + minPushHour % 24)
+                .withHour((random.nextInt(durationBetweenHours) + minPushHour) % 24)
                 .withMinute(random.nextInt(60))
                 .toInstant()
                 .truncatedTo(MINUTES);
