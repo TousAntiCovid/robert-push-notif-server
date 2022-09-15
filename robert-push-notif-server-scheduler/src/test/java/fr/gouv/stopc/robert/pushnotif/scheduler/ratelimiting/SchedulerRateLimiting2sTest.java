@@ -1,9 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.ratelimiting;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.Scheduler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
-import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +10,9 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.Duration;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatAllPushInfo;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
 import static java.time.Instant.now;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.LongStream.rangeClosed;
@@ -34,7 +34,7 @@ class SchedulerRateLimiting2sTest {
 
         // Given
         rangeClosed(1, notificationsNumber)
-                .forEach(i -> givenPushInfoWith(p -> p.id(i).token(randomUUID().toString())));
+                .forEach(i -> givenPushInfoForToken(randomUUID().toString()));
 
         // When
         final var before = now();
@@ -42,7 +42,8 @@ class SchedulerRateLimiting2sTest {
         final var after = now();
 
         // Then
-        assertThat(PsqlManager.findAll()).hasSize(notificationsNumber)
+        assertThatAllPushInfo()
+                .hasSize(notificationsNumber)
                 .extracting(
                         PushInfo::isActive,
                         PushInfo::isDeleted,

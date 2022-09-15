@@ -1,10 +1,11 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo.PushInfoBuilder;
+import lombok.Builder;
+import lombok.Value;
+import org.assertj.core.api.ListAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.flywaydb.core.Flyway;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.test.context.TestContext;
@@ -13,42 +14,23 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.Function;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.repository.InstantTimestampConverter.convertInstantToTimestamp;
-import static java.time.Instant.now;
 import static java.time.ZoneOffset.UTC;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PsqlManager implements TestExecutionListener {
 
     private static NamedParameterJdbcTemplate jdbcTemplate;
 
     private static final PushInfoRowMapper pushInfoRowMapper = new PushInfoRowMapper();
-
-    private static int insert(final PushInfo pushInfo) {
-        final MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("id", pushInfo.getId());
-        parameters.addValue("creation_date", convertInstantToTimestamp(pushInfo.getCreationDate()));
-        parameters.addValue("locale", pushInfo.getLocale());
-        parameters.addValue("timezone", pushInfo.getTimezone());
-        parameters.addValue("token", pushInfo.getToken());
-        parameters.addValue("active", pushInfo.isActive());
-        parameters.addValue("deleted", pushInfo.isDeleted());
-        parameters.addValue("successful_push_sent", pushInfo.getSuccessfulPushSent());
-        parameters.addValue("last_successful_push", convertInstantToTimestamp(pushInfo.getLastSuccessfulPush()));
-        parameters.addValue("failed_push_sent", pushInfo.getFailedPushSent());
-        parameters.addValue("last_failure_push", convertInstantToTimestamp(pushInfo.getLastFailurePush()));
-        parameters.addValue("last_error_code", pushInfo.getLastErrorCode());
-        parameters.addValue("next_planned_push", convertInstantToTimestamp(pushInfo.getNextPlannedPush()));
-        return new SimpleJdbcInsert(jdbcTemplate.getJdbcTemplate())
-                .withTableName("push")
-                .execute(parameters);
-    }
 
     private static final JdbcDatabaseContainer POSTGRES = new PostgreSQLContainer(
             DockerImageName.parse("postgres:13.7")
@@ -74,44 +56,94 @@ public class PsqlManager implements TestExecutionListener {
         jdbcTemplate = testContext.getApplicationContext().getBean(NamedParameterJdbcTemplate.class);
     }
 
-    static PushInfoBuilder pushinfoBuilder = PushInfo.builder()
-            .id(10000000L)
-            .active(true)
-            .deleted(false)
-            .token("00000000")
-            .locale("fr-FR")
-            .creationDate(now())
-            .successfulPushSent(0)
-            .failedPushSent(0)
-            .timezone("Europe/Paris");
-
-    public static void givenPushInfoWith(final Function<PushInfoBuilder, PushInfoBuilder> testSpecificBuilder) {
-        insert(
-                testSpecificBuilder.apply(
-                        pushinfoBuilder
-                                /*
-                                 * Set next planned push date outside of static builder to have varying
-                                 * getRandomNumberInRange results but let test specific builder override it if
-                                 * needed
-                                 */
-                                .nextPlannedPush(
-                                        LocalDateTime.from(
-                                                LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
-                                                        .plusMinutes(new Random().nextInt(60)).minusDays(1)
-                                        )
-                                                .toInstant(UTC)
-                                )
-                ).build()
+    public static void givenPushInfoForToken(String token) {
+        givenPushInfoForTokenAndNextPlannedPush(
+                token,
+                LocalDateTime.from(
+                        LocalDate.now().atStartOfDay().plusHours(new Random().nextInt(24))
+                                .plusMinutes(new Random().nextInt(60)).minusDays(1)
+                )
+                        .toInstant(UTC)
         );
     }
 
-    public static PushInfo findByToken(final String token) {
-        final var parameters = Map.of("token", token);
-        return jdbcTemplate.queryForObject("select * from push where token = :token", parameters, pushInfoRowMapper);
+    public static void givenPushInfoForTokenAndNextPlannedPush(String token, Instant nextPlannedPush) {
+        new SimpleJdbcInsert(jdbcTemplate.getJdbcTemplate())
+                .withTableName("push")
+                .usingGeneratedKeyColumns("id")
+                .execute(
+                        Map.of(
+                                "creation_date", Timestamp.from(Instant.now()),
+                                "locale", "fr-FR",
+                                "timezone", "Europe/Paris",
+                                "token", token,
+                                "active", true,
+                                "deleted", false,
+                                "successful_push_sent", 0,
+                                "failed_push_sent", 0,
+                                "next_planned_push", Timestamp.from(nextPlannedPush)
+                        )
+                );
     }
 
-    public static List<PushInfo> findAll() {
-        return jdbcTemplate.query("select * from push ", pushInfoRowMapper);
+    public static ListAssert<PushInfo> assertThatAllPushInfo() {
+        return assertThat(jdbcTemplate.query("select * from push", Map.of(), PushInfoRowMapper.INSTANCE))
+                .as("all push data stored");
     }
 
+    public static ObjectAssert<PushInfo> assertThatPushInfo(final String token) {
+        final var push = jdbcTemplate.queryForObject(
+                "select * from push where token = :token", Map.of("token", token),
+                PushInfoRowMapper.INSTANCE
+        );
+        return assertThat(push)
+                .describedAs("push data for token %s", token);
+    }
+
+    @Value
+    @Builder
+    public static class PushInfo {
+
+        String token;
+
+        boolean active;
+
+        boolean deleted;
+
+        int successfulPushSent;
+
+        Instant lastSuccessfulPush;
+
+        int failedPushSent;
+
+        Instant lastFailurePush;
+
+        String lastErrorCode;
+
+        Instant nextPlannedPush;
+    }
+
+    private static class PushInfoRowMapper implements RowMapper<PushInfo> {
+
+        private static final PushInfoRowMapper INSTANCE = new PushInfoRowMapper();
+
+        @Override
+        public PushInfo mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+            return PushInfo.builder()
+                    .token(rs.getString("token"))
+                    .active(rs.getBoolean("active"))
+                    .deleted(rs.getBoolean("deleted"))
+                    .successfulPushSent(rs.getInt("successful_push_sent"))
+                    .lastSuccessfulPush(toInstant(rs.getTimestamp("last_successful_push")))
+                    .failedPushSent(rs.getInt("failed_push_sent"))
+                    .lastFailurePush(toInstant(rs.getTimestamp("last_failure_push")))
+                    .lastErrorCode(rs.getString("last_error_code"))
+                    .nextPlannedPush(toInstant(rs.getTimestamp("next_planned_push")))
+                    .build();
+        }
+
+        private static Instant toInstant(final Timestamp timestamp) {
+            return timestamp != null ? timestamp.toInstant() : null;
+        }
+    }
 }
