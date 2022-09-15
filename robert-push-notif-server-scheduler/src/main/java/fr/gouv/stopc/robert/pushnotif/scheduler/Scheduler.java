@@ -4,11 +4,11 @@ import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
-import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -38,26 +38,41 @@ public class Scheduler {
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() {
 
-        pushInfoRepository.forEachNotificationToBeSent(this::sendNotification);
+        pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
+            // set the next planned push to be sure the notification could not be sent 2
+            // times the same day
+            pushInfoRepository.updateNextPlannedPushDate(
+                    pushInfo.withPushDateTomorrowBetween(
+                            robertPushServerProperties.getMinPushHour(),
+                            robertPushServerProperties.getMaxPushHour()
+                    )
+            );
+            final var notification = buildNotification(pushInfo.getToken());
+            apnsTemplate.sendNotification(notification, new ApnsNotificationHandler() {
+
+                @Override
+                public void onSuccess() {
+                    pushInfoRepository.updateSuccessfulPushSent(pushInfo.getId());
+                }
+
+                @Override
+                public void onRejection(final RejectionReason reason) {
+                    pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+                }
+
+                @Override
+                public void onError(final Throwable cause) {
+                    pushInfoRepository.updateFailure(pushInfo.getId(), cause.getMessage());
+                }
+
+                @Override
+                public void disableToken() {
+                    pushInfoRepository.disable(pushInfo.getId());
+                }
+            });
+        });
 
         apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
-    }
-
-    private void sendNotification(final PushInfo pushInfo) {
-        final var handler = new PushInfoNotificationHandler(
-                pushInfo,
-                pushInfoRepository
-        );
-        // set the next planned push to be sure the notification could not be sent 2
-        // times the same day
-        pushInfoRepository.updateNextPlannedPushDate(
-                pushInfo.withPushDateTomorrowBetween(
-                        robertPushServerProperties.getMinPushHour(),
-                        robertPushServerProperties.getMaxPushHour()
-                )
-        );
-
-        apnsTemplate.sendNotification(buildNotification(pushInfo.getToken()), handler);
     }
 
     public SimpleApnsPushNotification buildNotification(final String apnsToken) {
