@@ -1,8 +1,4 @@
-logging:
-  file:
-    name: ./target/logs/test.log
-  level:
-    fr.gouv.stopc: DEBUG
+spring.cloud.vault.enabled: false
 
 robert.push.server:
   # Min/Max Push Notification Hours

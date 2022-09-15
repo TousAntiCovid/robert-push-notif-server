@@ -4,7 +4,6 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
-logging:
-  level:
-    org.flywaydb.core.internal: OFF
-
+  cloud.vault.enabled: false
+logging.level:
+  org.flywaydb.core.internal: OFF
