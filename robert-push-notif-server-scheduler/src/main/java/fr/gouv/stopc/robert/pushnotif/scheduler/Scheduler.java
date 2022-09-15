@@ -9,6 +9,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHa
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Slf4j
 @Service
@@ -41,41 +46,31 @@ public class Scheduler {
         pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
-            pushInfoRepository.updateNextPlannedPushDate(
-                    pushInfo.withPushDateTomorrowBetween(
-                            robertPushServerProperties.getMinPushHour(),
-                            robertPushServerProperties.getMaxPushHour()
-                    )
-            );
-            final var notification = buildNotification(pushInfo.getToken());
-            apnsTemplate.sendNotification(notification, new ApnsNotificationHandler() {
-
-                @Override
-                public void onSuccess() {
-                    pushInfoRepository.updateSuccessfulPushSent(pushInfo.getId());
-                }
-
-                @Override
-                public void onRejection(final RejectionReason reason) {
-                    pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
-                }
-
-                @Override
-                public void onError(final Throwable cause) {
-                    pushInfoRepository.updateFailure(pushInfo.getId(), cause.getMessage());
-                }
-
-                @Override
-                public void disableToken() {
-                    pushInfoRepository.disable(pushInfo.getId());
-                }
-            });
+            updateNextPlannedPush(pushInfo);
+            final var notification = buildWakeUpNotification(pushInfo.getToken());
+            apnsTemplate.sendNotification(notification, new WakeUpDeviceNotificationHandler(pushInfo));
         });
 
         apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
-    public SimpleApnsPushNotification buildNotification(final String apnsToken) {
+    /**
+     * Updates the registered token with a new notification instant set to tomorrow.
+     */
+    private void updateNextPlannedPush(final PushInfo pushInfo) {
+        final var nextPushDate = generatePushDateTomorrowBetween(
+                robertPushServerProperties.getMinPushHour(),
+                robertPushServerProperties.getMaxPushHour(),
+                ZoneId.of(pushInfo.getTimezone())
+        );
+        pushInfoRepository.updateNextPlannedPushDate(pushInfo.getId(), nextPushDate);
+    }
+
+    /**
+     * Builds the {@link com.eatthepath.pushy.apns.ApnsPushNotification} to be sent
+     * to the Apple server.
+     */
+    private SimpleApnsPushNotification buildWakeUpNotification(final String apnsToken) {
         final var payload = new SimpleApnsPayloadBuilder()
                 .setContentAvailable(true)
                 .setBadgeNumber(0)
@@ -89,5 +84,60 @@ public class Scheduler {
                 DeliveryPriority.IMMEDIATE,
                 PushType.BACKGROUND
         );
+    }
+
+    /**
+     * Generates a random instant tomorrow between the given hour bounds for the
+     * specified timezone.
+     * <p>
+     * minPushHour can be greater than maxPushHour: its means notification period
+     * starts this evening and ends tommorrow. For instance min=20 and max=7 means
+     * notifications are send between today at 20:00 and tomorrow at 6:59.
+     */
+    static Instant generatePushDateTomorrowBetween(final int minPushHour, final int maxPushHour,
+            final ZoneId timezone) {
+        final var random = ThreadLocalRandom.current();
+        final int durationBetweenHours;
+        // In case config requires "between 6pm and 4am" which translates in minPushHour
+        // = 18 and maxPushHour = 4
+        if (maxPushHour < minPushHour) {
+            durationBetweenHours = 24 - minPushHour + maxPushHour;
+        } else {
+            durationBetweenHours = maxPushHour - minPushHour;
+        }
+        return ZonedDateTime.now(timezone).plusDays(1)
+                .withHour((random.nextInt(durationBetweenHours) + minPushHour) % 24)
+                .withMinute(random.nextInt(60))
+                .toInstant()
+                .truncatedTo(MINUTES);
+    }
+
+    /**
+     * Handles notification request response.
+     */
+    @RequiredArgsConstructor
+    private class WakeUpDeviceNotificationHandler implements ApnsNotificationHandler {
+
+        private final PushInfo pushInfo;
+
+        @Override
+        public void onSuccess() {
+            pushInfoRepository.updateSuccessfulPushSent(pushInfo.getId());
+        }
+
+        @Override
+        public void onRejection(final RejectionReason reason) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+        }
+
+        @Override
+        public void onError(final Throwable cause) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), cause.getMessage());
+        }
+
+        @Override
+        public void disableToken() {
+            pushInfoRepository.disable(pushInfo.getId());
+        }
     }
 }

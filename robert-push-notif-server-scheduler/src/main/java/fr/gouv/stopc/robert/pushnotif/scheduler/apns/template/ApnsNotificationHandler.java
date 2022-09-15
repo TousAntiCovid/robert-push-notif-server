@@ -34,5 +34,6 @@ public interface ApnsNotificationHandler {
      *      APN server, this method is called.
      * @param rejectionMessage rejected push notification request response message
      */
+    @Deprecated(since = "fixme: 'disableToken' is a business rule and should not be in this interface")
     void disableToken();
 }

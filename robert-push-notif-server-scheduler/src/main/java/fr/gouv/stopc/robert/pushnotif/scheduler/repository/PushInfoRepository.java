@@ -3,13 +3,10 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.repository;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
@@ -29,18 +26,22 @@ public class PushInfoRepository {
         jdbcTemplate.query(
                 "select * from push where active = true and deleted = false and next_planned_push <= now()",
                 rs -> {
-                    final var pushInfo = PushInfoRowMapper.INSTANCE.mapRow(rs, rs.getRow());
+                    final var pushInfo = PushInfo.builder()
+                            .id(rs.getLong("id"))
+                            .timezone(rs.getString("timezone"))
+                            .token(rs.getString("token"))
+                            .build();
                     pushInfoHandler.accept(pushInfo);
                 }
         );
     }
 
     @Transactional(propagation = REQUIRES_NEW)
-    public void updateNextPlannedPushDate(final PushInfo pushInfo) {
+    public void updateNextPlannedPushDate(final long id, final Instant nextPlannedPush) {
         jdbcTemplate.update(
                 "update push set next_planned_push = :nextPlannedPushDate where id = :id", Map.of(
-                        "id", pushInfo.getId(),
-                        "nextPlannedPushDate", Timestamp.from(pushInfo.getNextPlannedPush())
+                        "id", id,
+                        "nextPlannedPushDate", Timestamp.from(nextPlannedPush)
                 )
         );
     }
@@ -78,24 +79,5 @@ public class PushInfoRepository {
     @Transactional(propagation = REQUIRES_NEW)
     public void disable(final Long id) {
         jdbcTemplate.update("update push set active = false where id = :id", Map.of("id", id));
-    }
-
-    private static class PushInfoRowMapper implements RowMapper<PushInfo> {
-
-        private static final PushInfoRowMapper INSTANCE = new PushInfoRowMapper();
-
-        @Override
-        public PushInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return PushInfo.builder()
-                    .id(rs.getLong("id"))
-                    .timezone(rs.getString("timezone"))
-                    .token(rs.getString("token"))
-                    .nextPlannedPush(toInstantNullSafe(rs.getTimestamp("next_planned_push")))
-                    .build();
-        }
-
-        private Instant toInstantNullSafe(Timestamp timestamp) {
-            return null == timestamp ? null : timestamp.toInstant();
-        }
     }
 }
