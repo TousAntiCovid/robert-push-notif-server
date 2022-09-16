@@ -5,7 +5,6 @@ import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -25,7 +24,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.await;
 
 @IntegrationTest
-@ActiveProfiles({ "dev" })
 class SchedulerWithTwoApnsServerTest {
 
     @Test

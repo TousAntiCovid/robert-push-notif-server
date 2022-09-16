@@ -3,7 +3,6 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.PushInfo;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatAllPushInfo;
@@ -15,7 +14,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.awaitility.Awaitility.await;
 
 @IntegrationTest
-@ActiveProfiles({ "dev" })
 class SchedulerVolumetryTest {
 
     private static final int PUSH_NOTIF_COUNT = 100;

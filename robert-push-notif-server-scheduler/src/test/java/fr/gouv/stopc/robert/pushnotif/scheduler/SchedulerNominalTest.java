@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.awaitility.Awaitility.await;
 
 @IntegrationTest
-@ActiveProfiles({ "dev", "one-apns-server" })
+@ActiveProfiles({ "test", "one-apns-server" })
 @DirtiesContext
 class SchedulerNominalTest {
 

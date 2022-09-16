@@ -1,9 +1,8 @@
-spring.cloud.vault.enabled: false
-
 robert.push.server:
   # Min/Max Push Notification Hours
   min-push-hour: 8
   max-push-hour: 10
+  scheduler.delay-in-ms: 1000
   apns:
     clients:
       - host: localhost
@@ -15,8 +14,4 @@ robert.push.server:
     auth-key-id: key-id
     team-id: team-id
     topic: test
-
-    #path to the trusted certificate chain
     trusted-client-certificate-chain: classpath:/apns/ca.pem
-
-  scheduler.delay-in-ms: 1000
