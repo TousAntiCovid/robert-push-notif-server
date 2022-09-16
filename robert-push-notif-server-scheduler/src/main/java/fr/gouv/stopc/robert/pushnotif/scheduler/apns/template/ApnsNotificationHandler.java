@@ -1,16 +1,9 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
-import com.eatthepath.pushy.apns.ApnsClient;
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 
-public interface NotificationHandler {
-
-    /**
-     * @return Apple push notification device token
-     */
-    String getAppleToken();
+public interface ApnsNotificationHandler {
 
     /**
      * Called when the notification request is accepted
@@ -41,12 +34,6 @@ public interface NotificationHandler {
      *      APN server, this method is called.
      * @param rejectionMessage rejected push notification request response message
      */
+    @Deprecated(since = "fixme: 'disableToken' is a business rule and should not be in this interface")
     void disableToken();
-
-    /**
-     * @param topic: Apple Push Notification topic
-     * @return Push Notification for Apple Push Notification service
-     * @see ApnsClient#sendNotification(ApnsPushNotification)
-     */
-    ApnsPushNotification buildNotification();
 }

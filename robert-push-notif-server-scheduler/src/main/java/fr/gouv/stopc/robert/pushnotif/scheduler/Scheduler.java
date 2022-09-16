@@ -1,34 +1,38 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.PushInfoNotificationHandler;
+import com.eatthepath.pushy.apns.DeliveryPriority;
+import com.eatthepath.pushy.apns.PushType;
+import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoDao;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.PushInfoRowMapper;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
+import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
+import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class Scheduler {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    private final PushInfoRowMapper rowMapper = new PushInfoRowMapper();
-
-    private final PushInfoDao pushInfoDao;
+    private final PushInfoRepository pushInfoRepository;
 
     private final RobertPushServerProperties robertPushServerProperties;
 
@@ -39,36 +43,101 @@ public class Scheduler {
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() {
 
-        // use a RowCallBackHandler in order to process a large resultset on a per-row
-        // basis.
-        jdbcTemplate.query(
-                "select * from push where active = true and deleted = false and next_planned_push <= now()",
-                new PushNotificationRowCallbackHandler()
-        );
+        pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
+            // set the next planned push to be sure the notification could not be sent 2
+            // times the same day
+            updateNextPlannedPush(pushInfo);
+            final var notification = buildWakeUpNotification(pushInfo.getToken());
+            apnsTemplate.sendNotification(notification, new WakeUpDeviceNotificationHandler(pushInfo));
+        });
 
         apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
     }
 
+    /**
+     * Updates the registered token with a new notification instant set to tomorrow.
+     */
+    private void updateNextPlannedPush(final PushInfo pushInfo) {
+        final var nextPushDate = generatePushDateTomorrowBetween(
+                robertPushServerProperties.getMinPushHour(),
+                robertPushServerProperties.getMaxPushHour(),
+                ZoneId.of(pushInfo.getTimezone())
+        );
+        pushInfoRepository.updateNextPlannedPushDate(pushInfo.getId(), nextPushDate);
+    }
+
+    /**
+     * Builds the {@link com.eatthepath.pushy.apns.ApnsPushNotification} to be sent
+     * to the Apple server.
+     */
+    private SimpleApnsPushNotification buildWakeUpNotification(final String apnsToken) {
+        final var payload = new SimpleApnsPayloadBuilder()
+                .setContentAvailable(true)
+                .setBadgeNumber(0)
+                .build();
+
+        return new SimpleApnsPushNotification(
+                sanitizeTokenString(apnsToken).toLowerCase(),
+                robertPushServerProperties.getApns().getTopic(),
+                payload,
+                Instant.now().plus(DEFAULT_EXPIRATION_PERIOD),
+                DeliveryPriority.IMMEDIATE,
+                PushType.BACKGROUND
+        );
+    }
+
+    /**
+     * Generates a random instant tomorrow between the given hour bounds for the
+     * specified timezone.
+     * <p>
+     * minPushHour can be greater than maxPushHour: its means notification period
+     * starts this evening and ends tommorrow. For instance min=20 and max=7 means
+     * notifications are send between today at 20:00 and tomorrow at 6:59.
+     */
+    static Instant generatePushDateTomorrowBetween(final int minPushHour, final int maxPushHour,
+            final ZoneId timezone) {
+        final var random = ThreadLocalRandom.current();
+        final int durationBetweenHours;
+        // In case config requires "between 6pm and 4am" which translates in minPushHour
+        // = 18 and maxPushHour = 4
+        if (maxPushHour < minPushHour) {
+            durationBetweenHours = 24 - minPushHour + maxPushHour;
+        } else {
+            durationBetweenHours = maxPushHour - minPushHour;
+        }
+        return ZonedDateTime.now(timezone).plusDays(1)
+                .withHour((random.nextInt(durationBetweenHours) + minPushHour) % 24)
+                .withMinute(random.nextInt(60))
+                .toInstant()
+                .truncatedTo(MINUTES);
+    }
+
+    /**
+     * Handles notification request response.
+     */
     @RequiredArgsConstructor
-    private class PushNotificationRowCallbackHandler implements RowCallbackHandler {
+    private class WakeUpDeviceNotificationHandler implements ApnsNotificationHandler {
+
+        private final PushInfo pushInfo;
 
         @Override
-        public void processRow(final ResultSet resultSet) throws SQLException {
-            PushInfo pushInfo = rowMapper.mapRow(resultSet, resultSet.getRow());
+        public void onSuccess() {
+            pushInfoRepository.updateSuccessfulPushSent(pushInfo.getId());
+        }
 
-            // set the next planned push to be sure the notification could not be sent 2
-            // times the same day
-            PushInfoNotificationHandler handler = new PushInfoNotificationHandler(
-                    pushInfo,
-                    pushInfoDao,
-                    robertPushServerProperties.getApns().getTopic(),
-                    robertPushServerProperties.getMinPushHour(),
-                    robertPushServerProperties.getMaxPushHour()
-            );
+        @Override
+        public void onRejection(final RejectionReason reason) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+        }
 
-            handler.updateNextPlannedPushToRandomTomorrow();
+        @Override
+        public void onError(final Throwable cause) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), cause.getMessage());
+        }
 
-            apnsTemplate.sendNotification(handler);
+        @Override
+        public void disableToken() {
+            pushInfoRepository.disable(pushInfo.getId());
         }
     }
 }

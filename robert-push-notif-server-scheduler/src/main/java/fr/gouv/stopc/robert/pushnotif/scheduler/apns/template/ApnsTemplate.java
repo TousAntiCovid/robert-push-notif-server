@@ -1,6 +1,7 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
 import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +24,11 @@ public class ApnsTemplate implements ApnsOperations {
 
     private final ApnsClient apnsClient;
 
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsNotificationHandler notificationHandler) {
 
         pendingNotifications.incrementAndGet();
-        final var sendNotificationFuture = apnsClient.sendNotification(notificationHandler.buildNotification());
+        final var sendNotificationFuture = apnsClient.sendNotification(notification);
 
         sendNotificationFuture.whenComplete((response, cause) -> {
             pendingNotifications.decrementAndGet();
