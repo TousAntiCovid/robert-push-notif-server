@@ -146,7 +146,7 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", DEVICE_TOKEN_NOT_FOR_TOPIC
         );
         givenApnsServerRejectsTokenIdWith(
                 SECONDARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN

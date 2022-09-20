@@ -10,7 +10,6 @@ robert.push.server:
         port: 2198
       - host: localhost
         port: 2197
-    inactive-rejection-reason: BadDeviceToken
     auth-token-file: classpath:/apns/token-auth-private-key.p8
     auth-key-id: key-id
     team-id: team-id
