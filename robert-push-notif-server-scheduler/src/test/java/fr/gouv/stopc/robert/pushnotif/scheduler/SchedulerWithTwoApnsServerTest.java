@@ -1,27 +1,30 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler;
 
-import com.eatthepath.pushy.apns.ApnsPushNotification;
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECOND;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatPushInfo;
-import static java.time.ZoneOffset.UTC;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
+import static java.time.Instant.now;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.HamcrestCondition.matching;
 import static org.awaitility.Awaitility.await;
+import static org.exparity.hamcrest.date.InstantMatchers.*;
+import static org.exparity.hamcrest.date.InstantMatchers.after;
+import static org.exparity.hamcrest.date.InstantMatchers.within;
+import static org.hamcrest.Matchers.*;
 
 @IntegrationTest
 class SchedulerWithTwoApnsServerTest {
@@ -35,49 +38,36 @@ class SchedulerWithTwoApnsServerTest {
         // When
 
         // Then
-        await().atMost(40, SECONDS).untilAsserted(() -> {
+        await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThatMainServerAcceptedOne();
             assertThatMainServerRejectedNothing();
             assertThatSecondServerRejectedNothing();
             assertThatSecondServerAcceptedNothing();
 
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
-                    .as("Check the status of the notification that has been correctly sent to main APNs server")
-                    .satisfies(
-                            p -> {
-                                assertThat(p.getLastSuccessfulPush())
-                                        .as("Last successful push should have been updated")
-                                        .isNotNull();
-                                assertThat(p.getNextPlannedPush()).isAfter(
-                                        LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                                );
-                            }
-                    )
-                    .extracting(
-                            PushInfo::isActive,
-                            PushInfo::isDeleted,
-                            PushInfo::getFailedPushSent,
-                            PushInfo::getLastFailurePush,
-                            PushInfo::getLastErrorCode,
-                            PushInfo::getSuccessfulPushSent
-                    )
-                    .containsExactly(true, false, 0, null, null, 1);
+                    .hasFieldOrPropertyWithValue("active", true)
+                    .hasFieldOrPropertyWithValue("deleted", false)
+                    .hasFieldOrPropertyWithValue("failedPushSent", 0)
+                    .hasFieldOrPropertyWithValue("lastFailurePush", null)
+                    .hasFieldOrPropertyWithValue("lastErrorCode", null)
+                    .hasFieldOrPropertyWithValue("successfulPushSent", 1)
+                    .is(matching(hasProperty("lastSuccessfulPush", within(1, MINUTES, now()))))
+                    .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
 
-            assertThat(getNotifsAcceptedByMainServer().get(0))
-                    .as("Check the content of the notification received on the main APNs server side")
+            assertThat(getNotifsAcceptedByMainServer())
+                    .hasSize(1)
+                    .first()
+                    .hasFieldOrPropertyWithValue(
+                            "token",
+                            "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad"
+                    )
+                    .hasFieldOrPropertyWithValue("pushType", PushType.BACKGROUND)
+                    .hasFieldOrPropertyWithValue("priority", DeliveryPriority.IMMEDIATE)
+                    .hasFieldOrPropertyWithValue("topic", "test")
+                    .hasFieldOrPropertyWithValue("payload", "{\"aps\":{\"badge\":0,\"content-available\":1}}")
                     .satisfies(
                             notif -> assertThat(notif.getExpiration())
-                                    .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(30, ChronoUnit.SECONDS))
-                    ).extracting(
-                            ApnsPushNotification::getPushType,
-                            ApnsPushNotification::getPriority,
-                            ApnsPushNotification::getToken,
-                            ApnsPushNotification::getTopic,
-                            ApnsPushNotification::getPayload
-                    ).containsExactly(
-                            PushType.BACKGROUND, DeliveryPriority.IMMEDIATE,
-                            "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", "test",
-                            "{\"aps\":{\"badge\":0,\"content-available\":1}}"
+                                    .isCloseTo(now().plus(1, DAYS), within(30, ChronoUnit.SECONDS))
                     );
         });
     }
@@ -94,34 +84,21 @@ class SchedulerWithTwoApnsServerTest {
         // When -- triggering of the scheduled job
 
         // Then
-        await().atMost(40, SECONDS).untilAsserted(() -> {
+        await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThatMainServerAcceptedNothing();
             assertThatMainServerRejectedOne();
             assertThatSecondServerAcceptedNothing();
             assertThatSecondServerRejectedNothing();
 
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
-                    .as(
-                            "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
-                    )
-                    .satisfies(
-                            pushInfo -> {
-                                assertThat(pushInfo.getLastFailurePush())
-                                        .as("Last failure push should have been updated")
-                                        .isNotNull();
-                                assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                        LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                                );
-                            }
-                    ).extracting(
-                            PushInfo::isActive,
-                            PushInfo::isDeleted,
-                            PushInfo::getFailedPushSent,
-                            PushInfo::getLastErrorCode,
-                            PushInfo::getSuccessfulPushSent,
-                            PushInfo::getLastSuccessfulPush
-                    )
-                    .containsExactly(true, false, 1, "BadTopic", 0, null);
+                    .hasFieldOrPropertyWithValue("active", true)
+                    .hasFieldOrPropertyWithValue("deleted", false)
+                    .hasFieldOrPropertyWithValue("failedPushSent", 1)
+                    .is(matching(hasProperty("lastFailurePush", within(1, MINUTES, now()))))
+                    .hasFieldOrPropertyWithValue("lastErrorCode", "BadTopic")
+                    .hasFieldOrPropertyWithValue("successfulPushSent", 0)
+                    .hasFieldOrPropertyWithValue("lastSuccessfulPush", null)
+                    .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
         });
     }
 
@@ -137,51 +114,36 @@ class SchedulerWithTwoApnsServerTest {
         // When -- triggering of the scheduled job
 
         // Then
-        await().atMost(40, SECONDS).untilAsserted(() -> {
+        await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThatMainServerAcceptedNothing();
             assertThatMainServerRejectedOne();
             assertThatSecondServerAcceptedOne();
             assertThatSecondServerRejectedNothing();
 
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
-                    .as("Check the status of the notification that has been correctly sent to secondary APNs server")
-                    .satisfies(
-                            pushInfo -> {
-                                assertThat(pushInfo.getLastSuccessfulPush())
-                                        .as("Last successful push should have been updated")
-                                        .isNotNull();
-                                assertThat(pushInfo.getNextPlannedPush())
-                                        .isAfter(
-                                                LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1))
-                                                        .toInstant(UTC)
-                                        );
-                            }
-                    ).extracting(
-                            PushInfo::isActive,
-                            PushInfo::isDeleted,
-                            PushInfo::getFailedPushSent,
-                            PushInfo::getLastFailurePush,
-                            PushInfo::getLastErrorCode,
-                            PushInfo::getSuccessfulPushSent
-                    )
-                    .containsExactly(true, false, 0, null, null, 1);
+                    .hasFieldOrPropertyWithValue("active", true)
+                    .hasFieldOrPropertyWithValue("deleted", false)
+                    .hasFieldOrPropertyWithValue("failedPushSent", 0)
+                    .hasFieldOrPropertyWithValue("lastFailurePush", null)
+                    .hasFieldOrPropertyWithValue("lastErrorCode", null)
+                    .hasFieldOrPropertyWithValue("successfulPushSent", 1)
+                    .is(matching(hasProperty("lastSuccessfulPush", within(1, MINUTES, now()))))
+                    .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
 
-            assertThat(getNotifsAcceptedBySecondServer().get(0))
-                    .as("Check the content of the notification received on the secondary APNs server side")
+            assertThat(getNotifsAcceptedBySecondServer())
+                    .hasSize(1)
+                    .first()
+                    .hasFieldOrPropertyWithValue(
+                            "token",
+                            "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad"
+                    )
+                    .hasFieldOrPropertyWithValue("pushType", PushType.BACKGROUND)
+                    .hasFieldOrPropertyWithValue("priority", DeliveryPriority.IMMEDIATE)
+                    .hasFieldOrPropertyWithValue("topic", "test")
+                    .hasFieldOrPropertyWithValue("payload", "{\"aps\":{\"badge\":0,\"content-available\":1}}")
                     .satisfies(
                             notif -> assertThat(notif.getExpiration())
-                                    .isCloseTo(Instant.now().plus(Duration.ofDays(1)), within(30, ChronoUnit.SECONDS))
-                    ).extracting(
-                            ApnsPushNotification::getPushType,
-                            ApnsPushNotification::getPriority,
-                            ApnsPushNotification::getToken,
-                            ApnsPushNotification::getTopic,
-                            ApnsPushNotification::getPayload
-                    )
-                    .containsExactly(
-                            PushType.BACKGROUND, DeliveryPriority.IMMEDIATE,
-                            "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", "test",
-                            "{\"aps\":{\"badge\":0,\"content-available\":1}}"
+                                    .isCloseTo(now().plus(1, DAYS), within(30, ChronoUnit.SECONDS))
                     );
         });
     }
@@ -202,7 +164,7 @@ class SchedulerWithTwoApnsServerTest {
 
         // Then
 
-        await().atMost(40, SECONDS).untilAsserted(() -> {
+        await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
 
             assertThatMainServerAcceptedNothing();
             assertThatMainServerRejectedOne();
@@ -210,26 +172,14 @@ class SchedulerWithTwoApnsServerTest {
             assertThatSecondServerRejectedOne();
 
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
-                    .as("Check the status of the notification that has been rejected by all APNs server")
-                    .satisfies(
-                            pushInfo -> {
-                                assertThat(pushInfo.getLastFailurePush())
-                                        .as("Last failure push should have been updated")
-                                        .isNotNull();
-                                assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                        LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                                );
-                            }
-                    )
-                    .extracting(
-                            PushInfo::isActive,
-                            PushInfo::isDeleted,
-                            PushInfo::getFailedPushSent,
-                            PushInfo::getLastErrorCode,
-                            PushInfo::getSuccessfulPushSent,
-                            PushInfo::getLastSuccessfulPush
-                    )
-                    .containsExactly(false, false, 1, "BadDeviceToken", 0, null);
+                    .hasFieldOrPropertyWithValue("active", false)
+                    .hasFieldOrPropertyWithValue("deleted", false)
+                    .hasFieldOrPropertyWithValue("failedPushSent", 1)
+                    .is(matching(hasProperty("lastFailurePush", within(1, MINUTES, now()))))
+                    .hasFieldOrPropertyWithValue("lastErrorCode", "BadDeviceToken")
+                    .hasFieldOrPropertyWithValue("successfulPushSent", 0)
+                    .hasFieldOrPropertyWithValue("lastSuccessfulPush", null)
+                    .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
         });
     }
 
@@ -248,35 +198,21 @@ class SchedulerWithTwoApnsServerTest {
         // When -- triggering of the scheduled job
 
         // Then
-        await().atMost(40, SECONDS).untilAsserted(() -> {
+        await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThatMainServerAcceptedNothing();
             assertThatMainServerRejectedOne();
             assertThatSecondServerAcceptedNothing();
             assertThatSecondServerRejectedOne();
 
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
-                    .as(
-                            "Check the status of the notification that has been rejected by main APNs server (reason other than invalid token)"
-                    )
-                    .satisfies(
-                            pushInfo -> {
-                                assertThat(pushInfo.getLastFailurePush())
-                                        .as("Last failure push should have been updated")
-                                        .isNotNull();
-                                assertThat(pushInfo.getNextPlannedPush()).isAfter(
-                                        LocalDateTime.from(LocalDate.now().atStartOfDay().plusDays(1)).toInstant(UTC)
-                                );
-                            }
-                    )
-                    .extracting(
-                            PushInfo::isActive,
-                            PushInfo::isDeleted,
-                            PushInfo::getFailedPushSent,
-                            PushInfo::getLastErrorCode,
-                            PushInfo::getSuccessfulPushSent,
-                            PushInfo::getLastSuccessfulPush
-                    )
-                    .containsExactly(true, false, 1, "PayloadEmpty", 0, null);
+                    .hasFieldOrPropertyWithValue("active", true)
+                    .hasFieldOrPropertyWithValue("deleted", false)
+                    .hasFieldOrPropertyWithValue("failedPushSent", 1)
+                    .is(matching(hasProperty("lastFailurePush", within(1, MINUTES, now()))))
+                    .hasFieldOrPropertyWithValue("lastErrorCode", "PayloadEmpty")
+                    .hasFieldOrPropertyWithValue("successfulPushSent", 0)
+                    .hasFieldOrPropertyWithValue("lastSuccessfulPush", null)
+                    .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
         });
     }
 }

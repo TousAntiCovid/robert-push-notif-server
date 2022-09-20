@@ -5,8 +5,7 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.PushInfo;
 import org.junit.jupiter.api.Test;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatAllPushInfo;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.LongStream.rangeClosed;
