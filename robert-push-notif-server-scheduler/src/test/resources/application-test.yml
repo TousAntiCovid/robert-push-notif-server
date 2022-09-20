@@ -3,6 +3,7 @@ robert.push.server:
   min-push-hour: 8
   max-push-hour: 10
   scheduler.delay-in-ms: 1000
+  batch-termination-grace-time: 1s
   apns:
     clients:
       - host: localhost

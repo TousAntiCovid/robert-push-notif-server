@@ -13,6 +13,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 
+import java.time.Duration;
 import java.util.List;
 
 @Value
@@ -34,6 +35,9 @@ public class RobertPushServerProperties {
 
     @Positive
     int maxNotificationsPerSecond;
+
+    @NotNull
+    Duration batchTerminationGraceTime;
 
     @Valid
     RobertPushServerProperties.Apns apns;
