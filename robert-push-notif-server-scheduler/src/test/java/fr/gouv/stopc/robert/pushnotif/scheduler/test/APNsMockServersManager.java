@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import org.assertj.core.api.ListAssert;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 
@@ -11,6 +12,7 @@ import java.util.Map;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -34,52 +36,30 @@ public class APNsMockServersManager implements TestExecutionListener {
     public void beforeTestExecution(final TestContext testContext) throws Exception {
         TestExecutionListener.super.beforeTestExecution(testContext);
         servers.values().forEach(ApnsMockServerDecorator::resetMock);
-        servers.get(PRIMARY).clear();
-        servers.get(SECONDARY).clear();
+        servers.values().forEach(ApnsMockServerDecorator::clear);
     }
 
-    public static List<ApnsPushNotification> getNotifsAcceptedBySecondServer() {
-        return new ArrayList<>(servers.get(SECONDARY).getAcceptedPushNotifications());
+    public static ListAssert<ApnsPushNotification> assertThatNotifsAcceptedBy(final ServerId apnsServerId) {
+        final var notifs = new ArrayList<>(servers.get(apnsServerId).getAcceptedPushNotifications());
+        return assertThat(notifs)
+                .describedAs("Notifications accepted by APNS %s server:\n%s", apnsServerId, describe(notifs));
     }
 
-    public static List<ApnsPushNotification> getNotifsAcceptedByMainServer() {
-        return new ArrayList<>(servers.get(PRIMARY).getAcceptedPushNotifications());
+    public static ListAssert<ApnsPushNotification> assertThatNotifsRejectedBy(final ServerId apnsServerId) {
+        final var notifs = new ArrayList<>(servers.get(apnsServerId).getRejectedPushNotifications());
+        return assertThat(notifs)
+                .describedAs("Notifications rejected by APNS %s server:\n%s", apnsServerId, describe(notifs));
     }
 
-    public static void assertThatMainServerAcceptedOne() {
-        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatMainServerAccepted(final int nbNotifications) {
-        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).hasSize(nbNotifications);
-    }
-
-    public static void assertThatMainServerAcceptedNothing() {
-        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatMainServerRejectedOne() {
-        assertThat(servers.get(PRIMARY).getRejectedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatMainServerRejectedNothing() {
-        assertThat(servers.get(PRIMARY).getRejectedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatSecondServerAcceptedOne() {
-        assertThat(servers.get(SECONDARY).getAcceptedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatSecondServerAcceptedNothing() {
-        assertThat(servers.get(SECONDARY).getAcceptedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatSecondServerRejectedOne() {
-        assertThat(servers.get(SECONDARY).getRejectedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatSecondServerRejectedNothing() {
-        assertThat(servers.get(SECONDARY).getRejectedPushNotifications()).isEmpty();
+    private static String describe(List<ApnsPushNotification> notifs) {
+        return notifs.stream()
+                .map(
+                        n -> String.format(
+                                " - token=%s, topic=%s, pushType=%s, priority=%s, expiration=%s", n.getToken(),
+                                n.getTopic(), n.getPushType(), n.getPriority(), n.getExpiration()
+                        )
+                )
+                .collect(joining("\n"));
     }
 
     public enum ServerId {

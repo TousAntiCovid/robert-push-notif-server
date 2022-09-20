@@ -2,7 +2,6 @@ package fr.gouv.stopc.robert.pushnotif.scheduler;
 
 import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushType;
-import fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
 import io.micrometer.core.instrument.Tags;
 import org.junit.jupiter.api.Test;
@@ -18,14 +17,12 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.R
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.MetricsManager.assertCounterIncremented;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
 import static java.time.Instant.now;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
-import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.MINUTES;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.HamcrestCondition.matching;
 import static org.awaitility.Awaitility.await;
 import static org.exparity.hamcrest.date.InstantMatchers.after;
@@ -53,9 +50,7 @@ class SchedulerNominalTest {
 
         // Verify APNs servers
         await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThatMainServerAcceptedOne();
-            assertThatMainServerRejectedNothing();
-            assertThat(APNsMockServersManager.getNotifsAcceptedByMainServer())
+            assertThatNotifsAcceptedBy(PRIMARY)
                     .hasSize(1)
                     .first()
                     .hasFieldOrPropertyWithValue("pushType", PushType.BACKGROUND)
@@ -113,8 +108,11 @@ class SchedulerNominalTest {
 
         // Verify servers
         await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThatMainServerAcceptedNothing();
-            assertThatMainServerRejectedOne();
+            assertThatNotifsAcceptedBy(PRIMARY).hasSize(0);
+            assertThatNotifsRejectedBy(PRIMARY).hasSize(1);
+            assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
+            assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
+
             // Verify database
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
                     .hasFieldOrPropertyWithValue("active", false)
@@ -150,8 +148,10 @@ class SchedulerNominalTest {
 
         // Verify server
         await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThatMainServerAcceptedNothing();
-            assertThatMainServerRejectedOne();
+            assertThatNotifsAcceptedBy(PRIMARY).hasSize(0);
+            assertThatNotifsRejectedBy(PRIMARY).hasSize(1);
+            assertThatNotifsAcceptedBy(SECONDARY).hasSize(0);
+            assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
 
             // Verify database
             assertThatPushInfo("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad")
