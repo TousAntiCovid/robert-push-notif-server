@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECOND;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class APNsMockServersManager implements TestExecutionListener {
 
     private static final Map<ServerId, ApnsMockServerDecorator> servers = Map.of(
-            FIRST, new ApnsMockServerDecorator(2198),
-            SECOND, new ApnsMockServerDecorator(2197)
+            PRIMARY, new ApnsMockServerDecorator(2198),
+            SECONDARY, new ApnsMockServerDecorator(2197)
     );
 
     public static void givenApnsServerRejectsTokenIdWith(final ServerId serverId,
@@ -34,56 +34,56 @@ public class APNsMockServersManager implements TestExecutionListener {
     public void beforeTestExecution(final TestContext testContext) throws Exception {
         TestExecutionListener.super.beforeTestExecution(testContext);
         servers.values().forEach(ApnsMockServerDecorator::resetMock);
-        servers.get(FIRST).clear();
-        servers.get(SECOND).clear();
+        servers.get(PRIMARY).clear();
+        servers.get(SECONDARY).clear();
     }
 
     public static List<ApnsPushNotification> getNotifsAcceptedBySecondServer() {
-        return new ArrayList<>(servers.get(SECOND).getAcceptedPushNotifications());
+        return new ArrayList<>(servers.get(SECONDARY).getAcceptedPushNotifications());
     }
 
     public static List<ApnsPushNotification> getNotifsAcceptedByMainServer() {
-        return new ArrayList<>(servers.get(FIRST).getAcceptedPushNotifications());
+        return new ArrayList<>(servers.get(PRIMARY).getAcceptedPushNotifications());
     }
 
     public static void assertThatMainServerAcceptedOne() {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).hasSize(1);
+        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatMainServerAccepted(final int nbNotifications) {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).hasSize(nbNotifications);
+        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).hasSize(nbNotifications);
     }
 
     public static void assertThatMainServerAcceptedNothing() {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).isEmpty();
+        assertThat(servers.get(PRIMARY).getAcceptedPushNotifications()).isEmpty();
     }
 
     public static void assertThatMainServerRejectedOne() {
-        assertThat(servers.get(FIRST).getRejectedPushNotifications()).hasSize(1);
+        assertThat(servers.get(PRIMARY).getRejectedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatMainServerRejectedNothing() {
-        assertThat(servers.get(FIRST).getRejectedPushNotifications()).isEmpty();
+        assertThat(servers.get(PRIMARY).getRejectedPushNotifications()).isEmpty();
     }
 
     public static void assertThatSecondServerAcceptedOne() {
-        assertThat(servers.get(SECOND).getAcceptedPushNotifications()).hasSize(1);
+        assertThat(servers.get(SECONDARY).getAcceptedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatSecondServerAcceptedNothing() {
-        assertThat(servers.get(SECOND).getAcceptedPushNotifications()).isEmpty();
+        assertThat(servers.get(SECONDARY).getAcceptedPushNotifications()).isEmpty();
     }
 
     public static void assertThatSecondServerRejectedOne() {
-        assertThat(servers.get(SECOND).getRejectedPushNotifications()).hasSize(1);
+        assertThat(servers.get(SECONDARY).getRejectedPushNotifications()).hasSize(1);
     }
 
     public static void assertThatSecondServerRejectedNothing() {
-        assertThat(servers.get(SECOND).getRejectedPushNotifications()).isEmpty();
+        assertThat(servers.get(SECONDARY).getRejectedPushNotifications()).isEmpty();
     }
 
     public enum ServerId {
-        FIRST,
-        SECOND
+        PRIMARY,
+        SECONDARY
     }
 }

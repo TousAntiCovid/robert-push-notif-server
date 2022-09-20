@@ -17,7 +17,7 @@ import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.A
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome.REJECTED;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.MetricsManager.assertCounterIncremented;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
 import static java.time.Instant.now;
@@ -104,7 +104,7 @@ class SchedulerNominalTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
         );
 
         // When - triggering of the scheduled task
@@ -141,7 +141,7 @@ class SchedulerNominalTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_MESSAGE_ID
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_MESSAGE_ID
         );
 
         // When - triggering of the scheduled task

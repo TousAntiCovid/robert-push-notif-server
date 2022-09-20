@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason.*;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECOND;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatPushInfo;
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
 import static java.time.Instant.now;
@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.api.HamcrestCondition.matching;
 import static org.awaitility.Awaitility.await;
-import static org.exparity.hamcrest.date.InstantMatchers.*;
 import static org.exparity.hamcrest.date.InstantMatchers.after;
 import static org.exparity.hamcrest.date.InstantMatchers.within;
 import static org.hamcrest.Matchers.*;
@@ -78,7 +77,7 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_TOPIC
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_TOPIC
         );
 
         // When -- triggering of the scheduled job
@@ -108,7 +107,7 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
         );
 
         // When -- triggering of the scheduled job
@@ -154,10 +153,10 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
         );
         givenApnsServerRejectsTokenIdWith(
-                SECOND, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                SECONDARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
         );
 
         // When -- triggering of the scheduled job
@@ -189,10 +188,10 @@ class SchedulerWithTwoApnsServerTest {
         // Given
         givenPushInfoForToken("740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad");
         givenApnsServerRejectsTokenIdWith(
-                FIRST, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
+                PRIMARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", BAD_DEVICE_TOKEN
         );
         givenApnsServerRejectsTokenIdWith(
-                SECOND, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", PAYLOAD_EMPTY
+                SECONDARY, "740f4707bebcf74f9b7c25d48e3358945f6aa01da5ddb387462c7eaf61bb78ad", PAYLOAD_EMPTY
         );
 
         // When -- triggering of the scheduled job
