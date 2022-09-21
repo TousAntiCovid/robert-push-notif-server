@@ -93,13 +93,13 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     @Override
     public void sendNotification(final ApnsPushNotification notification,
-            final ApnsNotificationHandler notificationHandler) {
+            final ApnsResponseHandler responseHandler) {
 
         pendingNotifications.incrementAndGet();
 
         final var sample = Timer.start();
 
-        final var measuringHandler = new DelegateNotificationHandler(notificationHandler) {
+        final var measuringHandler = new DelegateApnsResponseHandler(responseHandler) {
 
             @Override
             public void onSuccess() {

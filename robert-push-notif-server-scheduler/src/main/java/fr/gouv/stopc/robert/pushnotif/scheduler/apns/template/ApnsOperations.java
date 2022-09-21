@@ -6,7 +6,7 @@ import java.time.Duration;
 
 public interface ApnsOperations extends AutoCloseable {
 
-    void sendNotification(ApnsPushNotification notification, ApnsNotificationHandler handler);
+    void sendNotification(ApnsPushNotification notification, ApnsResponseHandler handler);
 
     void waitUntilNoActivity(Duration toleranceDuration);
 }

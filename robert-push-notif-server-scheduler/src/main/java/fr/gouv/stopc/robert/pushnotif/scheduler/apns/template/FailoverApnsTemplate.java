@@ -21,11 +21,11 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     @Override
     public void sendNotification(final ApnsPushNotification notification,
-            final ApnsNotificationHandler notificationHandler) {
+            final ApnsResponseHandler responseHandler) {
 
         final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
 
-        sendNotification(notification, notificationHandler, apnsClientsQueue);
+        sendNotification(notification, responseHandler, apnsClientsQueue);
     }
 
     @Override
@@ -34,12 +34,12 @@ public class FailoverApnsTemplate implements ApnsOperations {
     }
 
     private void sendNotification(final ApnsPushNotification notification,
-            final ApnsNotificationHandler notificationHandler,
+            final ApnsResponseHandler responseHandler,
             final ConcurrentLinkedQueue<ApnsOperations> apnsTemplates) {
 
         final var client = apnsTemplates.poll();
         if (client != null) {
-            client.sendNotification(notification, new DelegateNotificationHandler(notificationHandler) {
+            client.sendNotification(notification, new DelegateApnsResponseHandler(responseHandler) {
 
                 @Override
                 public void onInactive(RejectionReason reason) {

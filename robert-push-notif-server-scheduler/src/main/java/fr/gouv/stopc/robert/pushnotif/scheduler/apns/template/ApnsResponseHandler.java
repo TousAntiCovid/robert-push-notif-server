@@ -3,7 +3,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 
-public interface ApnsNotificationHandler {
+public interface ApnsResponseHandler {
 
     /**
      * Called when the notification request is accepted

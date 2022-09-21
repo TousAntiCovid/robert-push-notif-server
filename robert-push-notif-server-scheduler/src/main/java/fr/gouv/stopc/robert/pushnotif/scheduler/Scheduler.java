@@ -5,8 +5,8 @@ import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsResponseHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
@@ -47,7 +47,7 @@ public class Scheduler {
             // times the same day
             updateNextPlannedPush(pushInfo);
             final var notification = buildWakeUpNotification(pushInfo.getToken());
-            apnsTemplate.sendNotification(notification, new WakeUpDeviceNotificationHandler(pushInfo));
+            apnsTemplate.sendNotification(notification, new WakeUpDeviceResponseHandler(pushInfo));
         });
 
         apnsTemplate.waitUntilNoActivity(robertPushServerProperties.getBatchTerminationGraceTime());
@@ -115,7 +115,7 @@ public class Scheduler {
      * Handles notification request response.
      */
     @RequiredArgsConstructor
-    private class WakeUpDeviceNotificationHandler implements ApnsNotificationHandler {
+    private class WakeUpDeviceResponseHandler implements ApnsResponseHandler {
 
         private final PushInfo pushInfo;
 

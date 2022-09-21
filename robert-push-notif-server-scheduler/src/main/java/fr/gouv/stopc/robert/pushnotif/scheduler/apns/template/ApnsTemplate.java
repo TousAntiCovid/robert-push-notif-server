@@ -28,7 +28,7 @@ public class ApnsTemplate implements ApnsOperations {
     private final List<RejectionReason> inactiveRejectionReasons;
 
     public void sendNotification(final ApnsPushNotification notification,
-            final ApnsNotificationHandler notificationHandler) {
+            final ApnsResponseHandler responseHandler) {
 
         pendingNotifications.incrementAndGet();
         final var sendNotificationFuture = apnsClient.sendNotification(notification);
@@ -37,15 +37,15 @@ public class ApnsTemplate implements ApnsOperations {
             pendingNotifications.decrementAndGet();
             if (response != null) {
                 if (response.isAccepted()) {
-                    notificationHandler.onSuccess();
+                    responseHandler.onSuccess();
                 } else {
                     final var rejection = response.getRejectionReason()
                             .map(RejectionReason::fromValue)
                             .orElse(UNKNOWN);
                     if (inactiveRejectionReasons.contains(rejection)) {
-                        notificationHandler.onInactive(rejection);
+                        responseHandler.onInactive(rejection);
                     } else {
-                        notificationHandler.onRejection(rejection);
+                        responseHandler.onRejection(rejection);
                     }
                 }
             } else {
@@ -53,7 +53,7 @@ public class ApnsTemplate implements ApnsOperations {
                 // APNs server. Note that this is distinct from a rejection from
                 // the server, and indicates that something went wrong when actually
                 // sending the notification or waiting for a reply.
-                notificationHandler.onError(cause);
+                responseHandler.onError(cause);
             }
         }).exceptionally(e -> {
             log.error("Unexpected error occurred", e);

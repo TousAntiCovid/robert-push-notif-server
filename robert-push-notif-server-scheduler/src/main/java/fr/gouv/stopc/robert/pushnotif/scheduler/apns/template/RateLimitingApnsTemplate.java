@@ -46,7 +46,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
 
     @Override
     public void sendNotification(final ApnsPushNotification notification,
-            final ApnsNotificationHandler notificationHandler) {
+            final ApnsResponseHandler responseHandler) {
 
         try {
             semaphore.acquire();
@@ -55,7 +55,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
             log.error("error during rate limiting process", e);
             return;
         }
-        final var limitedHandler = new DelegateNotificationHandler(notificationHandler) {
+        final var limitedHandler = new DelegateApnsResponseHandler(responseHandler) {
 
             @Override
             public void onSuccess() {
