@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -27,7 +26,6 @@ import static java.util.stream.Stream.concat;
  * sending each notification and amount of pending notifications beeing sent.
  */
 @Slf4j
-@ToString(onlyExplicitlyIncluded = true)
 public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
@@ -40,19 +38,16 @@ public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandle
 
     private final ApnsOperations<ApnsResponseHandler> delegate;
 
-    @ToString.Include
     private final String host;
 
-    @ToString.Include
     private final Integer port;
 
     public MonitoringApnsTemplate(final ApnsTemplate delegate,
-            final String host,
-            final Integer port,
+            final ApnsServerCoordinates serverCoordinates,
             final MeterRegistry meterRegistry) {
 
-        this.host = host;
-        this.port = port;
+        this.host = serverCoordinates.getHost();
+        this.port = serverCoordinates.getPort();
         this.delegate = delegate;
 
         final var successTags = Stream.of(
@@ -141,8 +136,12 @@ public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandle
 
     @Override
     public void close() throws Exception {
-        log.info("Shutting down {} -----> shutting down delegate: {}", this, delegate);
         delegate.close();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Monitoring(%s)", delegate);
     }
 
     /**
@@ -155,8 +154,7 @@ public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandle
      * @see ApnsRequestOutcome
      * @see RejectionReason
      */
-    public Timer getTimer(final ApnsRequestOutcome outcome,
-            final RejectionReason rejectionReason) {
+    private Timer getTimer(final ApnsRequestOutcome outcome, final RejectionReason rejectionReason) {
         return tagsToTimerMap.get(
                 Tags.of(
                         "host", host,

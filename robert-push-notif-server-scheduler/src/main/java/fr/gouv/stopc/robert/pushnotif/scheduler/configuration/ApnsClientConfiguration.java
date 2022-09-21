@@ -28,10 +28,14 @@ public class ApnsClientConfiguration {
     private ApnsOperations<ApnsResponseHandler> buildMeasureApnsTemplate(
             final RobertPushServerProperties.ApnsClient apnsClientProperties) {
 
-        final var listener = new MicrometerApnsClientMetricsListener(
-                meterRegistry,
+        final var apnsServerCoordinates = new ApnsServerCoordinates(
                 apnsClientProperties.getHost(),
                 apnsClientProperties.getPort()
+        );
+
+        final var listener = new MicrometerApnsClientMetricsListener(
+                meterRegistry,
+                apnsServerCoordinates
         );
 
         try (final var authTokenFile = this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream()) {
@@ -53,13 +57,13 @@ public class ApnsClientConfiguration {
             }
 
             final var apnsTemplate = new ApnsTemplate(
+                    apnsServerCoordinates,
                     apnsClientBuilder.build(),
                     robertPushServerProperties.getApns().getInactiveRejectionReason()
             );
             return new MonitoringApnsTemplate(
                     apnsTemplate,
-                    apnsClientProperties.getHost(),
-                    apnsClientProperties.getPort(),
+                    apnsServerCoordinates,
                     meterRegistry
             );
 

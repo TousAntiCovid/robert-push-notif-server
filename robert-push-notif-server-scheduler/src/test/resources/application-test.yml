@@ -15,3 +15,6 @@ robert.push.server:
     team-id: team-id
     topic: test
     trusted-client-certificate-chain: classpath:/apns/ca.pem
+
+logging.level:
+  org.flywaydb.core.internal.command.DbMigrate: WARN

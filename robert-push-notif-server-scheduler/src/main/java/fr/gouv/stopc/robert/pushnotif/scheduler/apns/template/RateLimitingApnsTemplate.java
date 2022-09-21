@@ -51,7 +51,7 @@ public class RateLimitingApnsTemplate implements ApnsOperations<ApnsResponseHand
         try {
             semaphore.acquire();
             rateLimitingBucket.asBlocking().consume(1);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             log.error("error during rate limiting process", e);
             return;
         }
@@ -86,5 +86,10 @@ public class RateLimitingApnsTemplate implements ApnsOperations<ApnsResponseHand
     @Override
     public void close() throws Exception {
         delegate.close();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RateLimiting(%s)", delegate);
     }
 }

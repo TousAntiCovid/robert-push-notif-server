@@ -23,6 +23,8 @@ public class ApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
+    private final ApnsServerCoordinates serverCoordinates;
+
     private final ApnsClient apnsClient;
 
     private final List<RejectionReason> inactiveRejectionReasons;
@@ -70,11 +72,18 @@ public class ApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
                 log.warn("Unable to wait until all notifications are sent", e);
             }
         } while (pendingNotifications.get() != 0);
+        log.info("{} has no more pending notifications");
     }
 
     @Override
     public void close() throws Exception {
         log.info("Shutting down {}, gracefully waiting 1 minute", this);
         apnsClient.close().get(1, MINUTES);
+        log.info("{} is stopped", this);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ApnsTemplate(%s)", serverCoordinates);
     }
 }

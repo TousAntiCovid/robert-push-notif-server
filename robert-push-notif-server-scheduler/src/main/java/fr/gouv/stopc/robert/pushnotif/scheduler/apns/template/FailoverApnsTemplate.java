@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static java.util.stream.Collectors.joining;
+
 /**
  * An APNS template able to defer notification sending to fallback servers
  * depending on the reason returned from the previous server.
@@ -36,7 +38,7 @@ public class FailoverApnsTemplate implements ApnsOperations<FailoverApnsResponse
 
     @Override
     public void waitUntilNoActivity(final Duration toleranceDuration) {
-        apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
+        apnsDelegates.forEach(apnsTemplate -> apnsTemplate.waitUntilNoActivity(toleranceDuration));
     }
 
     @Override
@@ -48,6 +50,14 @@ public class FailoverApnsTemplate implements ApnsOperations<FailoverApnsResponse
                 log.error("Unable to close {} gracefully", delegate, e);
             }
         });
+    }
+
+    @Override
+    public String toString() {
+        final var serverList = apnsDelegates.stream()
+                .map(Object::toString)
+                .collect(joining(","));
+        return String.format("Failover(%s)", serverList);
     }
 
     @RequiredArgsConstructor

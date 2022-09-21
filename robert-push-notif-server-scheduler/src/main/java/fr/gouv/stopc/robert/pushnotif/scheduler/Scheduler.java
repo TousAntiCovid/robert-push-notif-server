@@ -37,13 +37,12 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final ApnsOperations apnsTemplate;
+    private final ApnsOperations<FailoverApnsResponseHandler> apnsTemplate;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() {
-
         pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
