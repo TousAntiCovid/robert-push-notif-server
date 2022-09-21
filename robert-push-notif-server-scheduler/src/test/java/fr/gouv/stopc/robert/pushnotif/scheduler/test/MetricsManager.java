@@ -34,6 +34,15 @@ public class MetricsManager implements TestExecutionListener {
                 .collect(Collectors.toMap(Timer::getId, Timer::count));
     }
 
+    @Override
+    public void afterTestMethod(TestContext testContext) {
+        final var pendingNotifications = meterRegistry.get("pushy.notifications.pending")
+                .gauge();
+        assertThat(pendingNotifications.value())
+                .describedAs("'pushy.notifications.pending' gauge metric")
+                .isEqualTo(0.0);
+    }
+
     public static AbstractLongAssert<?> assertCounterIncremented(final String name, final long increment,
             final Tags tags) {
         final var timer = meterRegistry.timer(name, tags.and(SERVER_INFORMATION_TAGS));
