@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,17 +16,22 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class FailoverApnsTemplate implements ApnsOperations {
+public class FailoverApnsTemplate implements ApnsOperations<FailoverApnsResponseHandler> {
 
-    private final List<ApnsOperations> apnsDelegates;
+    private final List<ApnsOperations<ApnsResponseHandler>> apnsDelegates;
 
     @Override
     public void sendNotification(final ApnsPushNotification notification,
-            final ApnsResponseHandler responseHandler) {
+            final FailoverApnsResponseHandler responseHandler) {
 
-        final var apnsClientsQueue = new ConcurrentLinkedQueue<>(apnsDelegates);
-
-        sendNotification(notification, responseHandler, apnsClientsQueue);
+        final var apnsTemplates = new ConcurrentLinkedQueue<>(apnsDelegates);
+        final var first = apnsTemplates.poll();
+        if (first != null) {
+            first.sendNotification(
+                    notification,
+                    new TryOnNextServerAfterInactiveResponseHandler(notification, apnsTemplates, responseHandler)
+            );
+        }
     }
 
     @Override
@@ -33,35 +39,54 @@ public class FailoverApnsTemplate implements ApnsOperations {
         apnsDelegates.parallelStream().forEach(it -> it.waitUntilNoActivity(toleranceDuration));
     }
 
-    private void sendNotification(final ApnsPushNotification notification,
-            final ApnsResponseHandler responseHandler,
-            final ConcurrentLinkedQueue<ApnsOperations> apnsTemplates) {
-
-        final var client = apnsTemplates.poll();
-        if (client != null) {
-            client.sendNotification(notification, new DelegateApnsResponseHandler(responseHandler) {
-
-                @Override
-                public void onInactive(RejectionReason reason) {
-                    if (!apnsTemplates.isEmpty()) {
-                        // try next apn client in the queue
-                        sendNotification(notification, this, apnsTemplates);
-                    } else {
-                        super.onInactive(reason);
-                    }
-                }
-            });
-        }
-    }
-
     @Override
     public void close() {
         apnsDelegates.parallelStream().forEach(delegate -> {
             try {
                 delegate.close();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Unable to close {} gracefully", delegate, e);
             }
         });
+    }
+
+    @RequiredArgsConstructor
+    private static class TryOnNextServerAfterInactiveResponseHandler implements ApnsResponseHandler {
+
+        private final List<RejectionReason> rejectionsHistory = new ArrayList<>();
+
+        private final ApnsPushNotification notification;
+
+        private final ConcurrentLinkedQueue<ApnsOperations<ApnsResponseHandler>> apnsTemplates;
+
+        private final FailoverApnsResponseHandler failoverResponseHandler;
+
+        @Override
+        public void onSuccess() {
+            failoverResponseHandler.onSuccess();
+        }
+
+        @Override
+        public void onRejection(final RejectionReason reason) {
+            rejectionsHistory.add(reason);
+            failoverResponseHandler.onRejection(rejectionsHistory);
+        }
+
+        @Override
+        public void onError(final Throwable cause) {
+            failoverResponseHandler.onError(cause);
+        }
+
+        @Override
+        public void onInactive(final RejectionReason reason) {
+            rejectionsHistory.add(reason);
+            final var nextApnsTemplate = apnsTemplates.poll();
+            if (null != nextApnsTemplate) {
+                // try next apns in the queue
+                nextApnsTemplate.sendNotification(notification, this);
+            } else {
+                failoverResponseHandler.onInactive(rejectionsHistory);
+            }
+        }
     }
 }

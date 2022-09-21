@@ -168,7 +168,7 @@ class SchedulerWithTwoApnsServerTest {
                     .hasFieldOrPropertyWithValue("deleted", false)
                     .hasFieldOrPropertyWithValue("failedPushSent", 1)
                     .is(matching(hasProperty("lastFailurePush", within(1, MINUTES, now()))))
-                    .hasFieldOrPropertyWithValue("lastErrorCode", "BadDeviceToken")
+                    .hasFieldOrPropertyWithValue("lastErrorCode", "DeviceTokenNotForTopic,BadDeviceToken")
                     .hasFieldOrPropertyWithValue("successfulPushSent", 0)
                     .hasFieldOrPropertyWithValue("lastSuccessfulPush", null)
                     .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));
@@ -202,7 +202,7 @@ class SchedulerWithTwoApnsServerTest {
                     .hasFieldOrPropertyWithValue("deleted", false)
                     .hasFieldOrPropertyWithValue("failedPushSent", 1)
                     .is(matching(hasProperty("lastFailurePush", within(1, MINUTES, now()))))
-                    .hasFieldOrPropertyWithValue("lastErrorCode", "PayloadEmpty")
+                    .hasFieldOrPropertyWithValue("lastErrorCode", "BadDeviceToken,PayloadEmpty")
                     .hasFieldOrPropertyWithValue("successfulPushSent", 0)
                     .hasFieldOrPropertyWithValue("lastSuccessfulPush", null)
                     .is(matching(hasProperty("nextPlannedPush", after(now().plus(1, DAYS).truncatedTo(DAYS)))));

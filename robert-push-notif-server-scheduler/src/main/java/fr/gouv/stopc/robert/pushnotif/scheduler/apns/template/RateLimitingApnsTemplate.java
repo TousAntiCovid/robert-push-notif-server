@@ -15,18 +15,18 @@ import java.util.concurrent.Semaphore;
  * An APNS template decorator to limit notification rate.
  */
 @Slf4j
-public class RateLimitingApnsTemplate implements ApnsOperations {
+public class RateLimitingApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final LocalBucket rateLimitingBucket;
 
-    private final ApnsOperations delegate;
+    private final ApnsOperations<ApnsResponseHandler> delegate;
 
     private final Semaphore semaphore;
 
     public RateLimitingApnsTemplate(
             final int maxNotificationsPerSecond,
             final int maxNumberOfPendingNotifications,
-            final ApnsOperations delegate) {
+            final ApnsOperations<ApnsResponseHandler> delegate) {
 
         this.delegate = delegate;
         this.semaphore = new Semaphore(maxNumberOfPendingNotifications);

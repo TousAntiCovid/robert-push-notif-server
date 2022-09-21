@@ -19,7 +19,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class ApnsTemplate implements ApnsOperations {
+public class ApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 

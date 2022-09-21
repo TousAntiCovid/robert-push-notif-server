@@ -6,7 +6,7 @@ import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsResponseHandler;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.FailoverApnsResponseHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
@@ -20,11 +20,13 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.stream.Collectors.joining;
 
 @Slf4j
 @Service
@@ -115,7 +117,7 @@ public class Scheduler {
      * Handles notification request response.
      */
     @RequiredArgsConstructor
-    private class WakeUpDeviceResponseHandler implements ApnsResponseHandler {
+    private class WakeUpDeviceResponseHandler implements FailoverApnsResponseHandler {
 
         private final PushInfo pushInfo;
 
@@ -125,8 +127,9 @@ public class Scheduler {
         }
 
         @Override
-        public void onRejection(final RejectionReason reason) {
-            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+        public void onRejection(final List<RejectionReason> reasons) {
+
+            pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
         }
 
         @Override
@@ -135,9 +138,15 @@ public class Scheduler {
         }
 
         @Override
-        public void onInactive(final RejectionReason reason) {
-            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+        public void onInactive(final List<RejectionReason> reasons) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
             pushInfoRepository.disable(pushInfo.getId());
+        }
+
+        private String concat(List<RejectionReason> reasons) {
+            return reasons.stream()
+                    .map(RejectionReason::getValue)
+                    .collect(joining(","));
         }
     }
 }

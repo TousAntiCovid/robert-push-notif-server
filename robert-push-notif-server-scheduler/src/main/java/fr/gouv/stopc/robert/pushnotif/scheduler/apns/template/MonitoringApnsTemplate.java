@@ -28,7 +28,7 @@ import static java.util.stream.Stream.concat;
  */
 @Slf4j
 @ToString(onlyExplicitlyIncluded = true)
-public class MonitoringApnsTemplate implements ApnsOperations {
+public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
@@ -38,7 +38,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     private static final String REJECTION_REASON_TAG_KEY = "rejectionReason";
 
-    private final ApnsOperations delegate;
+    private final ApnsOperations<ApnsResponseHandler> delegate;
 
     @ToString.Include
     private final String host;

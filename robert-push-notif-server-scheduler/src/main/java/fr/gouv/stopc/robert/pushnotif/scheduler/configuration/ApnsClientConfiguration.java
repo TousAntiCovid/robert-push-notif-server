@@ -25,7 +25,8 @@ public class ApnsClientConfiguration {
 
     private final MeterRegistry meterRegistry;
 
-    private ApnsOperations buildMeasureApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
+    private ApnsOperations<ApnsResponseHandler> buildMeasureApnsTemplate(
+            final RobertPushServerProperties.ApnsClient apnsClientProperties) {
 
         final var listener = new MicrometerApnsClientMetricsListener(
                 meterRegistry,
@@ -69,7 +70,8 @@ public class ApnsClientConfiguration {
         }
     }
 
-    private ApnsOperations buildRateLimitingTemplate(final ApnsOperations apnsOperations) {
+    private ApnsOperations<ApnsResponseHandler> buildRateLimitingTemplate(
+            final ApnsOperations<ApnsResponseHandler> apnsOperations) {
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
                 robertPushServerProperties.getMaxNumberOfPendingNotifications(),
@@ -78,7 +80,7 @@ public class ApnsClientConfiguration {
     }
 
     @Bean
-    public ApnsOperations apnsTemplate() {
+    public ApnsOperations<FailoverApnsResponseHandler> apnsTemplate() {
         final var measuredRateLimitedApnsTemplates = robertPushServerProperties.getApns().getClients().stream()
                 .map(this::buildMeasureApnsTemplate)
                 .map(this::buildRateLimitingTemplate)
