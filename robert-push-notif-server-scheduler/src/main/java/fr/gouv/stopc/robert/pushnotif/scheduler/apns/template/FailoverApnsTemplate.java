@@ -19,8 +19,6 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     private final List<ApnsOperations> apnsDelegates;
 
-    private final List<RejectionReason> inactiveRejectionReasons;
-
     @Override
     public void sendNotification(final ApnsPushNotification notification,
             final ApnsNotificationHandler notificationHandler) {
@@ -37,28 +35,19 @@ public class FailoverApnsTemplate implements ApnsOperations {
 
     private void sendNotification(final ApnsPushNotification notification,
             final ApnsNotificationHandler notificationHandler,
-            final ConcurrentLinkedQueue<? extends ApnsOperations> queue) {
+            final ConcurrentLinkedQueue<ApnsOperations> apnsTemplates) {
 
-        final var client = queue.poll();
+        final var client = apnsTemplates.poll();
         if (client != null) {
             client.sendNotification(notification, new DelegateNotificationHandler(notificationHandler) {
 
                 @Override
-                public void onRejection(final RejectionReason reason) {
-                    if (inactiveRejectionReasons.contains(reason)) {
-                        // rejection reason means we must try on next APN server
-                        if (!queue.isEmpty()) {
-                            // try next apn client in the queue
-                            sendNotification(notification, notificationHandler, queue);
-                        } else {
-                            // notification was rejected on every client, then disable token
-                            super.disableToken();
-                            super.onRejection(reason);
-                        }
+                public void onInactive(RejectionReason reason) {
+                    if (!apnsTemplates.isEmpty()) {
+                        // try next apn client in the queue
+                        sendNotification(notification, this, apnsTemplates);
                     } else {
-                        // rejection reason means the notification must not be attempted on next APN
-                        // server
-                        super.onRejection(reason);
+                        super.onInactive(reason);
                     }
                 }
             });

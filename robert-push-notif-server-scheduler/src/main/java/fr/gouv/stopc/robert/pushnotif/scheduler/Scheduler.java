@@ -135,7 +135,8 @@ public class Scheduler {
         }
 
         @Override
-        public void disableToken() {
+        public void onInactive(final RejectionReason reason) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
             pushInfoRepository.disable(pushInfo.getId());
         }
     }

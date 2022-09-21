@@ -122,6 +122,13 @@ public class MonitoringApnsTemplate implements ApnsOperations {
                 log.warn("Push Notification sent by {} failed", this, cause);
                 super.onError(cause);
             }
+
+            @Override
+            public void onInactive(RejectionReason reason) {
+                pendingNotifications.decrementAndGet();
+                sample.stop(getTimer(REJECTED, reason));
+                super.onInactive(reason);
+            }
         };
 
         delegate.sendNotification(notification, measuringHandler);

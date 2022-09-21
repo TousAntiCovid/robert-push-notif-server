@@ -27,7 +27,7 @@ public class DelegateNotificationHandler implements ApnsNotificationHandler {
     }
 
     @Override
-    public void disableToken() {
-        delegate.disableToken();
+    public void onInactive(RejectionReason reason) {
+        delegate.onInactive(reason);
     }
 }

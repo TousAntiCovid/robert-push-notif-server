@@ -51,8 +51,12 @@ public class ApnsClientConfiguration {
                 );
             }
 
+            final var apnsTemplate = new ApnsTemplate(
+                    apnsClientBuilder.build(),
+                    robertPushServerProperties.getApns().getInactiveRejectionReason()
+            );
             return new MonitoringApnsTemplate(
-                    new ApnsTemplate(apnsClientBuilder.build()),
+                    apnsTemplate,
                     apnsClientProperties.getHost(),
                     apnsClientProperties.getPort(),
                     meterRegistry
@@ -80,8 +84,6 @@ public class ApnsClientConfiguration {
                 .map(this::buildRateLimitingTemplate)
                 .collect(toUnmodifiableList());
 
-        return new FailoverApnsTemplate(
-                measuredRateLimitedApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
-        );
+        return new FailoverApnsTemplate(measuredRateLimitedApnsTemplates);
     }
 }
