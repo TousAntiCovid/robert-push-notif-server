@@ -57,6 +57,6 @@ class SchedulerRateLimiting1sTest {
 
         final var expectedDuration = Duration.ofSeconds(notificationsNumber);
         assertThat(Duration.between(before, after))
-                .isBetween(expectedDuration.minusSeconds(1), expectedDuration.plusSeconds(1));
+                .isGreaterThanOrEqualTo(expectedDuration.minusSeconds(1));
     }
 }
