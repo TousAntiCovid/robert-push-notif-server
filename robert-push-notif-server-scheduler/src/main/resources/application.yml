@@ -27,6 +27,7 @@ robert.push.server:
 
   max-number-of-pending-notifications: 10000
   max-notifications-per-second: 200
+  batch-termination-grace-time: 10s
 
   apns:
     inactive-rejection-reason: BadDeviceToken,DeviceTokenNotForTopic

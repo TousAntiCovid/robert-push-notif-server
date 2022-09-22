@@ -3,15 +3,18 @@ robert.push.server:
   min-push-hour: 8
   max-push-hour: 10
   scheduler.delay-in-ms: 1000
+  batch-termination-grace-time: 1s
   apns:
     clients:
       - host: localhost
         port: 2198
       - host: localhost
         port: 2197
-    inactive-rejection-reason: BadDeviceToken
     auth-token-file: classpath:/apns/token-auth-private-key.p8
     auth-key-id: key-id
     team-id: team-id
     topic: test
     trusted-client-certificate-chain: classpath:/apns/ca.pem
+
+logging.level:
+  org.flywaydb.core.internal.command.DbMigrate: WARN

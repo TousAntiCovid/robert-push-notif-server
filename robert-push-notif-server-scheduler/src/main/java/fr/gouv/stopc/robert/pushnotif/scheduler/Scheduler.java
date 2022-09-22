@@ -5,8 +5,8 @@ import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
-import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsNotificationHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsOperations;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.FailoverApnsResponseHandler;
 import fr.gouv.stopc.robert.pushnotif.scheduler.configuration.RobertPushServerProperties;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.PushInfoRepository;
 import fr.gouv.stopc.robert.pushnotif.scheduler.repository.model.PushInfo;
@@ -17,15 +17,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.stream.Collectors.joining;
 
 @Slf4j
 @Service
@@ -36,22 +37,21 @@ public class Scheduler {
 
     private final RobertPushServerProperties robertPushServerProperties;
 
-    private final ApnsOperations apnsTemplate;
+    private final ApnsOperations<FailoverApnsResponseHandler> apnsTemplate;
 
     @Scheduled(fixedDelayString = "${robert.push.server.scheduler.delay-in-ms}")
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() {
-
         pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
             updateNextPlannedPush(pushInfo);
             final var notification = buildWakeUpNotification(pushInfo.getToken());
-            apnsTemplate.sendNotification(notification, new WakeUpDeviceNotificationHandler(pushInfo));
+            apnsTemplate.sendNotification(notification, new WakeUpDeviceResponseHandler(pushInfo));
         });
 
-        apnsTemplate.waitUntilNoActivity(Duration.ofSeconds(10));
+        apnsTemplate.waitUntilNoActivity(robertPushServerProperties.getBatchTerminationGraceTime());
     }
 
     /**
@@ -116,7 +116,7 @@ public class Scheduler {
      * Handles notification request response.
      */
     @RequiredArgsConstructor
-    private class WakeUpDeviceNotificationHandler implements ApnsNotificationHandler {
+    private class WakeUpDeviceResponseHandler implements FailoverApnsResponseHandler {
 
         private final PushInfo pushInfo;
 
@@ -126,8 +126,9 @@ public class Scheduler {
         }
 
         @Override
-        public void onRejection(final RejectionReason reason) {
-            pushInfoRepository.updateFailure(pushInfo.getId(), reason.getValue());
+        public void onRejection(final List<RejectionReason> reasons) {
+
+            pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
         }
 
         @Override
@@ -136,8 +137,15 @@ public class Scheduler {
         }
 
         @Override
-        public void disableToken() {
+        public void onInactive(final List<RejectionReason> reasons) {
+            pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
             pushInfoRepository.disable(pushInfo.getId());
+        }
+
+        private String concat(List<RejectionReason> reasons) {
+            return reasons.stream()
+                    .map(RejectionReason::getValue)
+                    .collect(joining(","));
         }
     }
 }

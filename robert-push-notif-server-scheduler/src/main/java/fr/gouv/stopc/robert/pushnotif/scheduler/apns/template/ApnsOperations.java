@@ -4,9 +4,9 @@ import com.eatthepath.pushy.apns.ApnsPushNotification;
 
 import java.time.Duration;
 
-public interface ApnsOperations extends AutoCloseable {
+public interface ApnsOperations<T> extends AutoCloseable {
 
-    void sendNotification(ApnsPushNotification notification, ApnsNotificationHandler handler);
+    void sendNotification(ApnsPushNotification notification, T handler);
 
     void waitUntilNoActivity(Duration toleranceDuration);
 }

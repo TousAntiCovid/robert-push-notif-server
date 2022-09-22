@@ -5,8 +5,9 @@ import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.PushInfo;
 import org.junit.jupiter.api.Test;
 
 import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.*;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatAllPushInfo;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.LongStream.rangeClosed;
@@ -29,9 +30,10 @@ class SchedulerVolumetryTest {
 
         // Then
         await().atMost(40, SECONDS).untilAsserted(() -> {
-            assertThatMainServerAccepted(PUSH_NOTIF_COUNT);
-            assertThatSecondServerAcceptedNothing();
-            assertThatSecondServerRejectedNothing();
+            assertThatNotifsAcceptedBy(PRIMARY).hasSize(PUSH_NOTIF_COUNT);
+            assertThatNotifsRejectedBy(PRIMARY).hasSize(0);
+            assertThatNotifsAcceptedBy(SECONDARY).hasSize(0);
+            assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
 
             assertThatAllPushInfo()
                     .hasSize(PUSH_NOTIF_COUNT)

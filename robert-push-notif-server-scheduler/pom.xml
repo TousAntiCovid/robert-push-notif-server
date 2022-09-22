@@ -15,6 +15,7 @@
 
     <properties>
         <bucket4j.version>7.6.0</bucket4j.version>
+        <hamcrest-date.version>2.0.8</hamcrest-date.version>
         <pushy.version>0.15.1</pushy.version>
     </properties>
 
@@ -71,6 +72,11 @@
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.exparity</groupId>
+            <artifactId>hamcrest-date</artifactId>
+            <version>${hamcrest-date.version}</version>
         </dependency>
     </dependencies>
 
