@@ -110,7 +110,7 @@ class SchedulerNominalTest {
         await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThatNotifsAcceptedBy(PRIMARY).hasSize(0);
             assertThatNotifsRejectedBy(PRIMARY).hasSize(1);
-            assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
+            assertThatNotifsAcceptedBy(SECONDARY).hasSize(0);
             assertThatNotifsRejectedBy(SECONDARY).hasSize(0);
 
             // Verify database
