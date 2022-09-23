@@ -66,13 +66,14 @@ public class ApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
     @Override
     public void waitUntilNoActivity(final Duration toleranceDuration) {
         do {
+            log.info("{} has {} remaining pending notifications", this, pendingNotifications.get());
             try {
                 SECONDS.sleep(toleranceDuration.getSeconds());
             } catch (InterruptedException e) {
                 log.warn("Unable to wait until all notifications are sent", e);
             }
         } while (pendingNotifications.get() != 0);
-        log.info("{} has no more pending notifications");
+        log.info("{} has no more pending notifications", this);
     }
 
     @Override
