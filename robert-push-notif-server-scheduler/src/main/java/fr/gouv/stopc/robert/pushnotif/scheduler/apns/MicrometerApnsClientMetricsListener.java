@@ -2,9 +2,9 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.apns;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsClientMetricsListener;
+import fr.gouv.stopc.robert.pushnotif.scheduler.apns.template.ApnsServerCoordinates;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,13 +69,16 @@ public class MicrometerApnsClientMetricsListener implements ApnsClientMetricsLis
      * Constructs a new Micrometer metrics listener that adds metrics to the given
      * registry with the given list of tags.
      *
-     * @param meterRegistry the registry to which to add metrics
-     * @param host          the apns server host
-     * @param port          the apns server port
+     * @param meterRegistry     the registry to which to add metrics
+     * @param serverCoordinates the apns server host and port
      */
-    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry, String host, int port) {
+    public MicrometerApnsClientMetricsListener(final MeterRegistry meterRegistry,
+            final ApnsServerCoordinates serverCoordinates) {
 
-        Iterable<Tag> tags = Tags.of("host", host, "port", "" + port);
+        final var tags = Tags.of(
+                "host", serverCoordinates.getHost(),
+                "port", String.valueOf(serverCoordinates.getPort())
+        );
 
         this.writeFailures = meterRegistry.counter(WRITE_FAILURES_COUNTER_NAME, tags);
         this.sentNotifications = meterRegistry.counter(SENT_NOTIFICATIONS_COUNTER_NAME, tags);

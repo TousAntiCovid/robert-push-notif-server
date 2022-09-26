@@ -23,11 +23,11 @@ robert.push.server:
   min-push-hour: 8
   max-push-hour: 20
 
-  scheduler:
-    delay-in-ms: 30000
+  scheduler.delay-in-ms: 30000
 
   max-number-of-pending-notifications: 10000
   max-notifications-per-second: 200
+  batch-termination-grace-time: 10s
 
   apns:
     inactive-rejection-reason: BadDeviceToken,DeviceTokenNotForTopic

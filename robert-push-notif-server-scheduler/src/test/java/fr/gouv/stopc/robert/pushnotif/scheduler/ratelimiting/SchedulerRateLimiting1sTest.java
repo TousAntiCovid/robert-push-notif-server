@@ -1,18 +1,17 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.ratelimiting;
 
 import fr.gouv.stopc.robert.pushnotif.scheduler.Scheduler;
-import fr.gouv.stopc.robert.pushnotif.scheduler.data.model.PushInfo;
 import fr.gouv.stopc.robert.pushnotif.scheduler.test.IntegrationTest;
-import fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.Duration;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoWith;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.*;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.assertThatAllPushInfo;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.PsqlManager.givenPushInfoForToken;
 import static java.time.Instant.now;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.LongStream.rangeClosed;
@@ -20,9 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 @IntegrationTest
-@ActiveProfiles("dev")
-@TestPropertySource(properties = { "robert.push.server.max-notifications-per-second=1",
-        "robert.push.server.scheduler.delay-in-ms=10000000000" })
+@TestPropertySource(properties = {
+        "robert.push.server.max-notifications-per-second=1",
+        "robert.push.server.scheduler.delay-in-ms=10000000000"
+})
 class SchedulerRateLimiting1sTest {
 
     @Autowired
@@ -34,7 +34,7 @@ class SchedulerRateLimiting1sTest {
 
         // Given
         rangeClosed(1, notificationsNumber)
-                .forEach(i -> givenPushInfoWith(p -> p.id(i).token(randomUUID().toString())));
+                .forEach(i -> givenPushInfoForToken(randomUUID().toString()));
 
         // When
         final var before = now();
@@ -42,7 +42,8 @@ class SchedulerRateLimiting1sTest {
         final var after = now();
 
         // Then
-        assertThat(PsqlManager.findAll()).hasSize(notificationsNumber)
+        assertThatAllPushInfo()
+                .hasSize(notificationsNumber)
                 .extracting(
                         PushInfo::isActive,
                         PushInfo::isDeleted,
@@ -54,7 +55,8 @@ class SchedulerRateLimiting1sTest {
                 )
                 .containsOnly(tuple(true, false, 0, null, null, 1, 0));
 
+        final var expectedDuration = Duration.ofSeconds(notificationsNumber);
         assertThat(Duration.between(before, after))
-                .isGreaterThanOrEqualTo(Duration.ofSeconds(notificationsNumber));
+                .isGreaterThanOrEqualTo(expectedDuration.minusSeconds(1));
     }
 }

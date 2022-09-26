@@ -25,12 +25,17 @@ public class ApnsClientConfiguration {
 
     private final MeterRegistry meterRegistry;
 
-    private ApnsOperations buildMeasureApnsTemplate(final RobertPushServerProperties.ApnsClient apnsClientProperties) {
+    private ApnsOperations<ApnsResponseHandler> buildMeasureApnsTemplate(
+            final RobertPushServerProperties.ApnsClient apnsClientProperties) {
+
+        final var apnsServerCoordinates = new ApnsServerCoordinates(
+                apnsClientProperties.getHost(),
+                apnsClientProperties.getPort()
+        );
 
         final var listener = new MicrometerApnsClientMetricsListener(
                 meterRegistry,
-                apnsClientProperties.getHost(),
-                apnsClientProperties.getPort()
+                apnsServerCoordinates
         );
 
         try (final var authTokenFile = this.robertPushServerProperties.getApns().getAuthTokenFile().getInputStream()) {
@@ -51,10 +56,14 @@ public class ApnsClientConfiguration {
                 );
             }
 
+            final var apnsTemplate = new ApnsTemplate(
+                    apnsServerCoordinates,
+                    apnsClientBuilder.build(),
+                    robertPushServerProperties.getApns().getInactiveRejectionReason()
+            );
             return new MonitoringApnsTemplate(
-                    new ApnsTemplate(apnsClientBuilder.build()),
-                    apnsClientProperties.getHost(),
-                    apnsClientProperties.getPort(),
+                    apnsTemplate,
+                    apnsServerCoordinates,
                     meterRegistry
             );
 
@@ -65,7 +74,8 @@ public class ApnsClientConfiguration {
         }
     }
 
-    private ApnsOperations buildRateLimitingTemplate(final ApnsOperations apnsOperations) {
+    private ApnsOperations<ApnsResponseHandler> buildRateLimitingTemplate(
+            final ApnsOperations<ApnsResponseHandler> apnsOperations) {
         return new RateLimitingApnsTemplate(
                 robertPushServerProperties.getMaxNotificationsPerSecond(),
                 robertPushServerProperties.getMaxNumberOfPendingNotifications(),
@@ -74,14 +84,12 @@ public class ApnsClientConfiguration {
     }
 
     @Bean
-    public ApnsOperations apnsTemplate() {
+    public ApnsOperations<FailoverApnsResponseHandler> apnsTemplate() {
         final var measuredRateLimitedApnsTemplates = robertPushServerProperties.getApns().getClients().stream()
                 .map(this::buildMeasureApnsTemplate)
                 .map(this::buildRateLimitingTemplate)
                 .collect(toUnmodifiableList());
 
-        return new FailoverApnsTemplate(
-                measuredRateLimitedApnsTemplates, robertPushServerProperties.getApns().getInactiveRejectionReason()
-        );
+        return new FailoverApnsTemplate(measuredRateLimitedApnsTemplates);
     }
 }

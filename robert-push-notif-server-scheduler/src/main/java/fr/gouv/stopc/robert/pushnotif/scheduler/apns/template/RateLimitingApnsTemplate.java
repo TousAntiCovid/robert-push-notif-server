@@ -1,5 +1,6 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -14,18 +15,18 @@ import java.util.concurrent.Semaphore;
  * An APNS template decorator to limit notification rate.
  */
 @Slf4j
-public class RateLimitingApnsTemplate implements ApnsOperations {
+public class RateLimitingApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final LocalBucket rateLimitingBucket;
 
-    private final ApnsOperations delegate;
+    private final ApnsOperations<ApnsResponseHandler> delegate;
 
     private final Semaphore semaphore;
 
     public RateLimitingApnsTemplate(
             final int maxNotificationsPerSecond,
             final int maxNumberOfPendingNotifications,
-            final ApnsOperations delegate) {
+            final ApnsOperations<ApnsResponseHandler> delegate) {
 
         this.delegate = delegate;
         this.semaphore = new Semaphore(maxNumberOfPendingNotifications);
@@ -44,36 +45,43 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsResponseHandler responseHandler) {
 
         try {
             semaphore.acquire();
             rateLimitingBucket.asBlocking().consume(1);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             log.error("error during rate limiting process", e);
             return;
         }
-        final var limitedHandler = new DelegateNotificationHandler(notificationHandler) {
+        final var limitedHandler = new ApnsResponseHandler() {
 
             @Override
             public void onSuccess() {
                 semaphore.release();
-                super.onSuccess();
+                responseHandler.onSuccess();
             }
 
             @Override
             public void onRejection(final RejectionReason reason) {
                 semaphore.release();
-                super.onRejection(reason);
+                responseHandler.onRejection(reason);
+            }
+
+            @Override
+            public void onInactive(RejectionReason reason) {
+                semaphore.release();
+                responseHandler.onInactive(reason);
             }
 
             @Override
             public void onError(final Throwable reason) {
                 semaphore.release();
-                super.onError(reason);
+                responseHandler.onError(reason);
             }
         };
-        delegate.sendNotification(limitedHandler);
+        delegate.sendNotification(notification, limitedHandler);
     }
 
     @Override
@@ -84,5 +92,10 @@ public class RateLimitingApnsTemplate implements ApnsOperations {
     @Override
     public void close() throws Exception {
         delegate.close();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RateLimiting(%s)", delegate);
     }
 }

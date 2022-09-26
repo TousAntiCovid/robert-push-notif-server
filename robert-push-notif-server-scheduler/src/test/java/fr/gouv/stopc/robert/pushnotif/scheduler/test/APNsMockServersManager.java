@@ -2,6 +2,7 @@ package fr.gouv.stopc.robert.pushnotif.scheduler.test;
 
 import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
+import org.assertj.core.api.ListAssert;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 
@@ -9,8 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.FIRST;
-import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECOND;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.PRIMARY;
+import static fr.gouv.stopc.robert.pushnotif.scheduler.test.APNsMockServersManager.ServerId.SECONDARY;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -20,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class APNsMockServersManager implements TestExecutionListener {
 
     private static final Map<ServerId, ApnsMockServerDecorator> servers = Map.of(
-            FIRST, new ApnsMockServerDecorator(2198),
-            SECOND, new ApnsMockServerDecorator(2197)
+            PRIMARY, new ApnsMockServerDecorator(2198),
+            SECONDARY, new ApnsMockServerDecorator(2197)
     );
 
     public static void givenApnsServerRejectsTokenIdWith(final ServerId serverId,
@@ -34,56 +36,34 @@ public class APNsMockServersManager implements TestExecutionListener {
     public void beforeTestExecution(final TestContext testContext) throws Exception {
         TestExecutionListener.super.beforeTestExecution(testContext);
         servers.values().forEach(ApnsMockServerDecorator::resetMock);
-        servers.get(FIRST).clear();
-        servers.get(SECOND).clear();
+        servers.values().forEach(ApnsMockServerDecorator::clear);
     }
 
-    public static List<ApnsPushNotification> getNotifsAcceptedBySecondServer() {
-        return new ArrayList<>(servers.get(SECOND).getAcceptedPushNotifications());
+    public static ListAssert<ApnsPushNotification> assertThatNotifsAcceptedBy(final ServerId apnsServerId) {
+        final var notifs = new ArrayList<>(servers.get(apnsServerId).getAcceptedPushNotifications());
+        return assertThat(notifs)
+                .describedAs("Notifications accepted by APNS %s server:\n%s", apnsServerId, describe(notifs));
     }
 
-    public static List<ApnsPushNotification> getNotifsAcceptedByMainServer() {
-        return new ArrayList<>(servers.get(FIRST).getAcceptedPushNotifications());
+    public static ListAssert<ApnsPushNotification> assertThatNotifsRejectedBy(final ServerId apnsServerId) {
+        final var notifs = new ArrayList<>(servers.get(apnsServerId).getRejectedPushNotifications());
+        return assertThat(notifs)
+                .describedAs("Notifications rejected by APNS %s server:\n%s", apnsServerId, describe(notifs));
     }
 
-    public static void assertThatMainServerAcceptedOne() {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatMainServerAccepted(final int nbNotifications) {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).hasSize(nbNotifications);
-    }
-
-    public static void assertThatMainServerAcceptedNothing() {
-        assertThat(servers.get(FIRST).getAcceptedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatMainServerRejectedOne() {
-        assertThat(servers.get(FIRST).getRejectedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatMainServerRejectedNothing() {
-        assertThat(servers.get(FIRST).getRejectedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatSecondServerAcceptedOne() {
-        assertThat(servers.get(SECOND).getAcceptedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatSecondServerAcceptedNothing() {
-        assertThat(servers.get(SECOND).getAcceptedPushNotifications()).isEmpty();
-    }
-
-    public static void assertThatSecondServerRejectedOne() {
-        assertThat(servers.get(SECOND).getRejectedPushNotifications()).hasSize(1);
-    }
-
-    public static void assertThatSecondServerRejectedNothing() {
-        assertThat(servers.get(SECOND).getRejectedPushNotifications()).isEmpty();
+    private static String describe(List<ApnsPushNotification> notifs) {
+        return notifs.stream()
+                .map(
+                        n -> String.format(
+                                " - token=%s, topic=%s, pushType=%s, priority=%s, expiration=%s", n.getToken(),
+                                n.getTopic(), n.getPushType(), n.getPriority(), n.getExpiration()
+                        )
+                )
+                .collect(joining("\n"));
     }
 
     public enum ServerId {
-        FIRST,
-        SECOND
+        PRIMARY,
+        SECONDARY
     }
 }

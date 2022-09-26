@@ -1,12 +1,12 @@
 package fr.gouv.stopc.robert.pushnotif.scheduler.apns.template;
 
+import com.eatthepath.pushy.apns.ApnsPushNotification;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.ApnsRequestOutcome;
 import fr.gouv.stopc.robert.pushnotif.scheduler.apns.RejectionReason;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -26,8 +26,7 @@ import static java.util.stream.Stream.concat;
  * sending each notification and amount of pending notifications beeing sent.
  */
 @Slf4j
-@ToString(onlyExplicitlyIncluded = true)
-public class MonitoringApnsTemplate implements ApnsOperations {
+public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandler> {
 
     private final AtomicInteger pendingNotifications = new AtomicInteger(0);
 
@@ -37,21 +36,18 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     private static final String REJECTION_REASON_TAG_KEY = "rejectionReason";
 
-    private final ApnsOperations delegate;
+    private final ApnsOperations<ApnsResponseHandler> delegate;
 
-    @ToString.Include
     private final String host;
 
-    @ToString.Include
     private final Integer port;
 
     public MonitoringApnsTemplate(final ApnsTemplate delegate,
-            final String host,
-            final Integer port,
+            final ApnsServerCoordinates serverCoordinates,
             final MeterRegistry meterRegistry) {
 
-        this.host = host;
-        this.port = port;
+        this.host = serverCoordinates.getHost();
+        this.port = serverCoordinates.getPort();
         this.delegate = delegate;
 
         final var successTags = Stream.of(
@@ -91,26 +87,27 @@ public class MonitoringApnsTemplate implements ApnsOperations {
     }
 
     @Override
-    public void sendNotification(final NotificationHandler notificationHandler) {
+    public void sendNotification(final ApnsPushNotification notification,
+            final ApnsResponseHandler responseHandler) {
 
         pendingNotifications.incrementAndGet();
 
         final var sample = Timer.start();
 
-        final var measuringHandler = new DelegateNotificationHandler(notificationHandler) {
+        final var measuringHandler = new ApnsResponseHandler() {
 
             @Override
             public void onSuccess() {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ACCEPTED, NONE));
-                super.onSuccess();
+                responseHandler.onSuccess();
             }
 
             @Override
             public void onRejection(final RejectionReason reason) {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(REJECTED, reason));
-                super.onRejection(reason);
+                responseHandler.onRejection(reason);
             }
 
             @Override
@@ -118,11 +115,18 @@ public class MonitoringApnsTemplate implements ApnsOperations {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ERROR, NONE));
                 log.warn("Push Notification sent by {} failed", this, cause);
-                super.onError(cause);
+                responseHandler.onError(cause);
+            }
+
+            @Override
+            public void onInactive(RejectionReason reason) {
+                pendingNotifications.decrementAndGet();
+                sample.stop(getTimer(REJECTED, reason));
+                responseHandler.onInactive(reason);
             }
         };
 
-        delegate.sendNotification(measuringHandler);
+        delegate.sendNotification(notification, measuringHandler);
     }
 
     @Override
@@ -132,8 +136,12 @@ public class MonitoringApnsTemplate implements ApnsOperations {
 
     @Override
     public void close() throws Exception {
-        log.info("Shutting down {} -----> shutting down delegate: {}", this, delegate);
         delegate.close();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Monitoring(%s)", delegate);
     }
 
     /**
@@ -146,8 +154,7 @@ public class MonitoringApnsTemplate implements ApnsOperations {
      * @see ApnsRequestOutcome
      * @see RejectionReason
      */
-    public Timer getTimer(final ApnsRequestOutcome outcome,
-            final RejectionReason rejectionReason) {
+    private Timer getTimer(final ApnsRequestOutcome outcome, final RejectionReason rejectionReason) {
         return tagsToTimerMap.get(
                 Tags.of(
                         "host", host,
