@@ -55,24 +55,30 @@ public class RateLimitingApnsTemplate implements ApnsOperations<ApnsResponseHand
             log.error("error during rate limiting process", e);
             return;
         }
-        final var limitedHandler = new DelegateApnsResponseHandler(responseHandler) {
+        final var limitedHandler = new ApnsResponseHandler() {
 
             @Override
             public void onSuccess() {
                 semaphore.release();
-                super.onSuccess();
+                responseHandler.onSuccess();
             }
 
             @Override
             public void onRejection(final RejectionReason reason) {
                 semaphore.release();
-                super.onRejection(reason);
+                responseHandler.onRejection(reason);
+            }
+
+            @Override
+            public void onInactive(RejectionReason reason) {
+                semaphore.release();
+                responseHandler.onInactive(reason);
             }
 
             @Override
             public void onError(final Throwable reason) {
                 semaphore.release();
-                super.onError(reason);
+                responseHandler.onError(reason);
             }
         };
         delegate.sendNotification(notification, limitedHandler);

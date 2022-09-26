@@ -94,20 +94,20 @@ public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandle
 
         final var sample = Timer.start();
 
-        final var measuringHandler = new DelegateApnsResponseHandler(responseHandler) {
+        final var measuringHandler = new ApnsResponseHandler() {
 
             @Override
             public void onSuccess() {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ACCEPTED, NONE));
-                super.onSuccess();
+                responseHandler.onSuccess();
             }
 
             @Override
             public void onRejection(final RejectionReason reason) {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(REJECTED, reason));
-                super.onRejection(reason);
+                responseHandler.onRejection(reason);
             }
 
             @Override
@@ -115,14 +115,14 @@ public class MonitoringApnsTemplate implements ApnsOperations<ApnsResponseHandle
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(ERROR, NONE));
                 log.warn("Push Notification sent by {} failed", this, cause);
-                super.onError(cause);
+                responseHandler.onError(cause);
             }
 
             @Override
             public void onInactive(RejectionReason reason) {
                 pendingNotifications.decrementAndGet();
                 sample.stop(getTimer(REJECTED, reason));
-                super.onInactive(reason);
+                responseHandler.onInactive(reason);
             }
         };
 

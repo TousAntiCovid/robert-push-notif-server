@@ -18,13 +18,6 @@ public interface ApnsResponseHandler {
     void onRejection(final RejectionReason reason);
 
     /**
-     * Called when the notification request fails before reaching Apple server.
-     *
-     * @param cause error message
-     */
-    void onError(final Throwable cause);
-
-    /**
      * Called when the notification request is rejected because one of inactive
      * rejection reasons.
      *
@@ -32,4 +25,11 @@ public interface ApnsResponseHandler {
      * @see RobertPushServerProperties.Apns#getInactiveRejectionReason()
      */
     void onInactive(RejectionReason reason);
+
+    /**
+     * Called when the notification request fails before reaching Apple server.
+     *
+     * @param cause error message
+     */
+    void onError(final Throwable cause);
 }
