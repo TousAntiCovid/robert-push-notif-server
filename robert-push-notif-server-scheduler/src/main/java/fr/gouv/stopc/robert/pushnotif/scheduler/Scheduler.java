@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.eatthepath.pushy.apns.util.SimpleApnsPushNotification.DEFAULT_EXPIRATION_PERIOD;
 import static com.eatthepath.pushy.apns.util.TokenUtil.sanitizeTokenString;
@@ -43,15 +44,20 @@ public class Scheduler {
     @Timed(value = "push.notifier.duration", description = "on going export duration", longTask = true)
     @Counted(value = "push.notifier.calls", description = "count each time the scheduler sending notifications is triggered")
     public void sendNotifications() {
+        log.info("start notification task");
+        final var count = new AtomicInteger(0);
         pushInfoRepository.forEachNotificationToBeSent(pushInfo -> {
             // set the next planned push to be sure the notification could not be sent 2
             // times the same day
+            log.info("update next planned push for {}", pushInfo.getToken());
             updateNextPlannedPush(pushInfo);
             final var notification = buildWakeUpNotification(pushInfo.getToken());
+            log.info("submit notification for {}", pushInfo.getToken());
             apnsTemplate.sendNotification(notification, new WakeUpDeviceResponseHandler(pushInfo));
         });
 
         apnsTemplate.waitUntilNoActivity(robertPushServerProperties.getBatchTerminationGraceTime());
+        log.info("end notification task");
     }
 
     /**
@@ -123,23 +129,26 @@ public class Scheduler {
         @Override
         public void onSuccess() {
             pushInfoRepository.updateSuccessfulPushSent(pushInfo.getId());
+            log.info("success for {}", pushInfo.getToken());
         }
 
         @Override
         public void onRejection(final List<RejectionReason> reasons) {
-
             pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
+            log.info("rejection for {}", pushInfo.getToken());
         }
 
         @Override
         public void onError(final Throwable cause) {
             pushInfoRepository.updateFailure(pushInfo.getId(), cause.getMessage());
+            log.info("error for {}", pushInfo.getToken());
         }
 
         @Override
         public void onInactive(final List<RejectionReason> reasons) {
             pushInfoRepository.updateFailure(pushInfo.getId(), concat(reasons));
             pushInfoRepository.disable(pushInfo.getId());
+            log.info("inactive for {}", pushInfo.getToken());
         }
 
         private String concat(List<RejectionReason> reasons) {
