@@ -16,12 +16,6 @@
     <name>robert-push-notif-server-ws-rest</name>
     <description>Rest Webservice Module</description>
 
-    <properties>
-        <openapi-generator-maven-plugin.version>
-            5.4.0
-        </openapi-generator-maven-plugin.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
