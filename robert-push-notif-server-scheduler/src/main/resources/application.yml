@@ -1,4 +1,5 @@
 spring:
+  cloud.vault.enabled: false
   datasource:
     url: jdbc:postgresql://localhost:5432/push
     username: robert-push

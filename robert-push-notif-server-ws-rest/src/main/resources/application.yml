@@ -1,4 +1,5 @@
 server:
+  cloud.vault.enabled: false
   port: :9096
 
 spring:
